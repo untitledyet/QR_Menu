@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <style>
+        .card img {
+            height: 200px;
+            object-fit: cover;
+        }
+        @media (min-width: 576px) {
+            .card img {
+                height: 150px;
+            }
+        }
+        @media (min-width: 992px) {
+            .card img {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Menu</h1>
+        <div class="row">
+            {% for item in items %}
+            <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <img src="{{ url_for('static', filename='images/' ~ item.image_filename) }}" class="card-img-top" alt="{{ item.FoodName }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.FoodName }}</h5>
+                        <p class="card-text">{{ item.Description }}</p>
+                        <p class="card-text"><strong>${{ item.Price }}</strong></p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+2024-07-21 22:40:51,807 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-21 22:40:58,502 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 15:23:35,140 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 17:10:16,732 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:16,741 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:16,741 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,673 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,681 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,681 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:11:10,092 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:11:17,183 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1146 (42S02): Table 'testing.food_item' doesn't exist
+[SQL: SELECT food_item.id AS food_item_id, food_item.name AS food_item_name, food_item.description AS food_item_description, food_item.price AS food_item_price, food_item.image AS food_item_image, food_item.category_id AS food_item_category_id 
+FROM food_item]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:17]
+2024-07-22 17:12:41,497 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:12:46,206 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
