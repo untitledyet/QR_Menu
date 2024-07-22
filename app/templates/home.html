@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <style>
+        .card img {
+            height: 200px;
+            object-fit: cover;
+        }
+        @media (min-width: 576px) {
+            .card img {
+                height: 150px;
+            }
+        }
+        @media (min-width: 992px) {
+            .card img {
+                height: 200px;
+            }
+        }
+        .category-card {
+            border: none;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            text-align: center;
+            width: 120px;
+            margin-right: 10px;
+        }
+        .category-card img {
+            border-radius: 10px;
+            height: 60px;
+            width: 60px;
+            object-fit: cover;
+        }
+        .category-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px;
+        }
+        .category-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .promotion-card {
+            border: none;
+            border-radius: 10px;
+            background-color: #ffebcd;
+        }
+        .promotion-card .card-body {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Home</h1>
+        <!-- Promotions Section -->
+        <div class="mb-4">
+            <h2>Promotions</h2>
+            <div class="row">
+                {% for promotion in promotions %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card promotion-card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ promotion.PromotionName }}</h5>
+                            <p class="card-text">Discount: {{ promotion.Discount }}%</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Categories Section -->
+        <div class="mb-4">
+            <h2>Categories</h2>
+            <div class="category-scroll">
+                {% for category in categories %}
+                <div class="card category-card shadow-sm">
+                    <img src="{{ url_for('static', filename='images/category_placeholder.jpg') }}" alt="{{ category.CategoryName }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ category.CategoryName }}</h5>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Popular Dishes Section -->
+        <div class="mb-4">
+            <h2>Popular Dishes</h2>
+            <div class="row">
+                {% for dish in popular_dishes %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm">
+                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ dish.FoodName }}</h5>
+                            <p class="card-text">{{ dish.Description }}</p>
+                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- New Dishes Section -->
+        <div class="mb-4">
+            <h2>New Dishes</h2>
+            <div class="row">
+                {% for dish in new_dishes %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm">
+                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ dish.FoodName }}</h5>
+                            <p class="card-text">{{ dish.Description }}</p>
+                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>

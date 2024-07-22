@@ -1,0 +1,51 @@
+2024-07-21 22:40:51,807 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-21 22:40:58,502 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 15:23:35,140 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 17:10:16,732 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:16,741 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:16,741 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,673 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,681 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:10:57,681 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:11:10,092 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:11:17,183 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1146 (42S02): Table 'testing.food_item' doesn't exist
+[SQL: SELECT food_item.id AS food_item_id, food_item.name AS food_item_name, food_item.description AS food_item_description, food_item.price AS food_item_price, food_item.image AS food_item_image, food_item.category_id AS food_item_category_id 
+FROM food_item]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:17]
+2024-07-22 17:12:41,497 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 17:12:46,206 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 19:13:56,317 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:13:58,508 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.ImageFilename' in 'field list'
+[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID` 
+FROM `FoodItems` ORDER BY `FoodItems`.`FoodItemID` DESC 
+ LIMIT %(param_1)s]
+[parameters: {'param_1': 5}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:19]
+2024-07-22 19:14:06,587 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.ImageFilename' in 'field list'
+[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID` 
+FROM `FoodItems`]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:33]
+2024-07-22 19:17:22,242 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:17:29,492 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:31]
+2024-07-22 19:18:33,621 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:18:40,637 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:31]
+2024-07-22 19:19:39,249 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.ImageFilename' in 'field list'
+[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID` 
+FROM `FoodItems`]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:33]
+2024-07-22 19:19:41,184 ERROR: Database table issue: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.ImageFilename' in 'field list'
+[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID` 
+FROM `FoodItems`]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:33]
+2024-07-22 19:19:51,847 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:19:54,859 INFO: Retrieved items: [FoodItem('Spaghetti Carbonara', '12.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Bruschetta', '5.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:31]
+2024-07-22 19:20:02,069 INFO: Retrieved categories: [Category('Main Courses'), Category('Appetizers'), Category('Desserts')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 19:20:02,069 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:16]
+2024-07-22 19:20:02,069 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:17]
+2024-07-22 19:22:19,994 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:22:24,760 INFO: Retrieved categories: [Category('Main Courses'), Category('Appetizers'), Category('Desserts')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 19:22:24,761 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:16]
+2024-07-22 19:22:24,761 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:17]
+2024-07-22 19:23:46,285 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:24]
+2024-07-22 19:24:07,769 INFO: Retrieved categories: [Category('Main Courses'), Category('Appetizers'), Category('Desserts')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:15]
+2024-07-22 19:24:07,770 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:16]

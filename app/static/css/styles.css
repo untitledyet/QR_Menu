@@ -23,4 +23,52 @@ body {
     color: #6c757d;
 }
 
+h1, h2 {
+    color: #343a40;
+}
 
+.text-center {
+    text-align: center;
+}
+
+.category-card {
+    border: none;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    text-align: center;
+    width: 120px;
+    margin-right: 10px;
+    flex: 0 0 auto;
+}
+
+.category-card img {
+    border-radius: 10px;
+    height: 60px;
+    width: 60px;
+    object-fit: cover;
+}
+
+.category-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px;
+    scroll-snap-type: x mandatory;
+}
+
+.category-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.category-card {
+    scroll-snap-align: start;
+}
+
+.promotion-card {
+    border: none;
+    border-radius: 10px;
+    background-color: #ffebcd;
+}
+
+.promotion-card .card-body {
+    text-align: center;
+}

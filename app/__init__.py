@@ -5,8 +5,6 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-
-
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
@@ -22,7 +20,5 @@ file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO)
 app.logger.info('MenuApp startup')
-
-
 
 from app.routes import menu_routes  # Register routes
