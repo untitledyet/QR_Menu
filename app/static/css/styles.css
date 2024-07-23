@@ -38,7 +38,6 @@ h1, h2 {
     text-align: center;
     width: 120px;
     margin-right: 10px;
-    flex: 0 0 auto;
 }
 
 .category-card img {
@@ -52,15 +51,10 @@ h1, h2 {
     display: flex;
     overflow-x: auto;
     padding: 10px;
-    scroll-snap-type: x mandatory;
 }
 
 .category-scroll::-webkit-scrollbar {
     display: none;
-}
-
-.category-card {
-    scroll-snap-align: start;
 }
 
 .promotion-card {

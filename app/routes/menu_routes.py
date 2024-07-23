@@ -1,54 +1,39 @@
-from flask import render_template, flash, request
+from flask import render_template, jsonify, request
 from app import app
 from app.models.models import FoodItem, Category, Promotion
-from sqlalchemy.exc import OperationalError, ProgrammingError
-
 
 @app.route('/')
-def index():
-    categories = []
-    promotions = []
-    popular_dishes = []
-    new_dishes = []
-    filters = request.args.get('filters')
+def home():
+    categories = Category.query.all()
+    promotions = Promotion.query.all()
+    popular_dishes = FoodItem.query.limit(6).all()  # Adjust this as needed
+    new_dishes = FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()
+    return render_template('home.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
 
-    try:
-        categories = Category.query.all()
-        promotions = Promotion.query.all()
-        popular_dishes = FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(
-            5).all()  # Example to fetch new dishes
-        new_dishes = FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(5).all()  # Example to fetch new dishes
+@app.route('/category/<int:category_id>')
+def get_items_by_category(category_id):
+    items = FoodItem.query.filter_by(CategoryID=category_id).all()
+    items_data = [
+        {
+            'FoodName': item.FoodName,
+            'Description': item.Description,
+            'Price': item.Price,
+            'ImageFilename': item.ImageFilename,
+        }
+        for item in items
+    ]
+    return jsonify(items_data)
 
-        if filters:
-            # Add filtering logic here
-            pass
-
-        app.logger.info(f"Retrieved categories: {categories}")
-        app.logger.info(f"Retrieved promotions: {promotions}")
-        app.logger.info(f"Retrieved popular dishes: {popular_dishes}")
-        app.logger.info(f"Retrieved new dishes: {new_dishes}")
-    except ProgrammingError as e:
-        app.logger.error(f"Database table issue: {e}")
-        flash("Database table issue. Unable to retrieve items at this time.", "danger")
-    except OperationalError as e:
-        app.logger.error(f"Database connection issue: {e}")
-        flash("Database connection issue. Unable to retrieve items at this time.", "danger")
-
-    return render_template('home.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes,
-                           new_dishes=new_dishes)
-
-
-@app.route('/menu')
-def menu():
-    items = []
-    try:
-        items = FoodItem.query.all()
-        app.logger.info(f"Retrieved items: {items}")
-    except ProgrammingError as e:
-        app.logger.error(f"Database table issue: {e}")
-        flash("Database table issue. Unable to retrieve menu items at this time.", "danger")
-    except OperationalError as e:
-        app.logger.error(f"Database connection issue: {e}")
-        flash("Database connection issue. Unable to retrieve menu items at this time.", "danger")
-
-    return render_template('menu.html', items=items)
+@app.route('/popular-dishes')
+def popular_dishes():
+    items = FoodItem.query.limit(6).all()  # Adjust this as needed
+    items_data = [
+        {
+            'FoodName': item.FoodName,
+            'Description': item.Description,
+            'Price': item.Price,
+            'ImageFilename': item.ImageFilename,
+        }
+        for item in items
+    ]
+    return jsonify(items_data)

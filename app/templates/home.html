@@ -31,17 +31,26 @@
             text-align: center;
             width: 120px;
             margin-right: 10px;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            cursor: pointer;
         }
         .category-card img {
             border-radius: 10px;
             height: 60px;
             width: 60px;
             object-fit: cover;
+            margin-bottom: 10px;
         }
         .category-scroll {
             display: flex;
             overflow-x: auto;
-            padding: 10px;
+            padding: 10px 0;
+            margin: 0 -10px;
         }
         .category-scroll::-webkit-scrollbar {
             display: none;
@@ -80,8 +89,8 @@
             <h2>Categories</h2>
             <div class="category-scroll">
                 {% for category in categories %}
-                <div class="card category-card shadow-sm">
-                    <img src="{{ url_for('static', filename='images/category_placeholder.jpg') }}" alt="{{ category.CategoryName }}">
+                <div class="card category-card shadow-sm" data-category-id="{{ category.CategoryID }}" data-category-name="{{ category.CategoryName }}">
+                    <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}" alt="{{ category.CategoryName }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ category.CategoryName }}</h5>
                     </div>
@@ -91,8 +100,8 @@
         </div>
         <!-- Popular Dishes Section -->
         <div class="mb-4">
-            <h2>Popular Dishes</h2>
-            <div class="row">
+            <h2 id="section-title">Popular Dishes</h2>
+            <div class="row" id="items-container">
                 {% for dish in popular_dishes %}
                 <div class="col-12 col-sm-6 col-lg-4 mb-4">
                     <div class="card shadow-sm">

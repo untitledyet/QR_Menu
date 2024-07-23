@@ -5,9 +5,11 @@ class Category(db.Model):
 
     CategoryID = db.Column(db.Integer, primary_key=True)
     CategoryName = db.Column(db.String(50), nullable=False)
+    Description = db.Column(db.String(200), nullable=True)
+    CategoryIcon = db.Column(db.String(100), nullable=True)  # New field for category icon
 
     def __repr__(self):
-        return f"Category('{self.CategoryName}')"
+        return f"Category('{self.CategoryName}', '{self.CategoryIcon}')"
 
 
 class Subcategory(db.Model):
@@ -27,9 +29,10 @@ class FoodItem(db.Model):
     FoodItemID = db.Column(db.Integer, primary_key=True)
     FoodName = db.Column(db.String(50), nullable=False)
     Description = db.Column(db.String(200), nullable=False)
+    Ingredients = db.Column(db.String(200), nullable=False)
     Price = db.Column(db.Float, nullable=False)
     ImageFilename = db.Column(db.String(100), nullable=True)
-    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=False)
+    CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
 
     def __repr__(self):
         return f"FoodItem('{self.FoodName}', '{self.Price}')"
