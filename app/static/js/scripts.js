@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 data.subcategories.forEach(sub => {
                                     const subcategoryCard = document.createElement('button');
-                                    subcategoryCard.classList.add('subcategory-card', 'btn', 'btn-light', 'mr-2', 'mb-2');
+                                    subcategoryCard.classList.add('subcategory-card', 'btn', 'mr-2', 'mb-2');
                                     subcategoryCard.dataset.subcategoryId = sub.SubcategoryID;
-                                    subcategoryCard.textContent = sub.SubcategoryName.toLowerCase();
+                                    subcategoryCard.textContent = sub.SubcategoryName;
                                     subcategoryCard.addEventListener('click', function() {
                                         const subcategoryId = this.dataset.subcategoryId;
                                         const isSubcategoryActive = this.classList.contains('active');
