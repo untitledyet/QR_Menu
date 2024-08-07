@@ -9,8 +9,20 @@ body {
 }
 
 .card img {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    height: 200px;
+    object-fit: cover;
+}
+
+@media (min-width: 576px) {
+    .card img {
+        height: 150px;
+    }
+}
+
+@media (min-width: 992px) {
+    .card img {
+        height: 200px;
+    }
 }
 
 .card-title {
@@ -38,6 +50,13 @@ h1, h2 {
     text-align: center;
     width: 120px;
     margin-right: 10px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
 }
 
 .category-card img {
@@ -45,12 +64,14 @@ h1, h2 {
     height: 60px;
     width: 60px;
     object-fit: cover;
+    margin-bottom: 10px;
 }
 
 .category-scroll {
     display: flex;
     overflow-x: auto;
-    padding: 10px;
+    padding: 10px 0;
+    margin: 0 -10px;
 }
 
 .category-scroll::-webkit-scrollbar {
@@ -65,4 +86,50 @@ h1, h2 {
 
 .promotion-card .card-body {
     text-align: center;
+}
+
+/* Custom styles for active category button */
+.category-card.active {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-card.active img {
+    border: 2px solid #fff;
+}
+
+/* Optional: Transition for smooth effect */
+.category-card {
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+.category-card img {
+    transition: border 0.3s;
+}
+
+/* Subcategory styles */
+.subcategories {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.subcategory-card {
+    padding: 10px 15px;
+    margin: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    flex: 0 0 auto;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.subcategory-card:hover, .subcategory-card.active {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: #fff;
 }

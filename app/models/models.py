@@ -33,6 +33,7 @@ class FoodItem(db.Model):
     Price = db.Column(db.Float, nullable=False)
     ImageFilename = db.Column(db.String(100), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
+    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True)  # New field for subcategory
 
     def __repr__(self):
         return f"FoodItem('{self.FoodName}', '{self.Price}')"

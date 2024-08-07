@@ -1,30 +1,93 @@
-2024-07-22 23:42:29,687 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-22 23:42:42,635 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-22 23:42:42,637 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-22 23:42:42,637 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-22 23:42:42,637 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-22 23:43:17,045 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-22 23:43:17,046 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-22 23:43:17,047 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-22 23:43:17,047 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-22 23:43:18,805 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-22 23:43:18,806 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-22 23:43:18,806 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-22 23:43:18,807 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-22 23:43:29,818 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-22 23:43:29,821 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-22 23:43:29,821 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-22 23:43:29,821 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-23 10:03:14,888 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-23 10:03:14,890 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-23 10:03:14,890 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-23 10:03:14,891 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-23 10:13:18,564 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-07-23 10:13:22,576 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-23 10:13:22,576 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-23 10:13:22,576 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
-2024-07-23 10:13:22,576 INFO: Retrieved new dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:29]
-2024-07-23 10:14:50,989 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-07-23 10:14:53,177 INFO: Retrieved categories: [Category('Pizza', 'pizza.jpg'), Category('Appetizers', 'appetaizer.jpg'), Category('Desserts', 'dessert.jpg'), Category('Asian', 'asian.jpg'), Category('Burgers', 'burger.jpg'), Category('Salads', 'salad.jpg'), Category('Drinks', 'drinks.jpg')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:26]
-2024-07-23 10:14:53,178 INFO: Retrieved promotions: [Promotion('Holiday Special', '15.0'), Promotion('Summer Sale', '20.0')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:27]
-2024-07-23 10:14:53,178 INFO: Retrieved popular dishes: [FoodItem('Bruschetta', '5.99'), FoodItem('Spring Rolls', '4.99'), FoodItem('Vanilla Ice Cream', '69.99'), FoodItem('Grilled Chicken', '89.99'), FoodItem('Spaghetti Carbonara', '12.99')] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py:28]
+2024-07-23 19:28:11,237 ERROR: Exception on /category/2 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2181, in _entity_namespace_key
+    return getattr(ns, key)  # type: ignore
+           ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FoodItem' has no attribute 'CategoryID'. Did you mean: 'SubcategoryID'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 15, in get_items_by_category
+    items = FoodItem.query.filter_by(CategoryID=category_id).all()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 1984, in filter_by
+    _entity_namespace_key(from_entity, key) == value
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2183, in _entity_namespace_key
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Entity namespace for "FoodItems" has no property "CategoryID"
+2024-07-23 19:28:11,800 ERROR: Exception on /category/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2181, in _entity_namespace_key
+    return getattr(ns, key)  # type: ignore
+           ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FoodItem' has no attribute 'CategoryID'. Did you mean: 'SubcategoryID'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 15, in get_items_by_category
+    items = FoodItem.query.filter_by(CategoryID=category_id).all()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 1984, in filter_by
+    _entity_namespace_key(from_entity, key) == value
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2183, in _entity_namespace_key
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Entity namespace for "FoodItems" has no property "CategoryID"
+2024-07-23 19:28:12,347 ERROR: Exception on /category/4 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2181, in _entity_namespace_key
+    return getattr(ns, key)  # type: ignore
+           ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FoodItem' has no attribute 'CategoryID'. Did you mean: 'SubcategoryID'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 15, in get_items_by_category
+    items = FoodItem.query.filter_by(CategoryID=category_id).all()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 1984, in filter_by
+    _entity_namespace_key(from_entity, key) == value
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2183, in _entity_namespace_key
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Entity namespace for "FoodItems" has no property "CategoryID"
