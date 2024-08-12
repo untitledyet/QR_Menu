@@ -93,24 +93,52 @@ h1, h2 {
     display: none;
 }
 
+/* Promotion Scroll Container */
+.promotion-carousel {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.promotion-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 10px 0;
+    scroll-snap-type: x mandatory;
+}
+
+.promotion-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.promotion-scroll::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+}
+
 /* Promotion Card Styles */
 .promotion-card {
     position: relative;
+    min-width: 300px;
+    height: 200px;
     border: none;
     border-radius: 12px;
     background-size: cover;
     background-position: center;
-    height: 200px; /* Set a fixed height for uniformity */
-    color: white; /* Ensure text is visible against background */
+    color: white;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    scroll-snap-align: start;
+    flex: 0 0 auto;
 }
 
 .promotion-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Slight hover effect */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
+/* Content Inside Promotion Card */
 .promotion-content {
     position: absolute;
     width: 100%;
@@ -125,18 +153,48 @@ h1, h2 {
     font-size: 1.5rem;
     font-weight: bold;
     margin: 0;
-    align-self: flex-start; /* Aligns text to the top-left */
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: Adds a background to improve readability */
+    align-self: flex-start;
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 5px 10px;
     border-radius: 5px;
 }
 
 .promotion-description {
     font-size: 1rem;
-    align-self: flex-end; /* Aligns text to the bottom-right */
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: Adds a background to improve readability */
+    align-self: flex-end;
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 5px 10px;
     border-radius: 5px;
+}
+
+/* Carousel Controls */
+.carousel-control-prev, .carousel-control-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.carousel-control-prev {
+    left: -20px;
+}
+
+.carousel-control-next {
+    right: -20px;
+}
+
+.carousel-control-prev:hover, .carousel-control-next:hover {
+    background: rgba(0, 0, 0, 0.8);
 }
 
 /* Subcategory Styles */

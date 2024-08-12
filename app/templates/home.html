@@ -13,20 +13,26 @@
 <body>
 <div class="container mt-5">
     <!-- Promotions Section -->
-    <div class="mb-4">
+    <div class="mb-4 promotion-section">
         <h2>Promotions</h2>
-        <div class="row">
-            {% for promotion in promotions %}
-                <div class="col-12 col-sm-6 col-lg-4 mb-4">
-                    <div class="card promotion-card shadow-sm"
+        <div class="promotion-carousel">
+            <div class="promotion-scroll">
+                {% for promotion in promotions %}
+                    <div class="promotion-card"
                          style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');">
                         <div class="promotion-content">
                             <h5 class="promotion-title">{{ promotion.PromotionName }}</h5>
                             <p class="promotion-description">{{ promotion.Description }}</p>
                         </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" aria-label="Previous">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-control-next" aria-label="Next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
     <!-- Categories Section -->
