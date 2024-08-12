@@ -1,9 +1,14 @@
-/* General Styles */
+/* ----------------------------------------------------------
+   General Styles
+---------------------------------------------------------- */
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
 }
 
+/* ----------------------------------------------------------
+   Typography
+---------------------------------------------------------- */
 h1, h2 {
     color: #343a40;
 }
@@ -12,12 +17,15 @@ h1, h2 {
     text-align: center;
 }
 
-/* Card Styles */
+/* ----------------------------------------------------------
+   Card Styles
+---------------------------------------------------------- */
 .card {
     border: none;
     border-radius: 10px;
 }
 
+/* Image inside cards (responsive height) */
 .card img {
     height: 200px;
     object-fit: cover;
@@ -45,7 +53,9 @@ h1, h2 {
     color: #6c757d;
 }
 
-/* Category Card Styles */
+/* ----------------------------------------------------------
+   Category Card Styles
+---------------------------------------------------------- */
 .category-card {
     border: none;
     border-radius: 10px;
@@ -63,6 +73,7 @@ h1, h2 {
     transition: background 0.3s, color 0.3s, box-shadow 0.3s;
 }
 
+/* Image inside category cards */
 .category-card img {
     border-radius: 10px;
     height: 60px;
@@ -72,6 +83,7 @@ h1, h2 {
     transition: border 0.3s;
 }
 
+/* Active category card style */
 .category-card.active {
     background: linear-gradient(135deg, #6e8efb, #a777e3);
     color: #fff;
@@ -82,6 +94,7 @@ h1, h2 {
     border: 2px solid #fff;
 }
 
+/* Horizontal scroll container for category cards */
 .category-scroll {
     display: flex;
     overflow-x: auto;
@@ -93,13 +106,16 @@ h1, h2 {
     display: none;
 }
 
-/* Promotion Scroll Container */
+/* ----------------------------------------------------------
+   Promotion Scroll Container
+---------------------------------------------------------- */
 .promotion-carousel {
     position: relative;
     display: flex;
     align-items: center;
 }
 
+/* Horizontal scroll container for promotion cards */
 .promotion-scroll {
     display: flex;
     overflow-x: auto;
@@ -117,7 +133,9 @@ h1, h2 {
     border-radius: 10px;
 }
 
-/* Promotion Card Styles */
+/* ----------------------------------------------------------
+   Promotion Card Styles
+---------------------------------------------------------- */
 .promotion-card {
     position: relative;
     min-width: 300px;
@@ -133,12 +151,13 @@ h1, h2 {
     flex: 0 0 auto;
 }
 
+/* Hover effect on promotion cards */
 .promotion-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* Content Inside Promotion Card */
+/* Content inside promotion cards */
 .promotion-content {
     position: absolute;
     width: 100%;
@@ -149,6 +168,7 @@ h1, h2 {
     justify-content: space-between;
 }
 
+/* Promotion title style */
 .promotion-title {
     font-size: 1.5rem;
     font-weight: bold;
@@ -159,6 +179,7 @@ h1, h2 {
     border-radius: 5px;
 }
 
+/* Promotion description style */
 .promotion-description {
     font-size: 1rem;
     align-self: flex-end;
@@ -167,7 +188,9 @@ h1, h2 {
     border-radius: 5px;
 }
 
-/* Carousel Controls */
+/* ----------------------------------------------------------
+   Carousel Controls
+---------------------------------------------------------- */
 .carousel-control-prev, .carousel-control-next {
     position: absolute;
     top: 50%;
@@ -197,7 +220,9 @@ h1, h2 {
     background: rgba(0, 0, 0, 0.8);
 }
 
-/* Subcategory Styles */
+/* ----------------------------------------------------------
+   Subcategory Styles
+---------------------------------------------------------- */
 .subcategories {
     display: flex;
     justify-content: flex-start;
@@ -218,11 +243,13 @@ h1, h2 {
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
+/* Hover effect on subcategory cards */
 .subcategory-card:hover {
     background-color: #e9e9e9;
     border-color: #ccc;
 }
 
+/* Active subcategory card style */
 .subcategory-card.active {
     background: linear-gradient(135deg, #6e8efb, #a777e3);
     color: #fff;
