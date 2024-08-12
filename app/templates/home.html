@@ -11,83 +11,88 @@
     <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="container mt-5">
-        <!-- Promotions Section -->
-        <div class="mb-4">
-            <h2>Promotions</h2>
-            <div class="row">
-                {% for promotion in promotions %}
+<div class="container mt-5">
+    <!-- Promotions Section -->
+    <div class="mb-4">
+        <h2>Promotions</h2>
+        <div class="row">
+            {% for promotion in promotions %}
                 <div class="col-12 col-sm-6 col-lg-4 mb-4">
-                    <div class="card promotion-card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ promotion.PromotionName }}</h5>
-                            <p class="card-text">Discount: {{ promotion.Discount }}%</p>
+                    <div class="card promotion-card shadow-sm"
+                         style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');">
+                        <div class="promotion-content">
+                            <h5 class="promotion-title">{{ promotion.PromotionName }}</h5>
+                            <p class="promotion-description">{{ promotion.Description }}</p>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
+            {% endfor %}
         </div>
-        <!-- Categories Section -->
-        <div class="mb-4">
-            <h2>Categories</h2>
-            <div class="category-scroll">
-                {% for category in categories %}
-                <div class="card category-card shadow-sm" data-category-id="{{ category.CategoryID }}" data-category-name="{{ category.CategoryName }}">
-                    <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}" alt="{{ category.CategoryName }}">
+    </div>
+    <!-- Categories Section -->
+    <div class="mb-4">
+        <h2>Categories</h2>
+        <div class="category-scroll">
+            {% for category in categories %}
+                <div class="card category-card shadow-sm" data-category-id="{{ category.CategoryID }}"
+                     data-category-name="{{ category.CategoryName }}">
+                    <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}"
+                         alt="{{ category.CategoryName }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ category.CategoryName }}</h5>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-        <!-- Subcategories Section -->
-        <div class="mb-4">
-            <div class="subcategories-container"></div>
-        </div>
-        <!-- Popular Dishes Section -->
-        <div class="mb-4">
-            <h2 id="section-title">Popular Dishes</h2>
-            <div class="row" id="items-container">
-                {% for dish in popular_dishes %}
-                <div class="col-12 col-sm-6 col-lg-4 mb-4">
-                    <div class="card shadow-sm">
-                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ dish.FoodName }}</h5>
-                            <p class="card-text">{{ dish.Ingredients }}</p>
-                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        <!-- New Dishes Section -->
-        <div class="mb-4">
-            <h2>New Dishes</h2>
-            <div class="row">
-                {% for dish in new_dishes %}
-                <div class="col-12 col-sm-6 col-lg-4 mb-4">
-                    <div class="card shadow-sm">
-                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ dish.FoodName }}</h5>
-                            <p class="card-text">{{ dish.Ingredients }}</p>
-                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+            {% endfor %}
         </div>
     </div>
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <!-- Subcategories Section -->
+    <div class="mb-4">
+        <div class="subcategories-container"></div>
+    </div>
+    <!-- Popular Dishes Section -->
+    <div class="mb-4">
+        <h2 id="section-title">Popular Dishes</h2>
+        <div class="row" id="items-container">
+            {% for dish in popular_dishes %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm">
+                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top"
+                             alt="{{ dish.FoodName }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ dish.FoodName }}</h5>
+                            <p class="card-text">{{ dish.Ingredients }}</p>
+                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- New Dishes Section -->
+    <div class="mb-4">
+        <h2>New Dishes</h2>
+        <div class="row">
+            {% for dish in new_dishes %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm">
+                        <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top"
+                             alt="{{ dish.FoodName }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ dish.FoodName }}</h5>
+                            <p class="card-text">{{ dish.Ingredients }}</p>
+                            <p class="card-text"><strong>${{ dish.Price }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<!-- Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </body>
 </html>

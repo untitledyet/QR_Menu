@@ -64,8 +64,13 @@ class Promotion(db.Model):
     __tablename__ = 'Promotions'
 
     PromotionID = db.Column(db.Integer, primary_key=True)
-    PromotionName = db.Column(db.String(50), nullable=False)
-    Discount = db.Column(db.Float, nullable=False)  # Assume discount is a percentage
+    PromotionName = db.Column(db.String(100), nullable=False)
+    Description = db.Column(db.String(255), nullable=True)
+    Discount = db.Column(db.Float, nullable=True)
+    StartDate = db.Column(db.Date, nullable=False)
+    EndDate = db.Column(db.Date, nullable=False)
+    BackgroundImage = db.Column(db.String(255), nullable=True)  # Path to the image
 
-    def __repr__(self):
+
+def __repr__(self):
         return f"Promotion('{self.PromotionName}', '{self.Discount}')"
