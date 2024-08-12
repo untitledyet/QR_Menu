@@ -17,6 +17,7 @@ def get_items_by_category(category_id):
     items_data = [
         {
             'FoodName': item.FoodName,
+            'Ingredients': item.Ingredients,
             'Description': item.Description,
             'Price': item.Price,
             'ImageFilename': item.ImageFilename,
@@ -39,6 +40,7 @@ def get_items_by_subcategory(subcategory_id):
     items_data = [
         {
             'FoodName': item.FoodName,
+            'Ingredients': item.Ingredients,
             'Description': item.Description,
             'Price': item.Price,
             'ImageFilename': item.ImageFilename,

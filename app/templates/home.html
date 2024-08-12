@@ -12,7 +12,6 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">Home</h1>
         <!-- Promotions Section -->
         <div class="mb-4">
             <h2>Promotions</h2>
@@ -57,7 +56,7 @@
                         <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ dish.FoodName }}</h5>
-                            <p class="card-text">{{ dish.Description }}</p>
+                            <p class="card-text">{{ dish.Ingredients }}</p>
                             <p class="card-text"><strong>${{ dish.Price }}</strong></p>
                         </div>
                     </div>
@@ -75,7 +74,7 @@
                         <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top" alt="{{ dish.FoodName }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ dish.FoodName }}</h5>
-                            <p class="card-text">{{ dish.Description }}</p>
+                            <p class="card-text">{{ dish.Ingredients }}</p>
                             <p class="card-text"><strong>${{ dish.Price }}</strong></p>
                         </div>
                     </div>
