@@ -66,8 +66,8 @@
 }
 
 .add-to-cart img {
-    width: 20px; /* Set the icon width */
-    height: 20px; /* Set the icon height */
+    width: 30px; /* Set the icon width */
+    height: 30px; /* Set the icon height */
 }
 
 .add-to-cart:hover {

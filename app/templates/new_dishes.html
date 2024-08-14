@@ -10,6 +10,10 @@
                         <h5 class="card-title">{{ dish.FoodName }}</h5>
                         <p class="card-text">{{ dish.Ingredients }}</p>
                         <p class="card-text"><strong>${{ dish.Price }}</strong></p>
+                        <!-- Add to Cart Icon -->
+                        <a href="#" class="add-to-cart" data-item-id="${item.FoodItemID}">
+                            <img src="/static/images/cart-icon.png" alt="Add to Cart" title="Add to Cart">
+                        </a>
                     </div>
                 </div>
             </div>
