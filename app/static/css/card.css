@@ -1,6 +1,12 @@
 /* ----------------------------------------------------------
    Item Card Specific Styles
    ---------------------------------------------------------- */
+.card-body {
+    padding-bottom: 40px; /* Add space at the bottom for the icon */
+    text-align: left; /* Ensure text is aligned to the left */
+    width: 100%;
+    /* Add any other specific styles here */
+}
 
 /* Specific Card Body for Item Cards */
 .item-card-body {

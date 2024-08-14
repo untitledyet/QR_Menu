@@ -142,7 +142,7 @@
 }
 
 /* Promotion Card Body */
-.card-body {
+.card-body-category {
     padding: 35px;
     overflow-y: auto; /* Allow scrolling if content overflows */
     flex-grow: 1; /* Allow the content to grow within the card */

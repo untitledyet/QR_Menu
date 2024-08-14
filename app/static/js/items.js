@@ -9,7 +9,7 @@ function createItemCard(item) {
     itemCard.innerHTML = `
         <div class="card shadow-sm">
             <img src="/static/images/${item.ImageFilename}" class="card-img-top" alt="${item.FoodName}">
-            <div class="card-body item-card-body"> <!-- Added unique class here -->
+            <div class="card-body">
                 <h5 class="card-title">${item.FoodName}</h5>
                 <p class="card-text">${item.Ingredients}</p>
                 <p class="card-text"><strong>$${item.Price}</strong></p>
@@ -22,4 +22,3 @@ function createItemCard(item) {
     `;
     return itemCard;
 }
-
