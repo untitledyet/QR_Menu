@@ -88,3 +88,4 @@ jinja2.exceptions.TemplateNotFound: popular_dishes.html
 2024-08-14 13:09:32,475 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
 2024-08-14 13:10:45,674 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
 2024-08-14 13:25:15,694 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-14 14:02:17,672 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
