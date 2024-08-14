@@ -1,11 +1,20 @@
 /* ----------------------------------------------------------
-   Card Styles
+   Item Card Specific Styles
    ---------------------------------------------------------- */
+
+/* Specific Card Body for Item Cards */
+.item-card-body {
+    padding-bottom: 40px; /* Add space at the bottom for the icon */
+    text-align: left; /* Ensure text is aligned to the left */
+    width: 100%;
+    /* Add any other specific styles here */
+}
 
 /* General Card Styles */
 .card {
     border: none;
     border-radius: 10px;
+    position: relative; /* Ensure the card is the reference point for absolute positioning */
 }
 
 /* Image inside cards (responsive height) */
@@ -30,9 +39,32 @@
 .card-title {
     font-size: 1.25rem;
     font-weight: bold;
+    text-align: left !important; /* Force left alignment */
 }
 
 .card-text {
     font-size: 1rem;
     color: #6c757d;
+    text-align: left !important; /* Force left alignment */
+}
+
+/* Add to Cart Icon Styling */
+.add-to-cart {
+    position: absolute; /* Position the icon absolutely within the card */
+    bottom: 10px; /* Position it 10px from the bottom of the card */
+    right: 10px; /* Position it 10px from the right side of the card */
+    background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+    border-radius: 50%; /* Make the icon background circular */
+    padding: 8px; /* Padding around the icon for a better click area */
+    transition: background-color 0.2s, transform 0.2s; /* Smooth transition effects */
+}
+
+.add-to-cart img {
+    width: 20px; /* Set the icon width */
+    height: 20px; /* Set the icon height */
+}
+
+.add-to-cart:hover {
+    background-color: rgba(255, 165, 0, 0.9); /* Change background color on hover */
+    transform: scale(1.1); /* Slightly increase the size on hover */
 }

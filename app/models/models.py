@@ -1,4 +1,5 @@
 from app import db
+from flask import url_for
 
 class Category(db.Model):
     __tablename__ = 'Categories'
@@ -38,6 +39,17 @@ class FoodItem(db.Model):
     def __repr__(self):
         return f"FoodItem('{self.FoodName}', '{self.Price}')"
 
+    def get_add_to_cart_icon(self):
+        """
+        Returns the HTML for the "add to cart" icon.
+        This includes an icon or button that can be clicked to add the item to the cart.
+        """
+        return f'''
+        <a href="#" class="add-to-cart" data-item-id="{self.FoodItemID}">
+            <img src="{url_for('static', filename='images/cart-icon.png')}" alt="Add to Cart" title="Add to Cart">
+        </a>
+        '''
+
 
 class Ingredient(db.Model):
     __tablename__ = 'Ingredients'
@@ -71,6 +83,5 @@ class Promotion(db.Model):
     EndDate = db.Column(db.Date, nullable=False)
     BackgroundImage = db.Column(db.String(255), nullable=True)  # Path to the image
 
-
-def __repr__(self):
+    def __repr__(self):
         return f"Promotion('{self.PromotionName}', '{self.Discount}')"
