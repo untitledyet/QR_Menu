@@ -110,9 +110,9 @@
 
 /* Promotion Detail Section Container */
 .promotion-detail-section {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    padding: 20px;
+    margin-top: 5px; /* Reduced margin for the top */
+    margin-bottom: 5px; /* Reduced margin for the bottom */
+    padding: 5px; /* Adjust padding to reduce space inside the container */
     background-color: #f9f9f9;
     border-radius: 12px;
     height: 250px; /* Fixed height for consistency */
@@ -143,7 +143,7 @@
 
 /* Promotion Card Body */
 .card-body {
-    padding: 20px;
+    padding: 35px;
     overflow-y: auto; /* Allow scrolling if content overflows */
     flex-grow: 1; /* Allow the content to grow within the card */
 }
