@@ -4,7 +4,8 @@
         <div class="promotion-scroll">
             {% for promotion in promotions %}
                 <div class="promotion-card"
-                     style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');">
+                     style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');"
+                     data-promotion-id="{{ promotion.PromotionID }}">
                     <div class="promotion-content">
                         <h5 class="promotion-title">{{ promotion.PromotionName }}</h5>
                         <p class="promotion-description">{{ promotion.Description }}</p>

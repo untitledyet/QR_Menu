@@ -84,3 +84,133 @@
     padding: 5px 10px;
     border-radius: 5px;
 }
+
+/* ----------------------------------------------------------
+   Promotion Detail Close Button
+   ---------------------------------------------------------- */
+.close-button {
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.3s ease;
+    z-index: 10;
+}
+
+.close-button:hover {
+    color: #ff0000;
+}
+
+/* ----------------------------------------------------------
+   Promotion Detail Styles
+   ---------------------------------------------------------- */
+
+/* Promotion Detail Section Container */
+.promotion-detail-section {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    height: 250px; /* Fixed height for consistency */
+    width: calc(100%); /* Match the width of the promotion cards */
+    max-width: 100%; /* Ensure it doesn't overflow */
+    display: flex;
+    align-items: center; /* Vertically center the content */
+    justify-content: center; /* Horizontally center the content */
+    overflow: hidden; /* Hide any overflowing content */
+}
+
+/* Promotion Card Styles */
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%; /* Ensure the card takes full width of the container */
+    height: 100%; /* Make sure the card takes full height */
+    display: flex;
+    align-items: center; /* Vertically center the content within the card */
+}
+
+/* Promotion Image */
+.card-img {
+    border-radius: 12px 0 0 12px;
+    height: 100%; /* Make the image take the full height of the card */
+    object-fit: cover; /* Ensure the image covers the space without stretching */
+}
+
+/* Promotion Card Body */
+.card-body {
+    padding: 20px;
+    overflow-y: auto; /* Allow scrolling if content overflows */
+    flex-grow: 1; /* Allow the content to grow within the card */
+}
+
+/* Card Title */
+.card-title {
+    font-size: 1.5rem; /* Adjusted to fit within the fixed height */
+    color: #2c3e50;
+    margin-bottom: 10px; /* Reduced margin for better fit */
+}
+
+/* Card Text */
+.card-text {
+    font-size: 1rem;
+    color: #7f8c8d;
+    margin-bottom: 8px; /* Reduced margin for better fit */
+}
+
+/* Button */
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    margin-top: 10px; /* Reduced margin for better fit */
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+/* ----------------------------------------------------------
+   Category Styles
+   ---------------------------------------------------------- */
+
+/* Category Card */
+.category-card {
+    width: 120px; /* Adjust the width of the category cards */
+    text-align: center;
+    padding: 10px;
+    margin-right: 10px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    border: none;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.category-card img {
+    width: 60px; /* Ensure the images fit well within the cards */
+    height: 60px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.category-card.active {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: white;
+}
+
+.category-card.active img {
+    border: 2px solid white;
+}
+
+.category-card .card-title {
+    font-size: 1.25rem; /* Adjusted font size for category titles */
+    font-weight: bold;
+    text-align: center;
+    color: #343a40;
+}

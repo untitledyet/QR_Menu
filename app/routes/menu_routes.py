@@ -48,3 +48,8 @@ def get_items_by_subcategory(subcategory_id):
         for item in items
     ]
     return jsonify(items=items_data)
+
+@app.route('/promotion/<int:promotion_id>')
+def promotion_detail(promotion_id):
+    promotion = Promotion.query.get_or_404(promotion_id)
+    return render_template('promotion_detail.html', promotion=promotion)
