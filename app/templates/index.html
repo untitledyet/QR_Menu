@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <!-- Include CSS and other meta tags -->
+    {% include 'header.html' %}
+</head>
+<body>
+    <div class="container mt-5">
+        {% include 'promotions.html' %}
+        {% include 'categories.html' %}
+        {% include 'subcategories.html' %}
+        {% include 'popular_dishes.html' %}
+        {% include 'new_dishes.html' %}
+    </div>
+    <!-- Include JS scripts -->
+    {% include 'footer.html' %}
+</body>
+</html>

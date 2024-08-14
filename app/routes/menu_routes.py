@@ -8,7 +8,7 @@ def home():
     promotions = Promotion.query.all()
     popular_dishes = FoodItem.query.limit(6).all()
     new_dishes = FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()
-    return render_template('home.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
+    return render_template('index.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
 
 @app.route('/category/<int:category_id>')
 def get_items_by_category(category_id):

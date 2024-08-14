@@ -1,0 +1,15 @@
+<div class="mb-4">
+    <h2>Categories</h2>
+    <div class="category-scroll">
+        {% for category in categories %}
+            <div class="card category-card shadow-sm" data-category-id="{{ category.CategoryID }}"
+                 data-category-name="{{ category.CategoryName }}">
+                <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}"
+                     alt="{{ category.CategoryName }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ category.CategoryName }}</h5>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
