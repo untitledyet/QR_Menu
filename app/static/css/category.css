@@ -1,0 +1,55 @@
+/* ----------------------------------------------------------
+   Category Card Styles
+   ---------------------------------------------------------- */
+
+/* General Category Card Styles */
+.category-card {
+    border: none;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    text-align: center;
+    width: 120px;
+    margin-right: 10px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+/* Image inside Category Cards */
+.category-card img {
+    border-radius: 10px;
+    height: 60px;
+    width: 60px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    transition: border 0.3s;
+}
+
+/* Active Category Card Styles */
+.category-card.active {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-card.active img {
+    border: 2px solid #fff;
+}
+
+/* Horizontal Scroll Container for Category Cards */
+.category-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 0;
+    margin: 0 -10px;
+}
+
+/* Hide Scrollbar for Category Scroll */
+.category-scroll::-webkit-scrollbar {
+    display: none;
+}

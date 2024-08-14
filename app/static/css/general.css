@@ -1,0 +1,19 @@
+/* ----------------------------------------------------------
+   General Styles
+   ---------------------------------------------------------- */
+
+/* Basic Body Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Headings */
+h1, h2 {
+    color: #343a40;
+}
+
+/* Text Alignment */
+.text-center {
+    text-align: center;
+}

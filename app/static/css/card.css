@@ -1,0 +1,38 @@
+/* ----------------------------------------------------------
+   Card Styles
+   ---------------------------------------------------------- */
+
+/* General Card Styles */
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+/* Image inside cards (responsive height) */
+.card img {
+    height: 200px;
+    object-fit: cover;
+}
+
+@media (min-width: 576px) {
+    .card img {
+        height: 150px;
+    }
+}
+
+@media (min-width: 992px) {
+    .card img {
+        height: 200px;
+    }
+}
+
+/* Card Title and Text */
+.card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.card-text {
+    font-size: 1rem;
+    color: #6c757d;
+}
