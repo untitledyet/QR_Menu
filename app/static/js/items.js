@@ -22,3 +22,28 @@ function createItemCard(item) {
     `;
     return itemCard;
 }
+
+/**
+ * Populate the items container with popular dishes
+ * @param {Array} dishes - The list of popular dishes to display
+ * @param {HTMLElement} container - The container to populate
+ */
+function populateItemsContainer(dishes, container) {
+    container.innerHTML = '';
+    dishes.forEach(dish => {
+        container.appendChild(createItemCard(dish));
+    });
+}
+
+/**
+ * Load popular dishes on DOMContentLoaded
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    const itemsContainer = document.getElementById('items-container');
+
+    // Fetch the popular dishes data embedded in the page
+    const popularDishes = JSON.parse(document.querySelector('script[type="application/json"]').textContent);
+
+    // Populate the items container with the fetched popular dishes
+    populateItemsContainer(popularDishes, itemsContainer);
+});

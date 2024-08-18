@@ -34,21 +34,23 @@ class FoodItem(db.Model):
     Price = db.Column(db.Float, nullable=False)
     ImageFilename = db.Column(db.String(100), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
-    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True)  # New field for subcategory
+    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True)
+
+    def to_dict(self):
+        return {
+            'FoodItemID': self.FoodItemID,
+            'FoodName': self.FoodName,
+            'Description': self.Description,
+            'Ingredients': self.Ingredients,
+            'Price': self.Price,
+            'ImageFilename': self.ImageFilename,
+            'CategoryID': self.CategoryID,
+            'SubcategoryID': self.SubcategoryID
+        }
 
     def __repr__(self):
         return f"FoodItem('{self.FoodName}', '{self.Price}')"
 
-    def get_add_to_cart_icon(self):
-        """
-        Returns the HTML for the "add to cart" icon.
-        This includes an icon or button that can be clicked to add the item to the cart.
-        """
-        return f'''
-        <a href="#" class="add-to-cart" data-item-id="{self.FoodItemID}">
-            <img src="{url_for('static', filename='images/cart-icon.png')}" alt="Add to Cart" title="Add to Cart">
-        </a>
-        '''
 
 
 class Ingredient(db.Model):

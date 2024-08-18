@@ -6,8 +6,8 @@ from app.models.models import FoodItem, Category, Subcategory, Promotion
 def home():
     categories = Category.query.all()
     promotions = Promotion.query.all()
-    popular_dishes = FoodItem.query.limit(6).all()
-    new_dishes = FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()
+    popular_dishes = [dish.to_dict() for dish in FoodItem.query.limit(6).all()]
+    new_dishes = [dish.to_dict() for dish in FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()]
     return render_template('index.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
 
 @app.route('/category/<int:category_id>')

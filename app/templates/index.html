@@ -18,6 +18,10 @@
         {% include 'popular_dishes.html' %}
         {% include 'new_dishes.html' %}
     </div>
+    <!-- Embed popular dishes data directly in the HTML -->
+    <script type="application/json">
+        {{ popular_dishes|tojson }}
+    </script>
     <!-- Include JS scripts -->
     {% include 'footer.html' %}
 </body>
