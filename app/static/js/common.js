@@ -3,6 +3,12 @@
  * @param {Array} items - The list of items to display
  * @param {HTMLElement} container - The container to populate
  */
+
+const pathArray = window.location.pathname.split('/');
+const tableId = pathArray[pathArray.length - 1];
+sessionStorage.setItem('table_id', tableId);
+
+
 function populateItemsContainer(items, container) {
     container.innerHTML = '';
     items.forEach(item => {
@@ -14,7 +20,15 @@ function populateItemsContainer(items, container) {
  * Reset the main content to the default view
  */
 function resetMainContent() {
-    fetch(`/`)
+    // Get table ID from sessionStorage or a similar mechanism
+    const tableId = sessionStorage.getItem('table_id');
+
+    if (!tableId) {
+        console.error('Table ID is not available');
+        return; // Exit the function early if tableId is not available
+    }
+
+    fetch(`/table/${tableId}`)
         .then(response => response.text())
         .then(html => {
             const tempDiv = document.createElement('div');
@@ -37,8 +51,10 @@ function resetMainContent() {
             initializeCategoryCards();
 
             // Populate popular dishes again if needed
-            const popularDishes = JSON.parse(tempDiv.querySelector('script[type="application/json"]').textContent);
+            const popularDishes = JSON.parse(tempDiv.querySelector('#popular-dishes-data').textContent);
             populateItemsContainer(popularDishes, itemsContainer);
         })
         .catch(error => console.error('Error:', error));
 }
+
+

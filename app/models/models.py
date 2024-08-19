@@ -87,3 +87,15 @@ class Promotion(db.Model):
 
     def __repr__(self):
         return f"Promotion('{self.PromotionName}', '{self.Discount}')"
+
+class Order(db.Model):
+    __tablename__ = 'Orders'
+
+    OrderID = db.Column(db.Integer, primary_key=True)
+    TableID = db.Column(db.Integer, nullable=False)
+    Items = db.Column(db.String, nullable=False)  # This can be modified to a more complex relationship if needed
+    Status = db.Column(db.String(50), default="Pending")
+
+    def __init__(self, table_id, items):
+        self.TableID = table_id
+        self.Items = items

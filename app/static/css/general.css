@@ -17,3 +17,86 @@ h1, h2 {
 .text-center {
     text-align: center;
 }
+
+/* პოპაპის კონტენტის სტილი */
+#item-modal .modal-content {
+    border-radius: 10px; /* ჩარჩოს მომრგვალება */
+    background-color: rgba(255, 255, 255, 1); /* ფონის ფერი */
+}
+
+/* სურათის სტილები */
+#item-modal .modal-body img {
+    width: 100%; /* სურათის სრული სიგანე პოპაპში */
+    height: 200px; /* ფიქსირებული სიმაღლე, ყველა სურათისთვის ერთიდაიგივე ზომა */
+    object-fit: cover; /* სურათის ზომის შევსება ისე, რომ არ დაკარგოს ფორმა */
+    border-radius: 10px 10px 0 0; /* სურათის ზედა ჩარჩოს მომრგვალება */
+    margin-bottom: 15px; /* ქვედა მარჯვენა */
+}
+
+/* ინგრედიენტების სტილები */
+#item-modal .modal-body ul {
+    padding: 0; /* Padding-ის მოხსნა */
+    text-align: center; /* ინგრედიენტების ცენტრში განლაგება */
+}
+
+#item-modal .modal-body .ingredient-item {
+    padding: 10px 0; /* ზემოთ და ქვემოთ მარჯვენა */
+    font-size: 1rem; /* ტექსტის ზომა */
+    display: flex;
+    justify-content: space-between; /* სივრცის განაწილება ღილაკებს შორის */
+    align-items: center;
+}
+
+#item-modal .modal-body .ingredient-name {
+    margin: 0 10px; /* ინგრედიენტის და ღილაკების დაშორება */
+    flex-grow: 1; /* ტექსტის გაშლა სივრცეში */
+    text-align: center; /* ტექსტის ცენტრში განლაგება */
+    transition: color 0.3s ease; /* ფერის ცვლილება ნელა */
+}
+
+#item-modal .modal-body .btn {
+    font-size: 1.2rem; /* ღილაკების ტექსტის ზომა */
+    padding: 5px 10px; /* ღილაკის შიდა მანძილი */
+    border: none;
+    border-radius: 50%; /* მომრგვალებული ღილაკები */
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* მსუბუქი ჩრდილი ღილაკებზე */
+    transition: background-color 0.3s ease;
+}
+
+/* ნაზი ფერები ღილაკებისთვის */
+#item-modal .modal-body .btn-minus {
+    background-color: #e57373; /* უფრო ნაზი ფერი (-) */
+    color: white;
+}
+
+#item-modal .modal-body .btn-plus {
+    background-color: #81c784; /* უფრო ნაზი ფერი (+) */
+    color: white;
+}
+
+/* ღილაკების გამორთვა */
+#item-modal .modal-body .btn:disabled {
+    background-color: #ccc; /* გამორთული ღილაკის ფერი */
+    cursor: not-allowed;
+}
+
+#item-modal .modal-body .ingredient-item.strikethrough .ingredient-name {
+    text-decoration: line-through; /* ტექსტის გადახაზვა */
+    color: #888; /* ფერის ცვლილება */
+}
+
+#item-modal .modal-body .ingredient-item.extra .ingredient-name {
+    font-weight: bold; /* გამუქებული ტექსტი */
+}
+
+#item-modal .modal-body .ingredient-item.extra .ingredient-name::after {
+    content: ' (Extra)'; /* ტექსტის დამატება */
+}
+
+

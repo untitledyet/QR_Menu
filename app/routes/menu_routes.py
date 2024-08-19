@@ -1,15 +1,29 @@
-from flask import render_template, jsonify, request
+from flask import render_template, jsonify, request, session, redirect, url_for
 from app import app
 from app.models.models import FoodItem, Category, Subcategory, Promotion
 
-@app.route('/')
-def home():
+@app.route('/table/<int:table_id>')
+def home(table_id):
+    # Save the table ID in the session
+    session['table_id'] = table_id
+
     categories = Category.query.all()
     promotions = Promotion.query.all()
     popular_dishes = [dish.to_dict() for dish in FoodItem.query.limit(6).all()]
     new_dishes = [dish.to_dict() for dish in FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()]
+
     return render_template('index.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
 
+@app.route('/order', methods=['POST'])
+def place_order():
+    table_id = session.get('table_id')
+    if not table_id:
+        return redirect(url_for('home'))
+
+    # Process the order based on the table_id
+    # order processing code here
+
+    return jsonify({'status': 'Order placed successfully', 'table_id': table_id})
 @app.route('/category/<int:category_id>')
 def get_items_by_category(category_id):
     items = FoodItem.query.filter_by(CategoryID=category_id).all()
