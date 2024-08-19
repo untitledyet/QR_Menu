@@ -130,3 +130,30 @@ h1, h2 {
 }
 
 
+/* ----------------------------------------------------------
+   Cart Button
+   ---------------------------------------------------------- */
+#floating-cart {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 132px;  /* უფრო პატარა ზომა */
+    height: 132px;
+    z-index: 1000;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#floating-cart img {
+    width: 110px; /* უფრო პატარა აიკონის ზომა */
+    height: 110px;
+}
+
+
+
+
+

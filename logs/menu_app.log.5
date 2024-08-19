@@ -1,4 +1,6 @@
-2024-08-07 15:51:29,590 ERROR: Exception on /category/5 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+2024-08-14 20:35:15,180 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-18 21:23:55,270 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-18 21:23:56,551 ERROR: Exception on / [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
@@ -12,12 +14,62 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 24, in get_items_by_category
-    'SubcategoryID': item.SubcategoryID,
-                     ^^^^^^^^^^^^^^^^^^
-AttributeError: 'FoodItem' object has no attribute 'SubcategoryID'. Did you mean: 'CategoryID'?
-2024-08-07 15:53:35,099 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 15:53:39,428 ERROR: Exception on /category/1 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 11, in home
+    return render_template('index.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/index.html", line 23, in top-level template code
+    const popularDishes = {{ popular_dishes|tojson }};
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/filters.py", line 1714, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/utils.py", line 658, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 179, in dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 121, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type FoodItem is not JSON serializable
+2024-08-18 21:25:24,837 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-18 21:29:26,464 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-18 21:31:08,995 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-18 21:31:42,097 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:52:59,791 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:53:18,296 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:53:38,639 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:53:52,406 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:55:21,114 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 15:56:42,446 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 17:11:49,315 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 17:12:09,844 ERROR: Exception on /table/1 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2181, in _entity_namespace_key
+    return getattr(ns, key)  # type: ignore
+           ^^^^^^^^^^^^^^^^
+AttributeError: type object 'FoodItem' has no attribute 'is_popular'
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
@@ -31,29 +83,18 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 23, in get_items_by_category
-    'SubcategoryID': item.SubcategoryID,
-                     ^^^^^^^^^^^^^^^^^^
-AttributeError: 'FoodItem' object has no attribute 'SubcategoryID'. Did you mean: 'CategoryID'?
-2024-08-07 15:54:47,399 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 15:56:54,709 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 16:21:17,173 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 16:25:24,996 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 16:29:43,260 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 16:35:21,581 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 19:56:23,915 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-07 19:56:47,920 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-09 22:15:31,550 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-09 22:16:12,049 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-09 22:50:35,746 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 12:43:19,411 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 12:43:48,831 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 12:56:11,039 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 12:56:50,401 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 13:08:57,863 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 13:52:02,863 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 13:57:24,287 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 13:58:54,574 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 14:24:43,045 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 14:25:39,865 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-12 14:32:39,280 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/routes/menu_routes.py", line 12, in home
+    popular_dishes = [dish.to_dict() for dish in FoodItem.query.filter_by(is_popular=True).limit(6).all()]
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 1984, in filter_by
+    _entity_namespace_key(from_entity, key) == value
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py", line 2183, in _entity_namespace_key
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Entity namespace for "FoodItems" has no property "is_popular"
+2024-08-19 17:13:40,479 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 18:07:47,942 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 18:37:30,970 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 18:38:21,213 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 18:42:34,976 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-19 18:47:13,783 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
