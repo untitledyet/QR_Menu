@@ -36,14 +36,21 @@ function populateItemsContainer(dishes, container) {
 }
 
 /**
- * Load popular dishes on DOMContentLoaded
+ * Load popular dishes and new dishes on DOMContentLoaded
  */
 document.addEventListener('DOMContentLoaded', function () {
     const itemsContainer = document.getElementById('items-container');
+    const newItemsContainer = document.getElementById('new-dishes-container');
 
     // Fetch the popular dishes data embedded in the page
-    const popularDishes = JSON.parse(document.querySelector('script[type="application/json"]').textContent);
+    const popularDishes = JSON.parse(document.querySelector('#popular-dishes-data').textContent);
 
     // Populate the items container with the fetched popular dishes
     populateItemsContainer(popularDishes, itemsContainer);
+
+    // Fetch the new dishes data embedded in the page
+    const newDishes = JSON.parse(document.querySelector('#new-dishes-data').textContent);
+
+    // Populate the new items container with the fetched new dishes
+    populateItemsContainer(newDishes, newItemsContainer);
 });

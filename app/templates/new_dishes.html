@@ -1,22 +1,7 @@
 <div class="mb-4">
-    <h2>New Dishes</h2>
-    <div class="row">
-        {% for dish in new_dishes %}
-            <div class="col-12 col-sm-6 col-lg-4 mb-4">
-                <div class="card shadow-sm">
-                    <img src="{{ url_for('static', filename='images/' ~ dish.ImageFilename) }}" class="card-img-top"
-                         alt="{{ dish.FoodName }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ dish.FoodName }}</h5>
-                        <p class="card-text">{{ dish.Ingredients }}</p>
-                        <p class="card-text"><strong>${{ dish.Price }}</strong></p>
-                        <!-- Add to Cart Icon -->
-                        <a href="#" class="add-to-cart" data-item-id="${item.FoodItemID}">
-                            <img src="/static/images/cart-icon.png" alt="Add to Cart" title="Add to Cart">
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
+    <h2 id="new-dishes-title">New Dishes</h2>
+    <div class="row" id="new-dishes-container">
+        <!-- Items will be dynamically loaded here by JavaScript -->
     </div>
 </div>
+

@@ -7,22 +7,18 @@
     {% include 'header.html' %}
 </head>
 <body>
-    <div class="container mt-5">
-        {% include 'promotions.html' %}
+<div class="container mt-5">
+    {% include 'promotions.html' %}
 
-        <!-- Promotion Details Section (Dynamically loaded) -->
-        <div id="promotion-detail-container"></div>
+    <!-- Promotion Details Section (Dynamically loaded) -->
+    <div id="promotion-detail-container"></div>
 
-        {% include 'categories.html' %}
-        {% include 'subcategories.html' %}
-        {% include 'popular_dishes.html' %}
-        {% include 'new_dishes.html' %}
-    </div>
-    <!-- Embed popular dishes data directly in the HTML -->
-    <script type="application/json">
-        {{ popular_dishes|tojson }}
-    </script>
-    <!-- Include JS scripts -->
-    {% include 'footer.html' %}
+    {% include 'categories.html' %}
+    {% include 'subcategories.html' %}
+    {% include 'popular_dishes.html' %}
+    {% include 'new_dishes.html' %}
+</div>
+
+{% include 'footer.html' %}
 </body>
 </html>
