@@ -6,6 +6,7 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
+    padding-bottom: 30px;
 }
 
 /* Headings */
@@ -130,28 +131,53 @@ h1, h2 {
 }
 
 
-/* ----------------------------------------------------------
-   Cart Button
-   ---------------------------------------------------------- */
-#floating-cart {
+/* Footer Navigation Styles */
+.footer-nav {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 132px;  /* უფრო პატარა ზომა */
-    height: 132px;
-    z-index: 1000;
-    background-color: #f8f9fa;
-    border-radius: 50%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Ensure it stays above other content */
 }
 
-#floating-cart img {
-    width: 110px; /* უფრო პატარა აიკონის ზომა */
-    height: 110px;
+/* Navigation Item Styles */
+.footer-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    flex: 1; /* Evenly space the items */
+    text-align: center;
 }
+
+/* Navigation Icon Styles */
+.footer-nav .nav-icon {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 5px;
+}
+
+/* Navigation Text Styles */
+.footer-nav .nav-text {
+    font-size: 0.9rem;
+}
+
+/* Active State for Navigation Item */
+.footer-nav .nav-item.active {
+    color: #4CAF50; /* Green color for active item */
+}
+
+.footer-nav .nav-item.active .nav-icon {
+    filter: hue-rotate(90deg); /* Optional: slightly change the icon color */
+}
+
 
 
 

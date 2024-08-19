@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>კალათი</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
 </head>
 <body>
 
 <div class="container">
     <header class="cart-header">
-        <a href="{{ url_for('home_page') }}" class="back-button">&#x2190;</a> <!-- უკან დაბრუნების ღილაკი -->
+        <a href="{{ url_for('home', table_id=table_id) }}" class="back-button">&#x2190;</a>
         <h1>კალათი</h1>
         <a href="#" class="trash-icon">
             <img src="/static/images/trash-icon.png" alt="Clear Cart">
@@ -21,15 +21,16 @@
         <div class="empty-cart">
             <img src="/static/images/empty-cart.png" alt="Empty Cart">
             <p>შენი კალათა ცარიელია!</p>
-            <button class="shop-button" onclick="window.location.href='{{ url_for('menu_page') }}'">მენიუ</button>
+            <!-- Update this to link to a valid route -->
+            <button class="shop-button" onclick="window.location.href='{{ url_for('home', table_id=table_id) }}'">მენიუ</button>
         </div>
     </main>
 
     <footer class="cart-footer">
-        <a href="{{ url_for('home_page') }}" class="home-icon">
+        <a href="{{ url_for('home', table_id=table_id) }}" class="home-icon">
             <img src="/static/images/home-icon.png" alt="Home">
         </a>
-        <a href="{{ url_for('cart_page') }}" class="cart-icon active">
+        <a href="{{ url_for('cart_page', table_id=table_id) }}" class="cart-icon active">
             <img src="/static/images/cart-icon.png" alt="Cart">
         </a>
     </footer>

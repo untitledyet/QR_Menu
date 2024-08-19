@@ -69,6 +69,10 @@ def promotion_detail(promotion_id):
     return render_template('promotion_detail.html', promotion=promotion)
 
 
-@app.route('/cart')
-def cart_page():
-    return render_template('cart.html')
+@app.route('/table/<int:table_id>/cart')
+def cart_page(table_id):
+    # საჭიროებისამებრ, დაამატეთ ლოგიკა table_id-ისთვის
+    return render_template('cart.html', table_id=table_id)
+
+
+

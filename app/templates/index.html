@@ -7,6 +7,7 @@
     {% include 'header.html' %}
 </head>
 <body>
+
 <div class="container mt-5">
     {% include 'promotions.html' %}
 
@@ -19,7 +20,6 @@
     {% include 'new_dishes.html' %}
 </div>
 
-<!-- Item Details Modal -->
 <!-- Item Details Modal -->
 <div class="modal fade" id="item-modal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -42,11 +42,21 @@
         </div>
     </div>
 </div>
-<!-- კალათის ღილაკი -->
-<a href="{{ url_for('cart_page') }}" id="floating-cart" title="View Cart">
-    <img src="/static/images/cart-icon.png" alt="Cart">
-</a>
+
+<!-- Footer Navigation -->
+<div id="footer-nav" class="footer-nav">
+    <a href="{{ url_for('home', table_id=session.get('table_id')) }}" class="nav-item">
+        <img src="/static/images/home-icon.png" alt="Home" class="nav-icon">
+        <span class="nav-text">სახლი</span>
+    </a>
+    <a href="{{ url_for('cart_page', table_id=session.get('table_id')) }}" class="nav-item">
+        <img src="/static/images/cart-icon.png" alt="Cart" class="nav-icon">
+        <span class="nav-text">კალათი</span>
+    </a>
+</div>
+
 
 {% include 'footer.html' %}
+
 </body>
 </html>
