@@ -24,6 +24,36 @@ h1, h2 {
     background-color: rgba(255, 255, 255, 1); /* ფონის ფერი */
 }
 
+/* მოდალის ჰედერის სტილი */
+#item-modal .modal-header {
+    display: flex;
+    justify-content: center; /* ცენტრში ტექსტის განლაგება */
+    align-items: center;
+}
+
+/* მოდალის ფუტერის სტილი */
+#item-modal .modal-footer {
+    display: flex;
+    justify-content: space-between; /* ღილაკების გადანაწილება მარცხნივ და მარჯვნივ */
+    align-items: center;
+    padding: 10px;
+}
+
+/* Close ღილაკის სტილი */
+#item-modal .modal-footer .btn-secondary {
+    order: -1; /* მარცხნივ განთავსება */
+}
+
+/* კალათის აიკონის სტილი */
+#item-modal .modal-footer .add-to-cart {
+    text-decoration: none; /* ტექსტის დეკორაციის მოხსნა */
+}
+
+#item-modal .modal-footer .add-to-cart img {
+    width: 40px; /* აიკონის ზომის გაზრდა */
+    height: 40px;
+}
+
 /* სურათის სტილები */
 #item-modal .modal-body img {
     width: 100%; /* სურათის სრული სიგანე პოპაპში */
