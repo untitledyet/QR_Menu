@@ -6,7 +6,6 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
-    padding-bottom: 30px;
 }
 
 /* Headings */
@@ -177,9 +176,5 @@ h1, h2 {
 .footer-nav .nav-item.active .nav-icon {
     filter: hue-rotate(90deg); /* Optional: slightly change the icon color */
 }
-
-
-
-
 
 

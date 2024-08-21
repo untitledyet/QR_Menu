@@ -34,20 +34,6 @@ function createItemCard(item) {
  * Show a popup with item details
  * @param {Object} item - The item data
  */
-function showItemPopup(item) {
-    // Populate the modal with item details
-    const modalImage = document.querySelector('#item-modal .modal-body img');
-    const modalTitle = document.querySelector('#item-modal .modal-title');
-    const modalIngredients = document.querySelector('#item-modal .item-ingredients');
-
-    modalImage.src = `/static/images/${item.ImageFilename}`;
-    modalImage.alt = item.FoodName;
-    modalTitle.textContent = item.FoodName;
-    modalIngredients.textContent = item.Ingredients;
-
-    // Show the modal
-    $('#item-modal').modal('show');
-}
 
 /**
  * Populate the items container with popular dishes
