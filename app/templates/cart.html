@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>კალათი</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
+    <title>Home</title>
+    <!-- Include CSS and other meta tags -->
+    {% include 'header.html' %}
 </head>
 <body>
+
 <div class="container mt-5">
     <div class="container">
         <header class="cart-header">
@@ -31,5 +32,33 @@
         {% include 'navigation.html' %}
     </div>
 </div>
+
+
+<!-- Item Details Modal -->
+<div class="modal fade" id="item-modal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header d-flex justify-content-center align-items-center">
+                <h5 class="modal-title" id="itemModalLabel">Vanilla Ice Cream</h5>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" alt="" class="img-fluid rounded mb-3">
+                <ul class="list-unstyled">
+                    <!-- Ingredients will be dynamically inserted here -->
+                </ul>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <a href="#" class="add-to-cart" id="modal-add-to-cart" title="Add to Cart">
+                    <img src="/static/images/cart-icon.png" alt="Add to Cart">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% include 'footer.html' %}
+
 </body>
 </html>

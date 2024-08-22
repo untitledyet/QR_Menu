@@ -10,7 +10,7 @@ def home(table_id):
     categories = Category.query.all()
     promotions = Promotion.query.all()
     popular_dishes = [dish.to_dict() for dish in FoodItem.query.limit(6).all()]
-    new_dishes = [dish.to_dict() for dish in FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(6).all()]
+    new_dishes = [dish.to_dict() for dish in FoodItem.query.order_by(FoodItem.FoodItemID.desc()).limit(9).all()]
 
     return render_template('index.html', categories=categories, promotions=promotions, popular_dishes=popular_dishes, new_dishes=new_dishes)
 
