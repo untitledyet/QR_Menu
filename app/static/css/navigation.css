@@ -1,17 +1,38 @@
-/* Footer Navigation Styles */
+.mt-5 {
+    position: relative;
+    height: 100vh;
+    overflow: auto;
+    padding-bottom: 60px; /* უზრუნველვყოთ, რომ ქვევით საკმარისი სივრცეა */
+    box-sizing: border-box; /* ჩავთვალოთ padding და border */
+    overflow-y: scroll; /* რათა კონტენტი მაინც დაისქროლოს */
+    scrollbar-width: none; /* Firefox-ისთვის */
+}
+
+.mt-5::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge და სხვა Webkit-ზე დაფუძნებული ბრაუზერებისთვის */
+}
+
 .footer-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
+    max-width: 100%;
     background-color: #fff;
     border-top: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
-    padding: 10px 20px;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000; /* Ensure it stays above other content */
+    z-index: 1000;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: Arial, sans-serif;
+    color: #333;
+    border-top-left-radius: 15px;  /* მარცხენა ზედა კუთხის ბორდერ რადიუსი */
+    border-top-right-radius: 15px; /* მარჯვენა ზედა კუთხის ბორდერ რადიუსი */
+
 }
+
 
 /* Navigation Item Styles */
 .footer-nav .nav-item {
@@ -22,6 +43,9 @@
     color: #333;
     flex: 1; /* Evenly space the items */
     text-align: center;
+    padding-left: 20px;
+    padding-right: 20px;
+
 }
 
 /* Navigation Icon Styles */
@@ -43,4 +67,12 @@
 
 .footer-nav .nav-item.active .nav-icon {
     filter: hue-rotate(90deg); /* Optional: slightly change the icon color */
+}
+
+.footer-nav .nav-item:first-child {
+    margin-left: -10px; /* გადაადგილეთ 'სახლი' მარცხნივ */
+}
+
+.footer-nav .nav-item:last-child {
+    margin-right: -10px; /* გადაადგილეთ 'კალათა' მარჯვნივ */
 }

@@ -1,4 +1,6 @@
 <!-- Footer Navigation -->
+<!-- Navigation Styles -->
+<link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
 <div id="footer-nav" class="footer-nav">
     <a href="{{ url_for('home', table_id=session.get('table_id')) }}" class="nav-item">
         <img src="/static/images/home-icon.png" alt="Home" class="nav-icon">

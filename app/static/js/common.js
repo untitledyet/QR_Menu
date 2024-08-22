@@ -56,5 +56,3 @@ function resetMainContent() {
         })
         .catch(error => console.error('Error:', error));
 }
-
-

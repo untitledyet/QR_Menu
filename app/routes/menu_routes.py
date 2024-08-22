@@ -74,5 +74,3 @@ def cart_page(table_id):
     # საჭიროებისამებრ, დაამატეთ ლოგიკა table_id-ისთვის
     return render_template('cart.html', table_id=table_id)
 
-
-
