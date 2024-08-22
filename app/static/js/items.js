@@ -8,12 +8,11 @@ function createItemCard(item) {
     itemCard.classList.add('col-12', 'col-sm-6', 'col-lg-4', 'mb-4');
     itemCard.innerHTML = `
         <div class="card shadow-sm">
-            <img src="/static/images/${item.ImageFilename}" class="card-img-top" alt="${item.FoodName}">
+            <img src="/static/images/${item.ImageFilename || 'default-image.png'}" class="card-img-top" alt="${item.FoodName || 'Unnamed Item'}">
             <div class="card-body">
-                <h5 class="card-title">${item.FoodName}</h5>
-                <p class="card-text">${item.Ingredients}</p>
-                <p class="card-text"><strong>$${item.Price}</strong></p>
-                <!-- Add to Cart Icon -->
+                <h5 class="card-title">${item.FoodName || 'Unnamed Item'}</h5>
+                <p class="card-text">${item.Ingredients || 'No ingredients specified'}</p>
+                <p class="card-text"><strong>$${item.Price.toFixed(2)}</strong></p>
                 <a href="#" class="add-to-cart" data-item-id="${item.FoodItemID}">
                     <img src="/static/images/cart-icon.png" alt="Add to Cart" title="Add to Cart">
                 </a>
@@ -31,11 +30,6 @@ function createItemCard(item) {
 }
 
 /**
- * Show a popup with item details
- * @param {Object} item - The item data
- */
-
-/**
  * Populate the items container with popular dishes
  * @param {Array} dishes - The list of popular dishes to display
  * @param {HTMLElement} container - The container to populate
@@ -48,73 +42,46 @@ function populateItemsContainer(dishes, container) {
 }
 
 /**
- * Load popular dishes and new dishes on DOMContentLoaded
+ * Show a popup with item details
+ * @param {Object} item - The item data
  */
-document.addEventListener('DOMContentLoaded', function () {
-    const itemsContainer = document.getElementById('items-container');
-    const newItemsContainer = document.getElementById('new-dishes-container');
-
-    // Fetch the popular dishes data embedded in the page
-    const popularDishes = JSON.parse(document.querySelector('#popular-dishes-data').textContent);
-
-    // Populate the items container with the fetched popular dishes
-    populateItemsContainer(popularDishes, itemsContainer);
-
-    // Fetch the new dishes data embedded in the page
-    const newDishes = JSON.parse(document.querySelector('#new-dishes-data').textContent);
-
-    // Populate the new items container with the fetched new dishes
-    populateItemsContainer(newDishes, newItemsContainer);
-});
-
 function showItemPopup(item) {
-    // Populate the modal with item details
     const modalImage = document.querySelector('#item-modal .modal-body img');
     const modalTitle = document.querySelector('#item-modal .modal-title');
     const modalIngredientsList = document.querySelector('#item-modal .modal-body ul');
 
-    modalImage.src = `/static/images/${item.ImageFilename}`;
-    modalImage.alt = item.FoodName;
-    modalTitle.textContent = item.FoodName;
+    modalImage.src = `/static/images/${item.ImageFilename || 'default-image.png'}`;
+    modalImage.alt = item.FoodName || 'Unnamed Item';
+    modalTitle.textContent = item.FoodName || 'Unnamed Item';
 
     // Clear existing ingredients
     modalIngredientsList.innerHTML = '';
 
     // Store modified ingredients
-    let modifiedIngredients = [];
+    const modifiedIngredients = [];
 
     // Add ingredients to the list
-    const ingredients = item.Ingredients.split(','); // Assuming ingredients are comma-separated
+    const ingredients = item.Ingredients ? item.Ingredients.split(',') : [];
     ingredients.forEach((ingredient, index) => {
+        if (!ingredient) return;
+
         const li = document.createElement('li');
         li.classList.add('ingredient-item');
 
-        // Minus button
-        const minusBtn = document.createElement('button');
-        minusBtn.textContent = '-';
-        minusBtn.classList.add('btn', 'btn-minus');
-        li.appendChild(minusBtn);
-
-        // Ingredient name
-        const span = document.createElement('span');
-        span.textContent = ingredient.trim();
-        span.classList.add('ingredient-name');
-        li.appendChild(span);
-
-        // Plus button
-        const plusBtn = document.createElement('button');
-        plusBtn.textContent = '+';
-        plusBtn.classList.add('btn', 'btn-plus');
-        li.appendChild(plusBtn);
+        li.innerHTML = `
+            <button class="btn btn-minus">-</button>
+            <span class="ingredient-name">${ingredient.trim()}</span>
+            <button class="btn btn-plus">+</button>
+        `;
 
         modalIngredientsList.appendChild(li);
 
         // Add event listeners for the buttons
-        minusBtn.addEventListener('click', function () {
+        li.querySelector('.btn-minus').addEventListener('click', function () {
             handleIngredientChange(li, 'minus', index, modifiedIngredients);
         });
 
-        plusBtn.addEventListener('click', function () {
+        li.querySelector('.btn-plus').addEventListener('click', function () {
             handleIngredientChange(li, 'plus', index, modifiedIngredients);
         });
 
@@ -131,32 +98,38 @@ function showItemPopup(item) {
     $('#item-modal').modal('show');
 }
 
-
+/**
+ * Handle ingredient changes within the modal
+ * @param {HTMLElement} li - The list item element
+ * @param {string} action - The action ('plus' or 'minus')
+ * @param {number} index - The index of the ingredient
+ * @param {Array} modifiedIngredients - The array to store modified ingredients
+ */
 function handleIngredientChange(li, action, index, modifiedIngredients) {
     if (action === 'minus') {
         if (li.classList.contains('extra')) {
             li.classList.remove('extra');
             modifiedIngredients[index] = 'default';
-            updateButtonStates(li);
         } else if (!li.classList.contains('strikethrough')) {
             li.classList.add('strikethrough');
             modifiedIngredients[index] = 'remove';
-            updateButtonStates(li);
         }
     } else if (action === 'plus') {
         if (li.classList.contains('strikethrough')) {
             li.classList.remove('strikethrough');
             modifiedIngredients[index] = 'default';
-            updateButtonStates(li);
         } else if (!li.classList.contains('extra')) {
             li.classList.add('extra');
             modifiedIngredients[index] = 'add';
-            updateButtonStates(li);
         }
     }
+    updateButtonStates(li);
 }
 
-
+/**
+ * Update the states of the ingredient buttons
+ * @param {HTMLElement} li - The list item element
+ */
 function updateButtonStates(li) {
     const minusBtn = li.querySelector('.btn-minus');
     const plusBtn = li.querySelector('.btn-plus');
@@ -173,21 +146,40 @@ function updateButtonStates(li) {
     }
 }
 
-
+/**
+ * Add the item to the cart with the modified ingredients
+ * @param {Object} item - The item data
+ * @param {Array} modifiedIngredients - The modified ingredients
+ */
 function addToCart(item, modifiedIngredients) {
     const cartItem = {
         id: item.FoodItemID,
-        name: item.FoodName,
+        name: item.FoodName || 'Unnamed Item',
         price: item.Price,
-        ingredients: modifiedIngredients,
+        imageFilename: item.ImageFilename || 'default-image.png',
+        ingredients: modifiedIngredients.length > 0 ? modifiedIngredients : item.Ingredients ? item.Ingredients.split(',').map(name => ({name: name.trim(), action: 'default'})) : [],
     };
 
-    // Store the cart item in session storage or send it to the server
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
     cart.push(cartItem);
     sessionStorage.setItem('cart', JSON.stringify(cart));
 
-    // Optionally, you can update the cart UI or redirect the user
     alert(`${item.FoodName} added to cart!`);
     $('#item-modal').modal('hide');
 }
+
+
+
+/**
+ * Load popular dishes and new dishes on DOMContentLoaded
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    const itemsContainer = document.getElementById('items-container');
+    const newItemsContainer = document.getElementById('new-dishes-container');
+
+    const popularDishes = JSON.parse(document.querySelector('#popular-dishes-data').textContent);
+    populateItemsContainer(popularDishes, itemsContainer);
+
+    const newDishes = JSON.parse(document.querySelector('#new-dishes-data').textContent);
+    populateItemsContainer(newDishes, newItemsContainer);
+});

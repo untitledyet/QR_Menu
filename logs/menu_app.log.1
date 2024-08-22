@@ -1,4 +1,4 @@
-2024-08-22 19:54:43,338 ERROR: Exception on /table/2/cart [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+2024-08-22 20:36:08,341 ERROR: Exception on /table/2/cart [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
@@ -25,7 +25,7 @@ Traceback (most recent call last):
     self.environment.handle_exception()
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 939, in handle_exception
     raise rewrite_traceback_stack(source=source)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/cart.html", line 42, in top-level template code
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/cart.html", line 61, in top-level template code
     {% include 'footer.html' %}
     ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/footer.html", line 25, in top-level template code
@@ -51,7 +51,15 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 121, in _default
     raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
 TypeError: Object of type Undefined is not JSON serializable
-2024-08-22 19:54:50,200 ERROR: Exception on /table/2/cart [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
+2024-08-22 20:38:15,820 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 20:38:56,207 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 20:41:51,863 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 20:46:29,097 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 20:49:44,264 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 20:50:59,491 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 21:02:00,428 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 21:05:33,654 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 21:06:13,082 ERROR: Exception on /table/2/cart [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py:838]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
     response = self.full_dispatch_request()
@@ -78,33 +86,20 @@ Traceback (most recent call last):
     self.environment.handle_exception()
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 939, in handle_exception
     raise rewrite_traceback_stack(source=source)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/cart.html", line 42, in top-level template code
-    {% include 'footer.html' %}
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/cart.html", line 32, in top-level template code
+    {% include 'navigation.html' %}
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/footer.html", line 25, in top-level template code
-    <script type="application/json" id="popular-dishes-data"> {{ popular_dishes|tojson }}</script>
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/templates/navigation.html", line 5, in top-level template code
+    <a href="{{ url_for('home', table_id=session.get('table_id')) }}" class="nav-item">
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/filters.py", line 1714, in do_tojson
-    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/jinja2/utils.py", line 658, in htmlsafe_json_dumps
-    dumps(obj, **kwargs)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 179, in dumps
-    return json.dumps(obj, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/__init__.py", line 238, in dumps
-    **kw).encode(obj)
-          ^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 200, in encode
-    chunks = self.iterencode(o, _one_shot=True)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 258, in iterencode
-    return _iterencode(o, 0)
-           ^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 121, in _default
-    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
-TypeError: Object of type Undefined is not JSON serializable
-2024-08-22 19:55:09,892 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-22 19:55:38,147 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-22 20:32:17,386 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
-2024-08-22 20:35:53,473 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/.venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'home'. Did you forget to specify values ['table_id']?
+2024-08-22 21:16:31,757 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]
+2024-08-22 21:21:34,086 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/menu/app/__init__.py:22]

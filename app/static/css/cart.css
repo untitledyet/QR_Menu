@@ -1,19 +1,23 @@
 /* ----------------------------------------------------------
-   Cart Button
+   General Body Styling
    ---------------------------------------------------------- */
-
 
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
 }
 
-/* Headings */
+/* ----------------------------------------------------------
+   Headings Styling
+   ---------------------------------------------------------- */
+
 h1, h2 {
     color: #343a40;
 }
 
-
+/* ----------------------------------------------------------
+   Cart Header Styling
+   ---------------------------------------------------------- */
 
 .cart-header {
     display: flex;
@@ -38,14 +42,20 @@ h1, h2 {
 .cart-header .trash-icon img {
     width: 24px;
     height: 24px;
+    cursor: pointer;
 }
 
+/* ----------------------------------------------------------
+   Cart Content Styling
+   ---------------------------------------------------------- */
+
 .cart-content {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin: 20px 0;
+}
+
+.empty-cart {
     text-align: center;
+    display: none; /* Default hidden until cart is empty */
 }
 
 .empty-cart img {
@@ -59,4 +69,132 @@ h1, h2 {
     margin-bottom: 20px;
 }
 
+/* ----------------------------------------------------------
+   Cart Item Styling
+   ---------------------------------------------------------- */
 
+.cart-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.item-image img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 15px;
+}
+
+.item-details {
+    flex-grow: 1;
+    padding-right: 15px;
+}
+
+.item-name {
+    margin: 0;
+    font-size: 18px;
+    color: #343a40;
+}
+
+.item-comment {
+    margin: 0;
+    font-size: 14px;
+    color: #777;
+    white-space: nowrap; /* Prevents text wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adds ellipsis for overflowed text */
+}
+
+/* ----------------------------------------------------------
+   Cart Item Quantity Controls
+   ---------------------------------------------------------- */
+
+.item-quantity {
+    display: flex;
+    align-items: center;
+}
+
+.item-quantity button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    margin: 0 5px;
+}
+
+.item-quantity button:focus {
+    outline: none;
+}
+
+.item-quantity input.quantity-value {
+    width: 50px;
+    text-align: center;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 0 5px;
+}
+
+/* ----------------------------------------------------------
+   Cart Item Price and Actions
+   ---------------------------------------------------------- */
+
+.cart-item-price {
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 20px;
+}
+
+.cart-item-actions {
+    margin-left: 20px;
+}
+
+.cart-item-actions .remove-item {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.cart-item-actions .remove-item:hover {
+    background-color: #c82333;
+}
+
+/* ----------------------------------------------------------
+   Media Queries for Responsive Design
+   ---------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cart-item-details,
+    .cart-item-quantity,
+    .cart-item-price,
+    .cart-item-actions {
+        margin-left: 0;
+        margin-bottom: 10px;
+    }
+
+    .cart-item-quantity {
+        justify-content: flex-start;
+    }
+}
