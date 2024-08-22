@@ -1,0 +1,11 @@
+<!-- Footer Navigation -->
+<div id="footer-nav" class="footer-nav">
+    <a href="{{ url_for('home', table_id=session.get('table_id')) }}" class="nav-item">
+        <img src="/static/images/home-icon.png" alt="Home" class="nav-icon">
+        <span class="nav-text">სახლი</span>
+    </a>
+    <a href="{{ url_for('cart_page', table_id=session.get('table_id')) }}" class="nav-item">
+        <img src="/static/images/cart-icon.png" alt="Cart" class="nav-icon">
+        <span class="nav-text">კალათი</span>
+    </a>
+</div>
