@@ -80,9 +80,12 @@ function showItemPopup(item) {
     // Clear existing ingredients
     modalIngredientsList.innerHTML = '';
 
+    // Store modified ingredients
+    let modifiedIngredients = [];
+
     // Add ingredients to the list
     const ingredients = item.Ingredients.split(','); // Assuming ingredients are comma-separated
-    ingredients.forEach(ingredient => {
+    ingredients.forEach((ingredient, index) => {
         const li = document.createElement('li');
         li.classList.add('ingredient-item');
 
@@ -108,40 +111,51 @@ function showItemPopup(item) {
 
         // Add event listeners for the buttons
         minusBtn.addEventListener('click', function () {
-            handleIngredientChange(li, 'minus');
+            handleIngredientChange(li, 'minus', index, modifiedIngredients);
         });
 
         plusBtn.addEventListener('click', function () {
-            handleIngredientChange(li, 'plus');
+            handleIngredientChange(li, 'plus', index, modifiedIngredients);
         });
 
         // Initially check the button states
         updateButtonStates(li);
     });
 
+    // Add event listener to the "Add to Cart" button
+    document.getElementById('modal-add-to-cart').addEventListener('click', function() {
+        addToCart(item, modifiedIngredients);
+    });
+
     // Show the modal
     $('#item-modal').modal('show');
 }
 
-function handleIngredientChange(li, action) {
+
+function handleIngredientChange(li, action, index, modifiedIngredients) {
     if (action === 'minus') {
         if (li.classList.contains('extra')) {
             li.classList.remove('extra');
+            modifiedIngredients[index] = 'default';
             updateButtonStates(li);
         } else if (!li.classList.contains('strikethrough')) {
             li.classList.add('strikethrough');
+            modifiedIngredients[index] = 'remove';
             updateButtonStates(li);
         }
     } else if (action === 'plus') {
         if (li.classList.contains('strikethrough')) {
             li.classList.remove('strikethrough');
+            modifiedIngredients[index] = 'default';
             updateButtonStates(li);
         } else if (!li.classList.contains('extra')) {
             li.classList.add('extra');
+            modifiedIngredients[index] = 'add';
             updateButtonStates(li);
         }
     }
 }
+
 
 function updateButtonStates(li) {
     const minusBtn = li.querySelector('.btn-minus');
@@ -160,3 +174,20 @@ function updateButtonStates(li) {
 }
 
 
+function addToCart(item, modifiedIngredients) {
+    const cartItem = {
+        id: item.FoodItemID,
+        name: item.FoodName,
+        price: item.Price,
+        ingredients: modifiedIngredients,
+    };
+
+    // Store the cart item in session storage or send it to the server
+    let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    cart.push(cartItem);
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+
+    // Optionally, you can update the cart UI or redirect the user
+    alert(`${item.FoodName} added to cart!`);
+    $('#item-modal').modal('hide');
+}
