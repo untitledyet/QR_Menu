@@ -21,7 +21,7 @@ function createItemCard(item) {
     `;
 
     // Add click event for the "Add to Cart" button
-    itemCard.querySelector('.add-to-cart').addEventListener('click', function(event) {
+    itemCard.querySelector('.add-to-cart').addEventListener('click', function (event) {
         event.preventDefault();
         showItemPopup(item);
     });
@@ -78,11 +78,11 @@ function showItemPopup(item) {
 
         // Add event listeners for the buttons
         li.querySelector('.btn-minus').addEventListener('click', function () {
-            handleIngredientChange(li, 'minus', index, modifiedIngredients);
+            handleIngredientChange(li, 'minus', index, modifiedIngredients, ingredient.trim());
         });
 
         li.querySelector('.btn-plus').addEventListener('click', function () {
-            handleIngredientChange(li, 'plus', index, modifiedIngredients);
+            handleIngredientChange(li, 'plus', index, modifiedIngredients, ingredient.trim());
         });
 
         // Initially check the button states
@@ -90,7 +90,7 @@ function showItemPopup(item) {
     });
 
     // Add event listener to the "Add to Cart" button
-    document.getElementById('modal-add-to-cart').addEventListener('click', function() {
+    document.getElementById('modal-add-to-cart').addEventListener('click', function () {
         addToCart(item, modifiedIngredients);
     });
 
@@ -104,23 +104,24 @@ function showItemPopup(item) {
  * @param {string} action - The action ('plus' or 'minus')
  * @param {number} index - The index of the ingredient
  * @param {Array} modifiedIngredients - The array to store modified ingredients
+ * @param {string} ingredientName - The name of the ingredient
  */
-function handleIngredientChange(li, action, index, modifiedIngredients) {
+function handleIngredientChange(li, action, index, modifiedIngredients, ingredientName) {
     if (action === 'minus') {
         if (li.classList.contains('extra')) {
             li.classList.remove('extra');
-            modifiedIngredients[index] = 'default';
+            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
         } else if (!li.classList.contains('strikethrough')) {
             li.classList.add('strikethrough');
-            modifiedIngredients[index] = 'remove';
+            modifiedIngredients[index] = {name: ingredientName, action: 'remove'};
         }
     } else if (action === 'plus') {
         if (li.classList.contains('strikethrough')) {
             li.classList.remove('strikethrough');
-            modifiedIngredients[index] = 'default';
+            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
         } else if (!li.classList.contains('extra')) {
             li.classList.add('extra');
-            modifiedIngredients[index] = 'add';
+            modifiedIngredients[index] = {name: ingredientName, action: 'add'};
         }
     }
     updateButtonStates(li);
@@ -152,22 +153,44 @@ function updateButtonStates(li) {
  * @param {Array} modifiedIngredients - The modified ingredients
  */
 function addToCart(item, modifiedIngredients) {
-    const cartItem = {
-        id: item.FoodItemID,
-        name: item.FoodName || 'Unnamed Item',
-        price: item.Price,
-        imageFilename: item.ImageFilename || 'default-image.png',
-        ingredients: modifiedIngredients.length > 0 ? modifiedIngredients : item.Ingredients ? item.Ingredients.split(',').map(name => ({name: name.trim(), action: 'default'})) : [],
-    };
-
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
-    cart.push(cartItem);
-    sessionStorage.setItem('cart', JSON.stringify(cart));
 
-    alert(`${item.FoodName} added to cart!`);
+    // Generate a unique key based on the item's ID and modified ingredients
+    const ingredientKey = item.FoodItemID + '-' + (modifiedIngredients.length > 0
+        ? modifiedIngredients.map(ing => `${ing.name}-${ing.action}`).join('|')
+        : item.Ingredients ? item.Ingredients.split(',').map(name => `${name.trim()}-default`).join('|')
+            : 'default');
+
+    // Check if an item with the same ID and ingredientKey exists in the cart
+    const existingItemIndex = cart.findIndex(cartItem =>
+        cartItem.id === item.FoodItemID &&
+        cartItem.ingredientKey === ingredientKey
+    );
+
+    if (existingItemIndex !== -1) {
+        // If the item already exists in the cart with the same ingredients, do not increase its quantity.
+        //alert(`${item.FoodName} is already in the cart with the same ingredients!`);
+    } else {
+        // If the item doesn't exist in the cart, add it
+        const cartItem = {
+            id: item.FoodItemID,
+            name: item.FoodName || 'Unnamed Item',
+            price: item.Price,
+            imageFilename: item.ImageFilename || 'default-image.png',
+            ingredients: modifiedIngredients.length > 0 ? modifiedIngredients : item.Ingredients ? item.Ingredients.split(',').map(name => ({
+                name: name.trim(),
+                action: 'default'
+            })) : [],
+            quantity: 1, // Start with quantity 1
+            ingredientKey: ingredientKey // Store the unique key
+        };
+        cart.push(cartItem);
+    }
+
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+    //alert(`${item.FoodName} added to cart!`);
     $('#item-modal').modal('hide');
 }
-
 
 
 /**

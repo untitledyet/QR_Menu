@@ -69,19 +69,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to generate comment text based on modified ingredients
     function generateCommentText(ingredients) {
         if (!Array.isArray(ingredients) || ingredients.length === 0) {
-            return "No ingredients specified";
+            return ""; // Return an empty string if there are no ingredients
         }
 
-        return ingredients.map(ingredient => {
+        const comments = ingredients.map(ingredient => {
             if (!ingredient) return "";
             if (ingredient.action === 'remove') {
                 return `remove: ${ingredient.name}`;
             } else if (ingredient.action === 'add') {
                 return `add: ${ingredient.name}`;
-            } else {
-                return `${ingredient.name}`;
             }
-        }).join(', ');
+            return ''; // For default or unchanged ingredients, return an empty string
+        }).filter(comment => comment !== ""); // Filter out empty strings
+
+        return comments.length > 0 ? comments.join(', ') : ""; // Join the comments with commas or return empty string if no changes
     }
 
     // Function to update item quantity by increment/decrement

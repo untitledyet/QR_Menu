@@ -1,24 +1,15 @@
-/* ----------------------------------------------------------
-   General Body Styling
-   ---------------------------------------------------------- */
-
+/* General Body Styling */
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
 }
 
-/* ----------------------------------------------------------
-   Headings Styling
-   ---------------------------------------------------------- */
-
+/* Headings Styling */
 h1, h2 {
     color: #343a40;
 }
 
-/* ----------------------------------------------------------
-   Cart Header Styling
-   ---------------------------------------------------------- */
-
+/* Cart Header Styling */
 .cart-header {
     display: flex;
     justify-content: space-between;
@@ -45,17 +36,15 @@ h1, h2 {
     cursor: pointer;
 }
 
-/* ----------------------------------------------------------
-   Cart Content Styling
-   ---------------------------------------------------------- */
-
+/* Cart Content Styling */
 .cart-content {
-    margin: 20px 0;
+    margin: 20px 15px;
+    padding: 0 15px;
 }
 
 .empty-cart {
     text-align: center;
-    display: none; /* Default hidden until cart is empty */
+    display: none;
 }
 
 .empty-cart img {
@@ -69,10 +58,7 @@ h1, h2 {
     margin-bottom: 20px;
 }
 
-/* ----------------------------------------------------------
-   Cart Item Styling
-   ---------------------------------------------------------- */
-
+/* Cart Item Styling */
 .cart-item {
     display: flex;
     flex-direction: row;
@@ -80,9 +66,8 @@ h1, h2 {
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 5px;
-    padding: 10px;
+    padding: 15px;
     margin-bottom: 15px;
-    width: 100%;
 }
 
 .item-image img {
@@ -95,11 +80,12 @@ h1, h2 {
 
 .item-details {
     flex-grow: 1;
-    padding-right: 15px;
+    min-height: 60px;
+    margin-right: 15px;
 }
 
 .item-name {
-    margin: 0;
+    margin: 0 0 5px 0;
     font-size: 18px;
     color: #343a40;
 }
@@ -108,18 +94,17 @@ h1, h2 {
     margin: 0;
     font-size: 14px;
     color: #777;
-    white-space: nowrap; /* Prevents text wrapping */
-    overflow: hidden;
-    text-overflow: ellipsis; /* Adds ellipsis for overflowed text */
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
+    max-width: 200px; /* ამით განვსაზღვრავთ მაქსიმალურ სიგანეს */
 }
-
-/* ----------------------------------------------------------
-   Cart Item Quantity Controls
-   ---------------------------------------------------------- */
 
 .item-quantity {
     display: flex;
     align-items: center;
+    justify-content: center;
+    min-width: 120px;
 }
 
 .item-quantity button {
@@ -149,18 +134,17 @@ h1, h2 {
     margin: 0 5px;
 }
 
-/* ----------------------------------------------------------
-   Cart Item Price and Actions
-   ---------------------------------------------------------- */
-
+/* Cart Item Price and Actions */
 .cart-item-price {
     font-size: 18px;
     font-weight: bold;
-    margin-left: 20px;
+    min-width: 80px;
+    text-align: right;
 }
 
 .cart-item-actions {
-    margin-left: 20px;
+    min-width: 80px;
+    text-align: right;
 }
 
 .cart-item-actions .remove-item {
@@ -176,21 +160,14 @@ h1, h2 {
     background-color: #c82333;
 }
 
-/* ----------------------------------------------------------
-   Media Queries for Responsive Design
-   ---------------------------------------------------------- */
-
+/* Media Queries for Responsive Design */
 @media (max-width: 768px) {
     .cart-item {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .cart-item-details,
-    .cart-item-quantity,
-    .cart-item-price,
-    .cart-item-actions {
-        margin-left: 0;
+    .item-details {
         margin-bottom: 10px;
     }
 
