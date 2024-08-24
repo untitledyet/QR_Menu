@@ -90,8 +90,12 @@ function showItemPopup(item) {
     });
 
     // Add event listener to the "Add to Cart" button
+    document.getElementById('modal-add-to-cart').replaceWith(document.getElementById('modal-add-to-cart').cloneNode(true));
+
     document.getElementById('modal-add-to-cart').addEventListener('click', function () {
         addToCart(item, modifiedIngredients);
+
+
     });
 
     // Show the modal
@@ -156,10 +160,12 @@ function addToCart(item, modifiedIngredients) {
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
 
     // Generate a unique key based on the item's ID and modified ingredients
-    const ingredientKey = item.FoodItemID + '-' + (modifiedIngredients.length > 0
-        ? modifiedIngredients.map(ing => `${ing.name}-${ing.action}`).join('|')
-        : item.Ingredients ? item.Ingredients.split(',').map(name => `${name.trim()}-default`).join('|')
-            : 'default');
+    const ingredientKey = item.FoodItemID + '-' +
+        (modifiedIngredients.length > 0
+            ? modifiedIngredients.sort((a, b) => a.name.localeCompare(b.name)).map(ing => `${ing.name}-${ing.action}`).join('|')
+            : item.Ingredients ? item.Ingredients.split(',').sort().map(name => `${name.trim()}-default`).join('|')
+                : 'default');
+
 
     // Check if an item with the same ID and ingredientKey exists in the cart
     const existingItemIndex = cart.findIndex(cartItem =>
@@ -167,8 +173,12 @@ function addToCart(item, modifiedIngredients) {
         cartItem.ingredientKey === ingredientKey
     );
 
+
     if (existingItemIndex !== -1) {
-        // If the item already exists in the cart with the same ingredients, do not increase its quantity.
+
+        cart[existingItemIndex].quantity += 1;
+
+
         //alert(`${item.FoodName} is already in the cart with the same ingredients!`);
     } else {
         // If the item doesn't exist in the cart, add it
@@ -184,6 +194,7 @@ function addToCart(item, modifiedIngredients) {
             quantity: 1, // Start with quantity 1
             ingredientKey: ingredientKey // Store the unique key
         };
+
         cart.push(cartItem);
     }
 
