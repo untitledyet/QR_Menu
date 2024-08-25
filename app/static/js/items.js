@@ -1,219 +1,126 @@
-/**
- * Create an item card element for a food item
- * @param {Object} item - The item data
- * @returns {HTMLElement} - The item card element
- */
-function createItemCard(item) {
-    const itemCard = document.createElement('div');
-    itemCard.classList.add('col-12', 'col-sm-6', 'col-lg-4', 'mb-4');
-    itemCard.innerHTML = `
-        <div class="card shadow-sm">
-            <img src="/static/images/${item.ImageFilename || 'default-image.png'}" class="card-img-top" alt="${item.FoodName || 'Unnamed Item'}">
-            <div class="card-body">
-                <h5 class="card-title">${item.FoodName || 'Unnamed Item'}</h5>
-                <p class="card-text">${item.Ingredients || 'No ingredients specified'}</p>
-                <p class="card-text"><strong>$${item.Price.toFixed(2)}</strong></p>
-                <a href="#" class="add-to-cart" data-item-id="${item.FoodItemID}">
-                    <img src="/static/images/cart-icon.png" alt="Add to Cart" title="Add to Cart">
-                </a>
-            </div>
-        </div>
-    `;
+document.addEventListener('DOMContentLoaded', function() {
+    const trashIcon = document.querySelector('.trash-icon');
+    const cartContent = document.querySelector('.cart-content');
+    const emptyCartMessage = document.querySelector('.empty-cart');
 
-    // Add click event for the "Add to Cart" button
-    itemCard.querySelector('.add-to-cart').addEventListener('click', function (event) {
-        event.preventDefault();
-        showItemPopup(item);
-    });
-
-    return itemCard;
-}
-
-/**
- * Populate the items container with popular dishes
- * @param {Array} dishes - The list of popular dishes to display
- * @param {HTMLElement} container - The container to populate
- */
-function populateItemsContainer(dishes, container) {
-    container.innerHTML = '';
-    dishes.forEach(dish => {
-        container.appendChild(createItemCard(dish));
-    });
-}
-
-/**
- * Show a popup with item details
- * @param {Object} item - The item data
- */
-function showItemPopup(item) {
-    const modalImage = document.querySelector('#item-modal .modal-body img');
-    const modalTitle = document.querySelector('#item-modal .modal-title');
-    const modalIngredientsList = document.querySelector('#item-modal .modal-body ul');
-
-    modalImage.src = `/static/images/${item.ImageFilename || 'default-image.png'}`;
-    modalImage.alt = item.FoodName || 'Unnamed Item';
-    modalTitle.textContent = item.FoodName || 'Unnamed Item';
-
-    // Clear existing ingredients
-    modalIngredientsList.innerHTML = '';
-
-    // Store modified ingredients
-    const modifiedIngredients = [];
-
-    // Add ingredients to the list
-    const ingredients = item.Ingredients ? item.Ingredients.split(',') : [];
-    ingredients.forEach((ingredient, index) => {
-        if (!ingredient) return;
-
-        const li = document.createElement('li');
-        li.classList.add('ingredient-item');
-
-        li.innerHTML = `
-            <button class="btn btn-minus">-</button>
-            <span class="ingredient-name">${ingredient.trim()}</span>
-            <button class="btn btn-plus">+</button>
-        `;
-
-        modalIngredientsList.appendChild(li);
-
-        // Add event listeners for the buttons
-        li.querySelector('.btn-minus').addEventListener('click', function () {
-            handleIngredientChange(li, 'minus', index, modifiedIngredients, ingredient.trim());
-        });
-
-        li.querySelector('.btn-plus').addEventListener('click', function () {
-            handleIngredientChange(li, 'plus', index, modifiedIngredients, ingredient.trim());
-        });
-
-        // Initially check the button states
-        updateButtonStates(li);
-    });
-
-    // Add event listener to the "Add to Cart" button
-    document.getElementById('modal-add-to-cart').replaceWith(document.getElementById('modal-add-to-cart').cloneNode(true));
-
-    document.getElementById('modal-add-to-cart').addEventListener('click', function () {
-        addToCart(item, modifiedIngredients);
-
-
-    });
-
-    // Show the modal
-    $('#item-modal').modal('show');
-}
-
-/**
- * Handle ingredient changes within the modal
- * @param {HTMLElement} li - The list item element
- * @param {string} action - The action ('plus' or 'minus')
- * @param {number} index - The index of the ingredient
- * @param {Array} modifiedIngredients - The array to store modified ingredients
- * @param {string} ingredientName - The name of the ingredient
- */
-function handleIngredientChange(li, action, index, modifiedIngredients, ingredientName) {
-    if (action === 'minus') {
-        if (li.classList.contains('extra')) {
-            li.classList.remove('extra');
-            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
-        } else if (!li.classList.contains('strikethrough')) {
-            li.classList.add('strikethrough');
-            modifiedIngredients[index] = {name: ingredientName, action: 'remove'};
-        }
-    } else if (action === 'plus') {
-        if (li.classList.contains('strikethrough')) {
-            li.classList.remove('strikethrough');
-            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
-        } else if (!li.classList.contains('extra')) {
-            li.classList.add('extra');
-            modifiedIngredients[index] = {name: ingredientName, action: 'add'};
-        }
-    }
-    updateButtonStates(li);
-}
-
-/**
- * Update the states of the ingredient buttons
- * @param {HTMLElement} li - The list item element
- */
-function updateButtonStates(li) {
-    const minusBtn = li.querySelector('.btn-minus');
-    const plusBtn = li.querySelector('.btn-plus');
-
-    if (li.classList.contains('strikethrough')) {
-        minusBtn.disabled = true;
-        plusBtn.disabled = false;
-    } else if (li.classList.contains('extra')) {
-        plusBtn.disabled = true;
-        minusBtn.disabled = false;
-    } else {
-        minusBtn.disabled = false;
-        plusBtn.disabled = false;
-    }
-}
-
-/**
- * Add the item to the cart with the modified ingredients
- * @param {Object} item - The item data
- * @param {Array} modifiedIngredients - The modified ingredients
- */
-function addToCart(item, modifiedIngredients) {
+    // Retrieve cart items from sessionStorage
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
 
-    // Generate a unique key based on the item's ID and modified ingredients
-    const ingredientKey = item.FoodItemID + '-' +
-        (modifiedIngredients.length > 0
-            ? modifiedIngredients.sort((a, b) => a.name.localeCompare(b.name)).map(ing => `${ing.name}-${ing.action}`).join('|')
-            : item.Ingredients ? item.Ingredients.split(',').sort().map(name => `${name.trim()}-default`).join('|')
-                : 'default');
+    // Function to render the cart items
+    function renderCartItems() {
+        if (!cartContent || !emptyCartMessage) {
+            console.error('Cart content or empty cart message element not found');
+            return;
+        }
 
+        cartContent.innerHTML = ''; // Clear existing content
 
-    // Check if an item with the same ID and ingredientKey exists in the cart
-    const existingItemIndex = cart.findIndex(cartItem =>
-        cartItem.id === item.FoodItemID &&
-        cartItem.ingredientKey === ingredientKey
-    );
+        if (cart.length === 0) {
+            emptyCartMessage.style.display = 'block';
+        } else {
+            emptyCartMessage.style.display = 'none';
 
+            cart.forEach(item => {
+                const imageFilename = item.imageFilename ? item.imageFilename : 'default-image.png'; // Ensure the image exists
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('cart-item', 'd-flex', 'align-items-center', 'justify-content-between', 'mb-3', 'p-3', 'border', 'rounded');
 
-    if (existingItemIndex !== -1) {
+                // Create the HTML structure for the cart item
+                itemElement.innerHTML = `
+                    <div class="item-image">
+                        <img src="/static/images/${imageFilename}" alt="${item.name || 'Item'}" class="img-fluid rounded">
+                    </div>
+                    <div class="item-details flex-grow-1">
+                        <h5 class="item-name">${item.name || 'Unnamed Item'}</h5>
+                        <p class="item-comment">${generateCommentText(item.ingredients || [])}</p>
+                    </div>
+                    <div class="item-quantity d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-secondary quantity-decrease" data-item-id="${item.id}">-</button>
+                        <input type="number" class="quantity-value" value="${item.quantity || 1}" min="1" data-item-id="${item.id}">
+                        <button class="btn btn-sm btn-outline-secondary quantity-increase" data-item-id="${item.id}">+</button>
+                    </div>
+                    <div class="cart-item-price">
+                        <strong>$${(item.price * (item.quantity || 1)).toFixed(2)}</strong>
+                    </div>
+                    <div class="cart-item-actions">
+                        <button class="btn btn-sm btn-danger remove-item" data-item-id="${item.id}">Remove</button>
+                    </div>
+                `;
 
-        cart[existingItemIndex].quantity += 1;
+                // Add the item element to the cart content
+                cartContent.appendChild(itemElement);
 
+                // Add event listeners for quantity buttons and remove button
+                itemElement.querySelector('.quantity-decrease').addEventListener('click', function() {
+                    updateItemQuantity(item.id, 'decrease');
+                });
 
-        //alert(`${item.FoodName} is already in the cart with the same ingredients!`);
-    } else {
-        // If the item doesn't exist in the cart, add it
-        const cartItem = {
-            id: item.FoodItemID,
-            name: item.FoodName || 'Unnamed Item',
-            price: item.Price,
-            imageFilename: item.ImageFilename || 'default-image.png',
-            ingredients: modifiedIngredients.length > 0 ? modifiedIngredients : item.Ingredients ? item.Ingredients.split(',').map(name => ({
-                name: name.trim(),
-                action: 'default'
-            })) : [],
-            quantity: 1, // Start with quantity 1
-            ingredientKey: ingredientKey // Store the unique key
-        };
+                itemElement.querySelector('.quantity-increase').addEventListener('click', function() {
+                    updateItemQuantity(item.id, 'increase');
+                });
 
-        cart.push(cartItem);
+                itemElement.querySelector('.remove-item').addEventListener('click', function() {
+                    removeCartItem(item.id);
+                });
+            });
+        }
     }
 
-    sessionStorage.setItem('cart', JSON.stringify(cart));
-    //alert(`${item.FoodName} added to cart!`);
-    $('#item-modal').modal('hide');
-}
+    // Function to generate comment text based on modified ingredients
+    function generateCommentText(ingredients) {
+        if (!Array.isArray(ingredients) || ingredients.length === 0) {
+            return ""; // Return an empty string if there are no ingredients
+        }
 
+        const comments = ingredients.map(ingredient => {
+            if (!ingredient) return "";
+            if (ingredient.action === 'remove') {
+                return `remove: ${ingredient.name}`;
+            } else if (ingredient.action === 'add') {
+                return `add: ${ingredient.name}`;
+            }
+            return ''; // For default or unchanged ingredients, return an empty string
+        }).filter(comment => comment !== ""); // Filter out empty strings
 
-/**
- * Load popular dishes and new dishes on DOMContentLoaded
- */
-document.addEventListener('DOMContentLoaded', function () {
-    const itemsContainer = document.getElementById('items-container');
-    const newItemsContainer = document.getElementById('new-dishes-container');
+        return comments.length > 0 ? comments.join(', ') : ""; // Join the comments with commas or return empty string if no changes
+    }
 
-    const popularDishes = JSON.parse(document.querySelector('#popular-dishes-data').textContent);
-    populateItemsContainer(popularDishes, itemsContainer);
+    // Function to update item quantity by increment/decrement
+    function updateItemQuantity(itemId, action) {
+        const cartItem = cart.find(item => item.id === itemId);
+        if (cartItem) {
+            if (action === 'decrease' && cartItem.quantity > 1) {
+                cartItem.quantity -= 1;
+            } else if (action === 'increase') {
+                cartItem.quantity += 1;
+            }
+            sessionStorage.setItem('cart', JSON.stringify(cart));
+            renderCartItems();
+            updateCartItemCount(); // Update the cart item count after quantity change
+        }
+    }
 
-    const newDishes = JSON.parse(document.querySelector('#new-dishes-data').textContent);
-    populateItemsContainer(newDishes, newItemsContainer);
+    // Function to remove an item from the cart
+    function removeCartItem(itemId) {
+        cart = cart.filter(item => item.id !== itemId);
+        sessionStorage.setItem('cart', JSON.stringify(cart));
+        renderCartItems(); // Re-render the cart after removing the item
+        updateCartItemCount(); // Update the cart item count after removing an item
+    }
+
+    // Clear cart event
+    if (trashIcon) {
+        trashIcon.addEventListener('click', function() {
+            if (confirm('დარწმუნებული ხართ, რომ გსურთ კალათის გასუფთავება?')) {
+                cart = [];
+                sessionStorage.setItem('cart', JSON.stringify(cart));
+                renderCartItems(); // Re-render the cart after clearing it
+                updateCartItemCount(); // Update the cart item count after clearing the cart
+            }
+        });
+    }
+
+    // Initial render of cart items
+    renderCartItems();
+    updateCartItemCount(); // Update the cart item count on page load
 });

@@ -1,5 +1,4 @@
 <!-- Footer Navigation -->
-<!-- Navigation Styles -->
 <link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
 <div id="footer-nav" class="footer-nav">
     <a href="{{ url_for('home', table_id=session.get('table_id')) }}" class="nav-item">
@@ -9,5 +8,9 @@
     <a href="{{ url_for('cart_page', table_id=session.get('table_id')) }}" class="nav-item">
         <img src="/static/images/cart-icon.png" alt="Cart" class="nav-icon">
         <span class="nav-text">კალათი</span>
+        <span class="cart-item-count"></span> <!-- Quantity will be displayed here -->
     </a>
 </div>
+
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/items.js') }}"></script>
