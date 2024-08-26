@@ -1,0 +1,36 @@
+/* ----------------------------------------------------------
+   Carousel Controls
+   ---------------------------------------------------------- */
+
+/* General Carousel Control Styles */
+.carousel-control-prev, .carousel-control-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+/* Positioning Previous Control */
+.carousel-control-prev {
+    left: -20px;
+}
+
+/* Positioning Next Control */
+.carousel-control-next {
+    right: -20px;
+}
+
+/* Hover Effect on Carousel Controls */
+.carousel-control-prev:hover, .carousel-control-next:hover {
+    background: rgba(0, 0, 0, 0.8);
+}

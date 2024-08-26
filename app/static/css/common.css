@@ -1,0 +1,59 @@
+/* ----------------------------------------------------------
+   Global Styles
+   ---------------------------------------------------------- */
+
+/* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Headings Styling */
+h1, h2, h3, h4, h5, h6 {
+    color: #343a40;
+    margin-bottom: 15px;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.75rem;
+}
+
+/* Text Alignment */
+.text-center {
+    text-align: center;
+}
+
+/* Margin and Padding Reset */
+.mt-0, .mb-0, .ml-0, .mr-0 {
+    margin: 0 !important;
+}
+
+.pt-0, .pb-0, .pl-0, .pr-0 {
+    padding: 0 !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}

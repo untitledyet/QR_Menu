@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/carousel.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/promotions.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/cards.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    {% include 'promotions.html' %}
+
+    <!-- Promotion Details Section (Dynamically loaded) -->
+    <div id="promotion-detail-container"></div>
+
+    {% include 'categories.html' %}
+    {% include 'popular_dishes.html' %}
+    {% include 'new_dishes.html' %}
+</div>
+{% endblock %}
+

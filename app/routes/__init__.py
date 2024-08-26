@@ -1,0 +1,1 @@
+from app.routes import menu_routes, api_routes, auth_routes

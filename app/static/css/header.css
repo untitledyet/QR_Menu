@@ -1,0 +1,49 @@
+/* ----------------------------------------------------------
+   Header & Navbar Styles
+   ---------------------------------------------------------- */
+
+/* Navbar General Styles */
+.navbar {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 15px;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 15px;
+}
+
+.navbar-nav .nav-link {
+    font-size: 1rem;
+    color: #333;
+    text-transform: uppercase;
+    padding: 8px 15px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #4CAF50;
+}
+
+.navbar-nav .cart-item-count {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Navbar Toggle Button (for mobile) */
+.navbar-toggler {
+    border-color: #ddd;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml...");
+}

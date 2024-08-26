@@ -1,0 +1,59 @@
+/* General Category Card Styles */
+.category-card {
+    border: none;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    text-align: center;
+    width: 120px;
+    height: 150px;
+    margin-right: 10px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Image inside Category Cards */
+.category-card img {
+    border-radius: 10px;
+    height: 60px;
+    width: 60px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    transition: border 0.3s;
+}
+
+/* Horizontal Scroll Container for Category Cards */
+.category-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 0;
+    margin: 0px;
+    white-space: nowrap;
+}
+
+/* Hide Scrollbar for Category Scroll */
+.category-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile View Adjustment */
+@media (max-width: 768px) {
+    .category-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .category-card {
+        flex: 0 0 auto;
+        display: inline-flex;
+    }
+}

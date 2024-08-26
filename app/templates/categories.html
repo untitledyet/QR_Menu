@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Categories{% endblock %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='css/categories.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Categories</h2>
+    <div class="category-scroll d-flex flex-wrap">
+        {% for category in categories %}
+            <div class="card category-card shadow-sm m-2" data-category-id="{{ category.CategoryID }}">
+                <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}" 
+                     alt="{{ category.CategoryName }}" class="card-img-top">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ category.CategoryName }}</h5>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/category.js') }}"></script>
+{% endblock %}
