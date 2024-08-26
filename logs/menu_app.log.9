@@ -1,4 +1,24 @@
-2024-08-25 20:04:25,462 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+2024-08-26 12:05:46,206 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/cursor.py", line 617, in execute
+    self._handle_result(self._connection.cmd_query(stmt))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/opentelemetry/context_propagation.py", line 77, in wrapper
+    return method(cnx, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 1069, in cmd_query
+    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 846, in _handle_result
+    raise get_exception(packet)
+mysql.connector.errors.ProgrammingError: 1054 (42S22): Unknown column 'FoodItems.PromotionID' in 'field list'
+
+The above exception was the direct cause of the following exception:
+
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
     response = self.full_dispatch_request()
@@ -12,9 +32,9 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 12, in home
-    categories = Category.query.all()
-                 ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 14, in home
+    popular_dishes = FoodItem.query.limit(6).all()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2673, in all
     return self._iter().all()  # type: ignore
            ^^^^^^^^^^^^
@@ -24,49 +44,47 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
     return self._execute_internal(
            ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2235, in _execute_internal
-    bind = self.get_bind(**bind_arguments)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/session.py", line 53, in get_bind
-    engines = self._db.engines
-              ^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/extension.py", line 639, in engines
-    raise RuntimeError(
-RuntimeError: The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?
-2024-08-25 21:44:38,882 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
-2024-08-25 21:44:41,998 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
-Traceback (most recent call last):
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 12, in home
-    categories = Category.query.all()
-                 ^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2673, in all
-    return self._iter().all()  # type: ignore
-           ^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
-    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
-                                                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
-    return self._execute_internal(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2235, in _execute_internal
-    bind = self.get_bind(**bind_arguments)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/session.py", line 53, in get_bind
-    engines = self._db.engines
-              ^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/extension.py", line 639, in engines
-    raise RuntimeError(
-RuntimeError: The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?
-2024-08-26 11:50:23,407 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2247, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+    return meth(
+           ^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/cursor.py", line 617, in execute
+    self._handle_result(self._connection.cmd_query(stmt))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/opentelemetry/context_propagation.py", line 77, in wrapper
+    return method(cnx, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 1069, in cmd_query
+    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 846, in _handle_result
+    raise get_exception(packet)
+sqlalchemy.exc.ProgrammingError: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.PromotionID' in 'field list'
+[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Ingredients` AS `FoodItems_Ingredients`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`CategoryID` AS `FoodItems_CategoryID`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID`, `FoodItems`.`PromotionID` AS `FoodItems_PromotionID` 
+FROM `FoodItems` 
+ LIMIT %(param_1)s]
+[parameters: {'param_1': 6}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-08-26 12:08:09,479 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]

@@ -1,3 +1,7 @@
+/* ----------------------------------------------------------
+   Category Card Styles
+   ---------------------------------------------------------- */
+
 /* General Category Card Styles */
 .category-card {
     border: none;
@@ -5,7 +9,6 @@
     background-color: #f8f9fa;
     text-align: center;
     width: 120px;
-    height: 150px;
     margin-right: 10px;
     flex: 0 0 auto;
     display: flex;
@@ -15,9 +18,6 @@
     padding: 10px;
     cursor: pointer;
     transition: background 0.3s, color 0.3s, box-shadow 0.3s;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* Image inside Category Cards */
@@ -30,30 +30,26 @@
     transition: border 0.3s;
 }
 
+/* Active Category Card Styles */
+.category-card.active {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-card.active img {
+    border: 2px solid #fff;
+}
+
 /* Horizontal Scroll Container for Category Cards */
 .category-scroll {
     display: flex;
     overflow-x: auto;
     padding: 10px 0;
     margin: 0px;
-    white-space: nowrap;
 }
 
 /* Hide Scrollbar for Category Scroll */
 .category-scroll::-webkit-scrollbar {
     display: none;
-}
-
-/* Mobile View Adjustment */
-@media (max-width: 768px) {
-    .category-scroll {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    .category-card {
-        flex: 0 0 auto;
-        display: inline-flex;
-    }
 }

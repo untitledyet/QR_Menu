@@ -1,14 +1,13 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <!-- Include CSS and other meta tags -->
+    {% include 'header.html' %}
+</head>
+<body>
 
-{% block title %}Home{% endblock %}
-
-{% block css %}
-<link href="{{ url_for('static', filename='css/carousel.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/promotions.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/cards.css') }}" rel="stylesheet">
-{% endblock %}
-
-{% block content %}
 <div class="container mt-5">
     {% include 'promotions.html' %}
 
@@ -16,8 +15,21 @@
     <div id="promotion-detail-container"></div>
 
     {% include 'categories.html' %}
+    {% include 'subcategories.html' %}
     {% include 'popular_dishes.html' %}
     {% include 'new_dishes.html' %}
+    {% include 'navigation.html' %}
+    {% include 'item_preorder.html' %}
 </div>
-{% endblock %}
 
+
+
+
+
+
+
+
+{% include 'footer.html' %}
+
+</body>
+</html>

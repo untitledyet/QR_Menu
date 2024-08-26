@@ -1,4 +1,4 @@
-2024-08-26 11:50:29,499 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+2024-08-26 12:08:11,398 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
     response = self.full_dispatch_request()
@@ -12,29 +12,35 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 12, in home
-    categories = Category.query.all()
-                 ^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2673, in all
-    return self._iter().all()  # type: ignore
-           ^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
-    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
-                                                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
-    return self._execute_internal(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2235, in _execute_internal
-    bind = self.get_bind(**bind_arguments)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 14, in home
+    return render_template('index.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/session.py", line 53, in get_bind
-    engines = self._db.engines
-              ^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/extension.py", line 639, in engines
-    raise RuntimeError(
-RuntimeError: The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?
-2024-08-26 12:00:12,393 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
-2024-08-26 12:00:15,531 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 18, in top-level template code
+    <a class="navbar-brand" href="{{ url_for('home', table_id=session.get('table_id')) }}">My Restaurant</a>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1697, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1686, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 947, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'home' with values ['table_id']. Did you mean 'menu_bp.home' instead?
+2024-08-26 12:08:28,898 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:08:37,346 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
     response = self.full_dispatch_request()
@@ -48,25 +54,31 @@ Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 12, in home
-    categories = Category.query.all()
-                 ^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2673, in all
-    return self._iter().all()  # type: ignore
-           ^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
-    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
-                                                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
-    return self._execute_internal(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2235, in _execute_internal
-    bind = self.get_bind(**bind_arguments)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 14, in home
+    return render_template('index.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/session.py", line 53, in get_bind
-    engines = self._db.engines
-              ^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask_sqlalchemy/extension.py", line 639, in engines
-    raise RuntimeError(
-RuntimeError: The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?
-2024-08-26 12:00:47,166 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 18, in top-level template code
+    <a class="navbar-brand" href="{{ url_for('home', table_id=session.get('table_id')) }}">My Restaurant</a>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1697, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1686, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 947, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'home' with values ['table_id']. Did you mean 'menu_bp.home' instead?
+2024-08-26 12:12:32,378 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]

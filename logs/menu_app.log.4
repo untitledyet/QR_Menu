@@ -1,4 +1,16 @@
-2024-08-26 12:08:11,398 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+2024-08-26 16:03:42,632 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:06:17,829 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:08:12,327 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:08:26,455 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:09:17,053 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:10:25,519 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:24:42,209 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:25:15,844 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:25:48,815 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:27:05,378 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:28:58,026 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:44:20,404 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:44:24,057 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
     response = self.full_dispatch_request()
@@ -27,58 +39,39 @@ Traceback (most recent call last):
     raise rewrite_traceback_stack(source=source)
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 1, in top-level template code
     {% extends "base.html" %}
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 18, in top-level template code
-    <a class="navbar-brand" href="{{ url_for('home', table_id=session.get('table_id')) }}">My Restaurant</a>
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 8, in top-level template code
+    <link rel="icon" href="{{ url_for(filename='favicon.ico') }}" type="image/x-icon">
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1697, in url_for
-    return self.handle_url_build_error(error, endpoint, values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1686, in url_for
-    rv = url_adapter.build(  # type: ignore[union-attr]
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 947, in build
-    raise BuildError(endpoint, values, method, self)
-werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'home' with values ['table_id']. Did you mean 'menu_bp.home' instead?
-2024-08-26 12:08:28,898 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
-2024-08-26 12:08:37,346 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
-Traceback (most recent call last):
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 14, in home
-    return render_template('index.html',
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
-    return _render(app, template, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
-    rv = template.render(context)
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1301, in render
-    self.environment.handle_exception()
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 936, in handle_exception
-    raise rewrite_traceback_stack(source=source)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 1, in top-level template code
-    {% extends "base.html" %}
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 18, in top-level template code
-    <a class="navbar-brand" href="{{ url_for('home', table_id=session.get('table_id')) }}">My Restaurant</a>
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1697, in url_for
-    return self.handle_url_build_error(error, endpoint, values)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1686, in url_for
-    rv = url_adapter.build(  # type: ignore[union-attr]
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/werkzeug/routing/map.py", line 947, in build
-    raise BuildError(endpoint, values, method, self)
-werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'home' with values ['table_id']. Did you mean 'menu_bp.home' instead?
-2024-08-26 12:12:32,378 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+TypeError: Flask.url_for() missing 1 required positional argument: 'endpoint'
+2024-08-26 16:44:57,063 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:51:05,438 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:51:37,995 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:53:44,564 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:57:03,959 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 16:57:14,739 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:02:38,927 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:03:00,554 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:18:21,131 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:23:00,540 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:29:27,337 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:31:01,486 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:32:34,723 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:32:46,452 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:35:53,388 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:37:03,527 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:37:59,241 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:38:31,879 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:40:04,484 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:49:16,205 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:52:52,952 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:55:53,384 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:57:53,342 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:59:32,888 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 17:59:49,791 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:02:12,973 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:03:10,616 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:04:23,240 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:57:51,036 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:58:38,334 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 18:59:16,095 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 19:00:04,043 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]

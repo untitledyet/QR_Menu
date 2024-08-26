@@ -1,10 +1,7 @@
 <div class="mb-4">
     <h2 id="new-dishes-title">New Dishes</h2>
     <div class="row" id="new-dishes-container">
-        <script type="application/json" id="new-dishes-data" defer> {{ new_dishes|tojson }}</script>
+        <script type="application/json" id="new-dishes-data"> {{ new_dishes|tojson }}</script>
     </div>
 </div>
 
-{% block css %}
-<link href="{{ url_for('static', filename='css/items.css') }}" rel="stylesheet">
-{% endblock %}

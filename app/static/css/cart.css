@@ -1,0 +1,189 @@
+/* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Headings Styling */
+h1, h2 {
+    color: #343a40;
+}
+
+/* Cart Header Styling */
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+}
+
+.cart-header .back-button {
+    font-size: 1.5rem;
+    text-decoration: none;
+    color: #333;
+}
+
+.cart-header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.cart-header .trash-icon img {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+/* Cart Content Styling */
+.cart-content {
+    margin: 20px 15px;
+    padding: 0 15px;
+}
+
+.empty-cart {
+    text-align: center;
+    display: none;
+}
+
+.empty-cart img {
+    width: 150px;
+    margin-bottom: 15px;
+}
+
+.empty-cart p {
+    font-size: 1.25rem;
+    color: #777;
+    margin-bottom: 20px;
+}
+
+/* Cart Item Styling */
+.cart-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.item-image img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 15px;
+}
+
+.item-details {
+    flex-grow: 1;
+    min-height: 60px;
+    margin-right: 15px;
+}
+
+.item-name {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #343a40;
+}
+
+.item-comment {
+    margin: 0;
+    font-size: 14px;
+    color: #777;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
+    max-width: 200px; /* ამით განვსაზღვრავთ მაქსიმალურ სიგანეს */
+}
+
+.item-quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+}
+
+.item-quantity button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    margin: 0 5px;
+}
+
+.item-quantity button:focus {
+    outline: none;
+}
+
+.item-quantity input.quantity-value {
+    width: 50px;
+    text-align: center;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 0 5px;
+}
+
+/* Cart Item Price and Actions */
+.cart-item-price {
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: right;
+}
+
+.cart-item-actions {
+    min-width: 80px;
+    text-align: right;
+}
+
+.cart-item-actions .remove-item {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.cart-item-actions .remove-item:hover {
+    background-color: #c82333;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .item-details {
+        margin-bottom: 10px;
+    }
+
+    .cart-item-quantity {
+        justify-content: flex-start;
+    }
+}
+
+.cart-item-count {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+}

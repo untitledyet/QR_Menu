@@ -1,4 +1,4 @@
-2024-08-25 19:56:10,965 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+2024-08-26 12:05:05,177 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
     self.dialect.do_execute(
@@ -87,4 +87,4 @@ FROM `FoodItems`
  LIMIT %(param_1)s]
 [parameters: {'param_1': 6}]
 (Background on this error at: https://sqlalche.me/e/20/f405)
-2024-08-25 20:04:22,672 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:05:44,281 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]

@@ -4,12 +4,7 @@
  * @returns {Promise} - A promise that resolves to the category data
  */
 function fetchCategoryData(categoryId) {
-    return fetch(`/category/${categoryId}`).then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    });
+    return fetch(`/category/${categoryId}`).then(response => response.json());
 }
 
 /**
@@ -27,15 +22,15 @@ function handleCategoryClick(card, categoryCards, itemsContainer, sectionTitle, 
     if (!isActive) {
         card.classList.add('active');
         const categoryId = card.dataset.categoryId;
-        const categoryName = card.dataset.categoryName || 'Category';
+        const categoryName = card.dataset.categoryName;
 
         fetchCategoryData(categoryId)
             .then(data => {
-                sectionTitle.textContent = categoryName;
-                populateItemsContainer(data.items || [], itemsContainer);
-                populateSubcategoriesContainer(data.subcategories || [], categoryId, subcategoriesContainer);
+                sectionTitle.textContent = `${categoryName}`;
+                populateItemsContainer(data.items, itemsContainer);
+                populateSubcategoriesContainer(data.subcategories, categoryId, subcategoriesContainer);
             })
-            .catch(error => console.error('Error fetching category data:', error));
+            .catch(error => console.error('Error:', error));
     } else {
         resetMainContent();
     }
@@ -50,15 +45,11 @@ function initializeCategoryCards() {
     const sectionTitle = document.getElementById('section-title');
     const subcategoriesContainer = document.querySelector('.subcategories-container');
 
-    if (categoryCards.length > 0) {
-        categoryCards.forEach(card => {
-            card.addEventListener('click', function () {
-                handleCategoryClick(this, categoryCards, itemsContainer, sectionTitle, subcategoriesContainer);
-            });
+    categoryCards.forEach(card => {
+        card.addEventListener('click', function () {
+            handleCategoryClick(this, categoryCards, itemsContainer, sectionTitle, subcategoriesContainer);
         });
-    } else {
-        console.warn('No category cards found.');
-    }
+    });
 }
 
 // Initialize category cards on DOMContentLoaded

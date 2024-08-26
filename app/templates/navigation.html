@@ -1,26 +1,16 @@
-{% extends "base.html" %}
-
-{% block title %}Navigation{% endblock %}
-
-{% block css %}
-<link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
-{% endblock %}
-
-{% block content %}
 <!-- Footer Navigation -->
+<link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
 <div id="footer-nav" class="footer-nav">
     <a href="{{ url_for('menu_bp.home', table_id=session.get('table_id')) }}" class="nav-item">
-        <img src="{{ url_for('static', filename='images/home-icon.png') }}" alt="Home" class="nav-icon">
-        <span class="nav-text">Home</span>
+        <img src="/static/images/home-icon.png" alt="Home" class="nav-icon">
+        <span class="nav-text">სახლი</span>
     </a>
     <a href="{{ url_for('menu_bp.cart_page', table_id=session.get('table_id')) }}" class="nav-item">
-        <img src="{{ url_for('static', filename='images/cart-icon.png') }}" alt="Cart" class="nav-icon">
-        <span class="nav-text">Cart</span>
+        <img src="/static/images/cart-icon.png" alt="Cart" class="nav-icon">
+        <span class="nav-text">კალათი</span>
         <span class="cart-item-count"></span> <!-- Quantity will be displayed here -->
     </a>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
-{% endblock %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/items.js') }}"></script>

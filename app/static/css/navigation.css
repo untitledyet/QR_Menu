@@ -1,6 +1,16 @@
-/* ----------------------------------------------------------
-   Footer Navigation Styles
-   ---------------------------------------------------------- */
+.mt-5 {
+    position: relative;
+    height: 100vh;
+    overflow: auto;
+    padding-bottom: 60px; /* უზრუნველვყოთ, რომ ქვევით საკმარისი სივრცეა */
+    box-sizing: border-box; /* ჩავთვალოთ padding და border */
+    overflow-y: scroll; /* რათა კონტენტი მაინც დაისქროლოს */
+    scrollbar-width: none; /* Firefox-ისთვის */
+}
+
+.mt-5::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge და სხვა Webkit-ზე დაფუძნებული ბრაუზერებისთვის */
+}
 
 .footer-nav {
     position: fixed;
@@ -20,7 +30,9 @@
     color: #333;
     border-top-left-radius: 15px;  /* მარცხენა ზედა კუთხის ბორდერ რადიუსი */
     border-top-right-radius: 15px; /* მარჯვენა ზედა კუთხის ბორდერ რადიუსი */
+
 }
+
 
 /* Navigation Item Styles */
 .footer-nav .nav-item {
@@ -33,6 +45,7 @@
     text-align: center;
     padding-left: 20px;
     padding-right: 20px;
+
 }
 
 /* Navigation Icon Styles */
@@ -63,3 +76,5 @@
 .footer-nav .nav-item:last-child {
     margin-right: -10px; /* გადაადგილეთ 'კალათა' მარჯვნივ */
 }
+
+

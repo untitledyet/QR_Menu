@@ -1,14 +1,3 @@
-{% extends "base.html" %}
-
-{% block title %}Item Preorder{% endblock %}
-
-{% block css %}
-<link href="{{ url_for('static', filename='css/items.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/modals.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
-{% endblock %}
-
-{% block content %}
 <!-- Item Details Modal -->
 <div class="modal fade" id="item-modal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -31,10 +20,3 @@
         </div>
     </div>
 </div>
-{% include 'navigation.html' %}
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/items.js') }}"></script>
-<script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
-{% endblock %}

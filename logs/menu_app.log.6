@@ -1,24 +1,4 @@
-2024-08-26 12:05:05,177 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
-Traceback (most recent call last):
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
-    self.dialect.do_execute(
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
-    cursor.execute(statement, parameters)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/cursor.py", line 617, in execute
-    self._handle_result(self._connection.cmd_query(stmt))
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/opentelemetry/context_propagation.py", line 77, in wrapper
-    return method(cnx, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 1069, in cmd_query
-    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 846, in _handle_result
-    raise get_exception(packet)
-mysql.connector.errors.ProgrammingError: 1054 (42S22): Unknown column 'FoodItems.PromotionID' in 'field list'
-
-The above exception was the direct cause of the following exception:
-
+2024-08-26 12:13:50,337 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
 Traceback (most recent call last):
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
     response = self.full_dispatch_request()
@@ -33,58 +13,95 @@ Traceback (most recent call last):
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 14, in home
-    popular_dishes = FoodItem.query.limit(6).all()
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2673, in all
-    return self._iter().all()  # type: ignore
-           ^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
-    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
-                                                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
-    return self._execute_internal(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2247, in _execute_internal
-    result: Result[Any] = compile_state_cls.orm_execute_statement(
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
-    result = conn.execute(
-             ^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
-    return meth(
-           ^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
-    return connection._execute_clauseelement(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
-    ret = self._execute_context(
-          ^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
-    return self._exec_single_context(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
-    self._handle_dbapi_exception(
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
-    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
-    self.dialect.do_execute(
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
-    cursor.execute(statement, parameters)
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/cursor.py", line 617, in execute
-    self._handle_result(self._connection.cmd_query(stmt))
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/opentelemetry/context_propagation.py", line 77, in wrapper
-    return method(cnx, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 1069, in cmd_query
-    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/mysql/connector/connection.py", line 846, in _handle_result
-    raise get_exception(packet)
-sqlalchemy.exc.ProgrammingError: (mysql.connector.errors.ProgrammingError) 1054 (42S22): Unknown column 'FoodItems.PromotionID' in 'field list'
-[SQL: SELECT `FoodItems`.`FoodItemID` AS `FoodItems_FoodItemID`, `FoodItems`.`FoodName` AS `FoodItems_FoodName`, `FoodItems`.`Description` AS `FoodItems_Description`, `FoodItems`.`Ingredients` AS `FoodItems_Ingredients`, `FoodItems`.`Price` AS `FoodItems_Price`, `FoodItems`.`ImageFilename` AS `FoodItems_ImageFilename`, `FoodItems`.`CategoryID` AS `FoodItems_CategoryID`, `FoodItems`.`SubcategoryID` AS `FoodItems_SubcategoryID`, `FoodItems`.`PromotionID` AS `FoodItems_PromotionID` 
-FROM `FoodItems` 
- LIMIT %(param_1)s]
-[parameters: {'param_1': 6}]
-(Background on this error at: https://sqlalche.me/e/20/f405)
-2024-08-26 12:05:44,281 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+    return render_template('index.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/base.html", line 32, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/index.html", line 13, in block 'content'
+    {% include 'popular_dishes.html' %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/templates/popular_dishes.html", line 4, in top-level template code
+    <script type="application/json" id="popular-dishes-data"> {{ popular_dishes|tojson }}</script>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/filters.py", line 1688, in do_tojson
+    return htmlsafe_json_dumps(value, dumps=dumps, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/jinja2/utils.py", line 658, in htmlsafe_json_dumps
+    dumps(obj, **kwargs)
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 180, in dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/json/provider.py", line 120, in _default
+    raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+TypeError: Object of type FoodItem is not JSON serializable
+2024-08-26 12:16:14,115 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:16:16,502 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 11, in home
+    popular_dishes = [dish.to_dict() for dish in FoodItem.query.limit(6).all()]  # ობიექტების სერიალიზაცია
+                      ^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/models.py", line 63, in to_dict
+    'PromotionID': self.PromotionID
+                   ^^^^^^^^^^^^^^^^
+AttributeError: 'FoodItem' object has no attribute 'PromotionID'
+2024-08-26 12:16:28,487 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:16:38,259 ERROR: Exception on /table/3 [GET] [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py:1414]
+Traceback (most recent call last):
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/.venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/routes/menu_routes.py", line 11, in home
+    popular_dishes = [dish.to_dict() for dish in FoodItem.query.limit(6).all()]  # ობიექტების სერიალიზაცია
+                      ^^^^^^^^^^^^^^
+  File "/Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/models.py", line 63, in to_dict
+    'PromotionID': self.PromotionID
+                   ^^^^^^^^^^^^^^^^
+AttributeError: 'FoodItem' object has no attribute 'PromotionID'
+2024-08-26 12:17:08,646 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:21:40,857 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:37:35,833 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:40:57,220 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]
+2024-08-26 12:42:42,810 INFO: MenuApp startup [in /Users/meskhdav/Library/CloudStorage/OneDrive-TheStarsGroup/Documents/QR_Menu/Menu_Refactor/app/__init__.py:50]

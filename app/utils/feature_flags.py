@@ -1,19 +1,23 @@
 from flask import current_app
 
+import app
+
+
 class FeatureFlags:
     def __init__(self, table_id):
         self.table_id = table_id
         self.flags = self._initialize_flags()
 
     def _initialize_flags(self):
-        # აქ შეგიძლიათ დაამატოთ ლოგიკა, თუ გსურთ განსხვავებული ფლაგების ჩართვა თითოეული table_id-ისთვის
+        # გამოიყენე `current_app.config` კონფიგურაციიდან ფლაგების მისაღებად
         return {
-            "ENABLE_CART": True,  # მაგიდის ID-ს საფუძველზე, ეს ფუნქციონალი შეიძლება იყოს აქტიური
-            "ENABLE_PROMOTIONS": True,  # მაგიდის ID-ს საფუძველზე, ეს ფუნქციონალი შეიძლება იყოს აქტიური
+            "ENABLE_CART": current_app.config['FEATURE_FLAGS'].get('enable_cart_functionality', False),
+            "ENABLE_PROMOTIONS": current_app.config['FEATURE_FLAGS'].get('enable_promotions', False),
         }
 
     def is_enabled(self, flag_name):
         return self.flags.get(flag_name, False)
+
 
 def init_feature_flags(app):
     @app.context_processor

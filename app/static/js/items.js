@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             sessionStorage.setItem('cart', JSON.stringify(cart));
             renderCartItems();
+            updateCartItemCount(); // Update the cart item count after quantity change
         }
     }
 
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cart = cart.filter(item => item.id !== itemId);
         sessionStorage.setItem('cart', JSON.stringify(cart));
         renderCartItems(); // Re-render the cart after removing the item
+        updateCartItemCount(); // Update the cart item count after removing an item
     }
 
     // Clear cart event
@@ -112,10 +114,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 cart = [];
                 sessionStorage.setItem('cart', JSON.stringify(cart));
                 renderCartItems(); // Re-render the cart after clearing it
+                updateCartItemCount(); // Update the cart item count after clearing the cart
             }
         });
     }
 
     // Initial render of cart items
     renderCartItems();
+    updateCartItemCount(); // Update the cart item count on page load
 });
