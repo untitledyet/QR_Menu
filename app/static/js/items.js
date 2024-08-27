@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const trashIcon = document.querySelector('.trash-icon');
     const cartContent = document.querySelector('.cart-content');
     const emptyCartMessage = document.querySelector('.empty-cart');
@@ -34,15 +34,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="item-comment">${generateCommentText(item.ingredients || [])}</p>
                     </div>
                     <div class="item-quantity d-flex align-items-center">
-                        <button class="btn btn-sm btn-outline-secondary quantity-decrease" data-item-id="${item.id}">-</button>
-                        <input type="number" class="quantity-value" value="${item.quantity || 1}" min="1" data-item-id="${item.id}">
-                        <button class="btn btn-sm btn-outline-secondary quantity-increase" data-item-id="${item.id}">+</button>
+                        <button class="btn btn-sm btn-outline-secondary quantity-decrease" data-item-id="${item.id}" data-item-key="${item.ingredientKey}">-</button>
+                        <input type="number" class="quantity-value" value="${item.quantity || 1}" min="1" data-item-id="${item.id}" data-item-key="${item.ingredientKey}">
+                        <button class="btn btn-sm btn-outline-secondary quantity-increase" data-item-id="${item.id}" data-item-key="${item.ingredientKey}">+</button>
                     </div>
                     <div class="cart-item-price">
                         <strong>$${(item.price * (item.quantity || 1)).toFixed(2)}</strong>
                     </div>
                     <div class="cart-item-actions">
-                        <button class="btn btn-sm btn-danger remove-item" data-item-id="${item.id}">Remove</button>
+                        <button class="btn btn-sm btn-danger remove-item" data-item-id="${item.id}" data-item-key="${item.ingredientKey}">Remove</button>
                     </div>
                 `;
 
@@ -50,16 +50,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 cartContent.appendChild(itemElement);
 
                 // Add event listeners for quantity buttons and remove button
-                itemElement.querySelector('.quantity-decrease').addEventListener('click', function() {
-                    updateItemQuantity(item.id, 'decrease');
+                itemElement.querySelector('.quantity-decrease').addEventListener('click', function () {
+                    const itemKey = this.getAttribute('data-item-key');
+                    updateItemQuantity(item.id, itemKey, 'decrease');
                 });
 
-                itemElement.querySelector('.quantity-increase').addEventListener('click', function() {
-                    updateItemQuantity(item.id, 'increase');
+                itemElement.querySelector('.quantity-increase').addEventListener('click', function () {
+                    const itemKey = this.getAttribute('data-item-key');
+                    updateItemQuantity(item.id, itemKey, 'increase');
                 });
 
-                itemElement.querySelector('.remove-item').addEventListener('click', function() {
-                    removeCartItem(item.id);
+                itemElement.querySelector('.remove-item').addEventListener('click', function () {
+                    const itemKey = this.getAttribute('data-item-key');
+                    removeCartItem(item.id, itemKey);
                 });
             });
         }
@@ -85,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to update item quantity by increment/decrement
-    function updateItemQuantity(itemId, action) {
-        const cartItem = cart.find(item => item.id === itemId);
+    function updateItemQuantity(itemId, ingredientKey, action) {
+        const cartItem = cart.find(item => item.id === itemId && item.ingredientKey === ingredientKey);
         if (cartItem) {
             if (action === 'decrease' && cartItem.quantity > 1) {
                 cartItem.quantity -= 1;
@@ -95,31 +98,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             sessionStorage.setItem('cart', JSON.stringify(cart));
             renderCartItems();
-            updateCartItemCount(); // Update the cart item count after quantity change
         }
     }
 
     // Function to remove an item from the cart
-    function removeCartItem(itemId) {
-        cart = cart.filter(item => item.id !== itemId);
+    // Function to remove an item from the cart
+    function removeCartItem(itemId, ingredientKey) {
+        cart = cart.filter(item => !(item.id === itemId && item.ingredientKey === ingredientKey));
         sessionStorage.setItem('cart', JSON.stringify(cart));
         renderCartItems(); // Re-render the cart after removing the item
         updateCartItemCount(); // Update the cart item count after removing an item
     }
 
+
     // Clear cart event
     if (trashIcon) {
-        trashIcon.addEventListener('click', function() {
+        trashIcon.addEventListener('click', function () {
             if (confirm('დარწმუნებული ხართ, რომ გსურთ კალათის გასუფთავება?')) {
                 cart = [];
                 sessionStorage.setItem('cart', JSON.stringify(cart));
                 renderCartItems(); // Re-render the cart after clearing it
-                updateCartItemCount(); // Update the cart item count after clearing the cart
             }
         });
     }
 
     // Initial render of cart items
     renderCartItems();
-    updateCartItemCount(); // Update the cart item count on page load
 });

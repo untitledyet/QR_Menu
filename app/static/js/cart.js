@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const trashIcon = document.querySelector('.trash-icon');
     const cartContent = document.querySelector('.cart-content');
     const emptyCartMessage = document.querySelector('.empty-cart');
@@ -50,15 +50,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 cartContent.appendChild(itemElement);
 
                 // Add event listeners for quantity buttons and remove button
-                itemElement.querySelector('.quantity-decrease').addEventListener('click', function() {
+                itemElement.querySelector('.quantity-decrease').addEventListener('click', function () {
                     updateItemQuantity(item.id, 'decrease');
                 });
 
-                itemElement.querySelector('.quantity-increase').addEventListener('click', function() {
+                itemElement.querySelector('.quantity-increase').addEventListener('click', function () {
                     updateItemQuantity(item.id, 'increase');
                 });
 
-                itemElement.querySelector('.remove-item').addEventListener('click', function() {
+                itemElement.querySelector('.remove-item').addEventListener('click', function () {
                     removeCartItem(item.id);
                 });
             });
@@ -99,15 +99,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to remove an item from the cart
-    function removeCartItem(itemId) {
-        cart = cart.filter(item => item.id !== itemId);
+    // Function to remove an item from the cart
+    function removeCartItem(itemId, ingredientKey) {
+        cart = cart.filter(item => !(item.id === itemId && item.ingredientKey === ingredientKey));
         sessionStorage.setItem('cart', JSON.stringify(cart));
         renderCartItems(); // Re-render the cart after removing the item
+        updateCartItemCount(); // Update the cart item count after removing an item
     }
+
 
     // Clear cart event
     if (trashIcon) {
-        trashIcon.addEventListener('click', function() {
+        trashIcon.addEventListener('click', function () {
             if (confirm('დარწმუნებული ხართ, რომ გსურთ კალათის გასუფთავება?')) {
                 cart = [];
                 sessionStorage.setItem('cart', JSON.stringify(cart));

@@ -1,3 +1,8 @@
+document.addEventListener('DOMContentLoaded', function () {
+    initializeCategoryCards();
+    loadInitialContent(); // Load initial content on page load
+});
+
 /**
  * Fetch data for a specific category by its ID
  * @param {number} categoryId - The ID of the category to fetch data for
@@ -32,7 +37,7 @@ function handleCategoryClick(card, categoryCards, itemsContainer, sectionTitle, 
             })
             .catch(error => console.error('Error:', error));
     } else {
-        resetMainContent();
+        loadInitialContent(); // Load initial content when the active category is clicked again
     }
 }
 
@@ -52,7 +57,21 @@ function initializeCategoryCards() {
     });
 }
 
-// Initialize category cards on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function () {
-    initializeCategoryCards();
-});
+/**
+ * Load initial content for the main page
+ */
+function loadInitialContent() {
+    const itemsContainer = document.getElementById('items-container');
+    const sectionTitle = document.getElementById('section-title');
+    const subcategoriesContainer = document.querySelector('.subcategories-container');
+
+    // Fetch initial data (adjust the endpoint and data processing as needed)
+    fetch('/initial-content')
+        .then(response => response.json())
+        .then(data => {
+            sectionTitle.textContent = data.title || 'საწყისი კონტენტი'; // Adjust the title as needed
+            populateItemsContainer(data.items, itemsContainer);
+            populateSubcategoriesContainer(data.subcategories, null, subcategoriesContainer);
+        })
+        .catch(error => console.error('Error loading initial content:', error));
+}

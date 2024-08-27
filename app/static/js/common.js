@@ -183,7 +183,7 @@ function addToCart(item, modifiedIngredients) {
                 action: 'default'
             })) : [],
             quantity: 1,
-            ingredientKey: ingredientKey
+            ingredientKey: ingredientKey // Ensure this key is used in both addition and removal
         };
 
         cart.push(cartItem);
@@ -217,7 +217,7 @@ function updateCartItemCount() {
 /**
  * Load popular dishes and new dishes on DOMContentLoaded
  */
-(function() {
+(function () {
     if (window.hasInitialized) {
         return;
     }
