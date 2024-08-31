@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Retrieve the table ID from sessionStorage
+    const tableId = sessionStorage.getItem('table_id');
+    if (tableId) {
+        sessionStorage.setItem('table_id', tableId);
+    } else {
+        console.error('Table ID not found in session storage.');
+    }
+
+    // Initialize category cards for user interaction
     initializeCategoryCards();
-    loadInitialContent(); // Load initial content on page load
 });
 
 /**
@@ -10,6 +18,26 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 function fetchCategoryData(categoryId) {
     return fetch(`/category/${categoryId}`).then(response => response.json());
+}
+
+/**
+ * Fetch initial content to reset the page to its original state
+ * @returns {Promise} - A promise that resolves to the initial page content
+ */
+function fetchInitialContent() {
+    const tableId = sessionStorage.getItem('table_id');
+    if (!tableId) {
+        console.error('Table ID not found in sessionStorage.');
+        return Promise.reject('Table ID not found.');
+    }
+
+    return fetch(`/table/${tableId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        });
 }
 
 /**
@@ -25,19 +53,32 @@ function handleCategoryClick(card, categoryCards, itemsContainer, sectionTitle, 
     categoryCards.forEach(card => card.classList.remove('active'));
 
     if (!isActive) {
+        // Activate the clicked card and fetch its data
         card.classList.add('active');
         const categoryId = card.dataset.categoryId;
         const categoryName = card.dataset.categoryName;
 
         fetchCategoryData(categoryId)
             .then(data => {
-                sectionTitle.textContent = `${categoryName}`;
+                sectionTitle.textContent = `${categoryName} Dishes`;
                 populateItemsContainer(data.items, itemsContainer);
                 populateSubcategoriesContainer(data.subcategories, categoryId, subcategoriesContainer);
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => console.error('Error fetching category data:', error));
     } else {
-        loadInitialContent(); // Load initial content when the active category is clicked again
+        // Reset to initial content when the active card is clicked again
+        fetchInitialContent()
+            .then(html => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+
+                // Update the page content with the initial data
+                updatePageContent(tempDiv);
+
+                // Reinitialize category cards after resetting content
+                initializeCategoryCards();
+            })
+            .catch(error => console.error('Error fetching initial content:', error));
     }
 }
 
@@ -58,20 +99,34 @@ function initializeCategoryCards() {
 }
 
 /**
- * Load initial content for the main page
+ * Update the page content with initial HTML data
+ * @param {HTMLElement} tempDiv - Temporary container for new HTML content
  */
-function loadInitialContent() {
-    const itemsContainer = document.getElementById('items-container');
-    const sectionTitle = document.getElementById('section-title');
-    const subcategoriesContainer = document.querySelector('.subcategories-container');
+function updatePageContent(tempDiv) {
+    const newCategories = tempDiv.querySelector('.category-scroll');
+    const newItemsContainer = tempDiv.querySelector('#items-container');
+    const newSectionTitle = tempDiv.querySelector('#section-title');
+    const newSubcategoriesContainer = tempDiv.querySelector('.subcategories-container');
+    const newPopularDishes = tempDiv.querySelector('#popular-dishes');
 
-    // Fetch initial data (adjust the endpoint and data processing as needed)
-    fetch('/initial-content')
-        .then(response => response.json())
-        .then(data => {
-            sectionTitle.textContent = data.title || 'საწყისი კონტენტი'; // Adjust the title as needed
-            populateItemsContainer(data.items, itemsContainer);
-            populateSubcategoriesContainer(data.subcategories, null, subcategoriesContainer);
-        })
-        .catch(error => console.error('Error loading initial content:', error));
+    if (newCategories) {
+        document.querySelector('.category-scroll').innerHTML = newCategories.innerHTML;
+    }
+
+    if (newItemsContainer) {
+        document.getElementById('items-container').innerHTML = newItemsContainer.innerHTML;
+    }
+
+    if (newSectionTitle) {
+        document.getElementById('section-title').textContent = newSectionTitle.textContent;
+    }
+
+    if (newSubcategoriesContainer) {
+        document.querySelector('.subcategories-container').innerHTML = newSubcategoriesContainer.innerHTML;
+    }
+
+    if (newPopularDishes) {
+        const popularDishesData = JSON.parse(newPopularDishes.textContent);
+        populateItemsContainer(popularDishesData, document.getElementById('items-container'));
+    }
 }

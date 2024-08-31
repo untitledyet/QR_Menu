@@ -229,12 +229,12 @@ function updateCartItemCount() {
         const newItemsContainer = document.getElementById('new-dishes-container');
 
         try {
-            const popularDishesDataElement = document.querySelector('#popular-dishes-data');
+            const popularDishesDataElement = document.querySelector('#popular-dishes');
             if (popularDishesDataElement) {
                 const popularDishes = JSON.parse(popularDishesDataElement.textContent);
                 populateItemsContainer(popularDishes, itemsContainer);
             } else {
-                console.error('#popular-dishes-data element not found.');
+                console.error('#popular-dishes element not found.');
             }
         } catch (error) {
             console.error('Error loading popular dishes:', error);
