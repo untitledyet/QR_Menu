@@ -1,0 +1,112 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>{{ title }}</h1>
+    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="bo-item-form">
+    <div class="bo-form-grid">
+        <!-- Left: image preview -->
+        <div class="bo-form-image">
+            <div class="bo-image-preview" id="image-preview">
+                {% if item and item.ImageFilename %}
+                <img src="{{ url_for('static', filename='images/' ~ item.ImageFilename) }}" id="preview-img">
+                {% else %}
+                <div class="bo-image-placeholder"><i class="fas fa-camera"></i><span>Upload Image</span></div>
+                {% endif %}
+            </div>
+            <input type="file" name="image" id="image-input" accept="image/*" style="display:none;">
+            <button type="button" class="bo-btn bo-btn--outline bo-btn--full" onclick="document.getElementById('image-input').click()" style="margin-top:10px;">
+                <i class="fas fa-upload"></i> {{ 'Change Image' if item else 'Upload Image' }}
+            </button>
+        </div>
+
+        <!-- Right: fields -->
+        <div class="bo-form-fields">
+            <div class="bo-form-group">
+                <label>Name *</label>
+                <input type="text" name="name" value="{{ item.FoodName if item else '' }}" required placeholder="e.g. Cheeseburger">
+            </div>
+
+            <div class="bo-form-group">
+                <label>Description</label>
+                <textarea name="description" rows="2" placeholder="Short description">{{ item.Description if item else '' }}</textarea>
+            </div>
+
+            <div class="bo-form-group">
+                <label>Ingredients</label>
+                <input type="text" name="ingredients" value="{{ item.Ingredients if item else '' }}" placeholder="Comma separated: Beef, Cheese, Lettuce">
+                <small class="bo-form-hint">Separate with commas. These appear in the item detail popup.</small>
+            </div>
+
+            <div class="bo-form-row">
+                <div class="bo-form-group">
+                    <label>Price (₾) *</label>
+                    <input type="number" name="price" step="0.01" min="0" value="{{ '%.2f'|format(item.Price) if item else '' }}" required placeholder="0.00">
+                </div>
+                <div class="bo-form-group">
+                    <label>Category *</label>
+                    <select name="category_id" id="category-select" required>
+                        <option value="">Select...</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.CategoryID }}" {{ 'selected' if item and item.CategoryID == cat.CategoryID }}>{{ cat.CategoryName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="bo-form-group">
+                <label>Subcategory</label>
+                <select name="subcategory_id" id="subcategory-select">
+                    <option value="">None</option>
+                    {% for sub in subcategories %}
+                    <option value="{{ sub.SubcategoryID }}" data-cat="{{ sub.CategoryID }}" {{ 'selected' if item and item.SubcategoryID == sub.SubcategoryID }}>{{ sub.SubcategoryName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="bo-form-group">
+                <label class="bo-checkbox-label">
+                    <input type="checkbox" name="allow_customization" {{ 'checked' if not item or item.allow_customization }}>
+                    <span>Allow ingredient customization</span>
+                </label>
+            </div>
+
+            <div class="bo-form-actions">
+                <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost">Cancel</a>
+                <button type="submit" class="bo-btn bo-btn--primary">
+                    <i class="fas fa-check"></i> {{ 'Save Changes' if item else 'Add Item' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+// Image preview
+document.getElementById('image-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        document.getElementById('image-preview').innerHTML = '<img src="' + ev.target.result + '" id="preview-img">';
+    };
+    reader.readAsDataURL(file);
+});
+
+// Filter subcategories by selected category
+document.getElementById('category-select').addEventListener('change', function() {
+    const catId = this.value;
+    const subSelect = document.getElementById('subcategory-select');
+    Array.from(subSelect.options).forEach(opt => {
+        if (!opt.value) return; // keep "None"
+        opt.style.display = (opt.dataset.cat === catId) ? '' : 'none';
+        if (opt.dataset.cat !== catId && opt.selected) opt.selected = false;
+    });
+});
+// Trigger on load
+document.getElementById('category-select').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

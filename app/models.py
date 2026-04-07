@@ -1,41 +1,174 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
-class User(db.Model):  # User მოდელი
-    __tablename__ = 'Users'
 
+# ============================================================
+# Plans — feature bundles
+# ============================================================
+
+# Define which features each plan includes
+PLAN_FEATURES = {
+    'free': {
+        'menu': True,
+        'categories': True,
+        'subcategories': True,
+        'ingredient_customization': False,
+        'promotions': False,
+        'cart': False,
+        'payments': False,
+        'ratings': False,
+        'analytics': False,
+    },
+    'basic': {
+        'menu': True,
+        'categories': True,
+        'subcategories': True,
+        'ingredient_customization': True,
+        'promotions': True,
+        'cart': True,
+        'payments': False,
+        'ratings': False,
+        'analytics': False,
+    },
+    'premium': {
+        'menu': True,
+        'categories': True,
+        'subcategories': True,
+        'ingredient_customization': True,
+        'promotions': True,
+        'cart': True,
+        'payments': True,
+        'ratings': True,
+        'analytics': True,
+    },
+}
+
+MAX_ITEMS_PER_VENUE = 999
+
+FEATURE_LIST = [
+    ('menu', 'Menu', 'fas fa-book-open', 'Create and manage menu items'),
+    ('categories', 'Categories', 'fas fa-layer-group', 'Organize items by category'),
+    ('subcategories', 'Subcategories', 'fas fa-sitemap', 'Sub-level categorization'),
+    ('ingredient_customization', 'Ingredient Customization', 'fas fa-sliders-h', 'Customers can modify ingredients'),
+    ('promotions', 'Promotions', 'fas fa-tags', 'Create promotional offers'),
+    ('cart', 'Cart & Ordering', 'fas fa-shopping-cart', 'Cart and order placement'),
+    ('payments', 'Online Payments', 'fas fa-credit-card', 'Accept payments online'),
+    ('ratings', 'Ratings & Reviews', 'fas fa-star', 'Customer ratings on dishes'),
+    ('analytics', 'Analytics', 'fas fa-chart-bar', 'Venue performance analytics'),
+]
+
+
+# ============================================================
+# Admin & Venue
+# ============================================================
+
+class AdminUser(db.Model):
+    __tablename__ = 'AdminUsers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='venue')
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+
+    def check_password(self, pw):
+        return check_password_hash(self.password_hash, pw)
+
+    @property
+    def is_super(self):
+        return self.role == 'super'
+
+
+class Venue(db.Model):
+    __tablename__ = 'Venues'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(100), unique=True, nullable=False)
+    plan = db.Column(db.String(20), nullable=False, default='free')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    feature_overrides = db.relationship('VenueFeatureOverride', backref='venue',
+                                         lazy=True, cascade='all, delete-orphan')
+    categories = db.relationship('Category', backref='venue', lazy=True, cascade='all, delete-orphan')
+    promotions = db.relationship('Promotion', backref='venue', lazy=True, cascade='all, delete-orphan')
+
+    def has_feature(self, feature_key):
+        """Check if venue has a feature: plan default + individual override."""
+        # Check override first
+        override = VenueFeatureOverride.query.filter_by(
+            venue_id=self.id, feature_key=feature_key).first()
+        if override:
+            return override.enabled
+        # Fall back to plan
+        plan_features = PLAN_FEATURES.get(self.plan, PLAN_FEATURES['free'])
+        return plan_features.get(feature_key, False)
+
+    def get_all_features(self):
+        plan_features = PLAN_FEATURES.get(self.plan, PLAN_FEATURES['free'])
+        overrides = {o.feature_key: o.enabled for o in self.feature_overrides}
+        result = {}
+        for key, default_val in plan_features.items():
+            result[key] = overrides.get(key, default_val)
+        return result
+
+    @property
+    def plan_display(self):
+        return self.plan.capitalize()
+
+    def item_count(self):
+        return FoodItem.query.join(Category).filter(Category.venue_id == self.id).count()
+
+
+class VenueFeatureOverride(db.Model):
+    """Super admin can override individual features per venue, regardless of plan."""
+    __tablename__ = 'VenueFeatureOverrides'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    feature_key = db.Column(db.String(50), nullable=False)
+    enabled = db.Column(db.Boolean, nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('venue_id', 'feature_key'),)
+
+
+# ============================================================
+# Menu models
+# ============================================================
+
+class User(db.Model):
+    __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f"<User Table {self.id}>"
 
 class Category(db.Model):
     __tablename__ = 'Categories'
-
     CategoryID = db.Column(db.Integer, primary_key=True)
     CategoryName = db.Column(db.String(50), nullable=False)
     Description = db.Column(db.String(200), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
 
-    def __repr__(self):
-        return f"<Category {self.CategoryName}>"
 
 class Subcategory(db.Model):
     __tablename__ = 'Subcategories'
-
     SubcategoryID = db.Column(db.Integer, primary_key=True)
     SubcategoryName = db.Column(db.String(50), nullable=False)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
     category = db.relationship('Category', backref=db.backref('subcategories', lazy=True))
 
-    def __repr__(self):
-        return f"<Subcategory {self.SubcategoryName}>"
 
 class FoodItem(db.Model):
     __tablename__ = 'FoodItems'
-
     FoodItemID = db.Column(db.Integer, primary_key=True)
     FoodName = db.Column(db.String(50), nullable=False)
     Description = db.Column(db.String(200), nullable=False)
@@ -44,28 +177,21 @@ class FoodItem(db.Model):
     ImageFilename = db.Column(db.String(100), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
     SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True)
-    # ამოვიღეთ PromotionID, რადგან ის არ არის მონაცემთა ბაზაში
-
-
-    def __repr__(self):
-        return f"<FoodItem {self.FoodName}>"
+    allow_customization = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
         return {
-            'FoodItemID': self.FoodItemID,
-            'FoodName': self.FoodName,
-            'Description': self.Description,
-            'Ingredients': self.Ingredients,
-            'Price': self.Price,
-            'ImageFilename': self.ImageFilename,
-            'CategoryID': self.CategoryID,
-            'SubcategoryID': self.SubcategoryID,
-            #'PromotionID': self.PromotionID
+            'FoodItemID': self.FoodItemID, 'FoodName': self.FoodName,
+            'Description': self.Description, 'Ingredients': self.Ingredients,
+            'Price': self.Price, 'ImageFilename': self.ImageFilename,
+            'CategoryID': self.CategoryID, 'SubcategoryID': self.SubcategoryID,
+            'AllowCustomization': self.allow_customization,
         }
+
 
 class Promotion(db.Model):
     __tablename__ = 'Promotions'
-
     PromotionID = db.Column(db.Integer, primary_key=True)
     PromotionName = db.Column(db.String(100), nullable=False)
     Description = db.Column(db.String(255), nullable=True)
@@ -73,31 +199,20 @@ class Promotion(db.Model):
     StartDate = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     EndDate = db.Column(db.Date, nullable=False)
     BackgroundImage = db.Column(db.String(255), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
 
-    def __repr__(self):
-        return f"<Promotion {self.PromotionName}>"
 
 class Order(db.Model):
     __tablename__ = 'Orders'
-
     OrderID = db.Column(db.Integer, primary_key=True)
-    TableID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)  # დაკავშირება User მოდელთან
+    TableID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
     Items = db.Column(db.Text, nullable=False)
     Status = db.Column(db.String(50), default="Pending")
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
 
-    def __init__(self, TableID, Items):
+    def __init__(self, TableID, Items, venue_id=None):
         self.TableID = TableID
         self.Items = Items
-
-    def __repr__(self):
-        return f"<Order {self.OrderID} - Table {self.TableID}>"
-
-class Ingredient(db.Model):
-    __tablename__ = 'Ingredients'
-
-    IngredientID = db.Column(db.Integer, primary_key=True)
-    IngredientName = db.Column(db.String(50), nullable=False)
-
-    def __repr__(self):
-        return f"<Ingredient {self.IngredientName}>"
+        self.venue_id = venue_id

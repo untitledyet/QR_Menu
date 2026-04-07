@@ -1,35 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
-    <!-- Include CSS and other meta tags -->
+    <title>მენიუ</title>
     {% include 'header.html' %}
 </head>
-<body>
+<body data-page="home" data-venue="{{ session.get('venue_slug', 'demo') }}">
 
-<div class="container mt-5">
+<div class="app-shell">
+    <!-- Top bar: dark mode + language -->
+    <div class="top-bar">
+        <button class="top-bar__btn" id="theme-toggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
+        <button class="top-bar__lang" id="lang-toggle">EN</button>
+    </div>
+
     {% include 'promotions.html' %}
-
-    <!-- Promotion Details Section (Dynamically loaded) -->
     <div id="promotion-detail-container"></div>
-
     {% include 'categories.html' %}
     {% include 'subcategories.html' %}
     {% include 'popular_dishes.html' %}
     {% include 'new_dishes.html' %}
-    {% include 'navigation.html' %}
     {% include 'item_preorder.html' %}
+    {% include 'navigation.html' %}
 </div>
 
-
-
-
-
-
-
-
 {% include 'footer.html' %}
-
 </body>
 </html>

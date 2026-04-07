@@ -1,7 +1,5 @@
-<div class="mb-4">
-    <h2 id="new-dishes-title">New Dishes</h2>
-    <div class="row" id="new-dishes-container">
-        <script type="application/json" id="new-dishes-data"> {{ new_dishes|tojson }}</script>
-    </div>
-</div>
-
+<script type="application/json" id="new-dishes-data">{{ new_dishes|tojson }}</script>
+<section>
+    <h2 class="section-title" id="new-dishes-title" data-i18n="newDishes">ახალი კერძები</h2>
+    <div class="items-grid" id="new-dishes-container"></div>
+</section>

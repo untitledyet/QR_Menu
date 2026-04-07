@@ -1,16 +1,12 @@
-<!-- Footer Navigation -->
-<link href="{{ url_for('static', filename='css/navigation.css') }}" rel="stylesheet">
-<div id="footer-nav" class="footer-nav">
-    <a href="{{ url_for('menu_bp.home', table_id=session.get('table_id')) }}" class="nav-item">
-        <img src="/static/images/home-icon.png" alt="Home" class="nav-icon">
-        <span class="nav-text">სახლი</span>
+<nav class="bottom-nav">
+    <a href="{{ url_for('menu_bp.home', slug=session.get('venue_slug','demo'), table_id=session.get('table_id',1)) }}" class="nav-tab" data-nav="home">
+        <i class="fas fa-home nav-tab__icon"></i>
+        <span data-i18n="home">სახლი</span>
     </a>
-    <a href="{{ url_for('menu_bp.cart_page', table_id=session.get('table_id')) }}" class="nav-item">
-        <img src="/static/images/cart-icon.png" alt="Cart" class="nav-icon">
-        <span class="nav-text">კალათი</span>
-        <span class="cart-item-count"></span> <!-- Quantity will be displayed here -->
+    <a href="{{ url_for('menu_bp.cart_page', slug=session.get('venue_slug','demo'), table_id=session.get('table_id',1)) }}" class="nav-tab" data-nav="cart">
+        <i class="fas fa-shopping-bag nav-tab__icon"></i>
+        <span data-i18n="cart">კალათი</span>
+        <span class="nav-tab__badge cart-item-count" style="display:none;">0</span>
     </a>
-</div>
-
-<script src="{{ url_for('static', filename='js/common.js') }}"></script>
-<script src="{{ url_for('static', filename='js/items.js') }}"></script>
+</nav>
+<div class="toast-notification" id="cart-toast"></div>

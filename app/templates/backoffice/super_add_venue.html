@@ -1,0 +1,39 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Add Venue{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>Add New Venue</h1>
+</div>
+
+<form method="POST" class="bo-item-form" style="max-width:500px;">
+    <div class="bo-form-group">
+        <label>Venue Name *</label>
+        <input type="text" name="name" required placeholder="e.g. Valhalla">
+    </div>
+    <div class="bo-form-group">
+        <label>URL Slug *</label>
+        <input type="text" name="slug" required placeholder="e.g. valhalla" pattern="[a-z0-9-]+">
+        <small class="bo-form-hint">Lowercase, no spaces. Menu URL: /slug/table/1</small>
+    </div>
+    <div class="bo-form-group">
+        <label>Plan</label>
+        <select name="plan">
+            {% for p in plans %}<option value="{{ p }}">{{ p|capitalize }}</option>{% endfor %}
+        </select>
+    </div>
+    <hr style="border-color:var(--bo-border); margin:20px 0;">
+    <h3 style="margin-bottom:12px;">Venue Admin Account</h3>
+    <div class="bo-form-group">
+        <label>Admin Username</label>
+        <input type="text" name="admin_username" placeholder="Leave empty to skip">
+    </div>
+    <div class="bo-form-group">
+        <label>Admin Password</label>
+        <input type="password" name="admin_password" placeholder="Leave empty to skip">
+    </div>
+    <div class="bo-form-actions">
+        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">Cancel</a>
+        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Create Venue</button>
+    </div>
+</form>
+{% endblock %}

@@ -1,66 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <title>კალათი</title>
-    <!-- Include CSS and other meta tags -->
     {% include 'header.html' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
 </head>
-<body>
+<body data-page="cart" data-venue="{{ session.get('venue_slug', 'demo') }}">
 
-<div class="container mt-5">
-    <div class="container">
-        <header class="cart-header">
-            <a href="{{ url_for('menu_bp.home', table_id=table_id) }}" class="back-button">&#x2190;</a>
-            <h1>კალათი</h1>
-            <a href="#" class="trash-icon">
-                <img src="/static/images/trash-icon.png" alt="Clear Cart">
-            </a>
-        </header>
+<div class="app-shell">
+    <header class="cart-page__header">
+        <a href="{{ url_for('menu_bp.home', slug=session.get('venue_slug','demo'), table_id=table_id) }}" class="cart-page__back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="cart-page__title" data-i18n="cart">კალათი</h1>
+        <a href="#" class="cart-page__clear trash-icon">
+            <i class="fas fa-trash-alt"></i>
+        </a>
+    </header>
 
-        <main class="cart-content">
-            <div class="empty-cart">
-                <img src="/static/images/empty-cart.png" alt="Empty Cart">
-                <p>შენი კალათა ცარიელია!</p>
-                <button class="shop-button" onclick="window.location.href='{{ url_for('menu_bp.home', table_id=table_id) }}'">
-                    მენიუ
-                </button>
-            </div>
-            <!-- Dynamic content will be inserted here by JavaScript -->
-        </main>
-
-        {% include 'navigation.html' %}
-    </div>
-</div>
-
-<!-- Item Details Modal -->
-<div class="modal fade" id="item-modal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header d-flex justify-content-center align-items-center">
-                <h5 class="modal-title" id="itemModalLabel">Vanilla Ice Cream</h5>
-            </div>
-            <div class="modal-body text-center">
-                <img src="" alt="" class="img-fluid rounded mb-3">
-                <ul class="list-unstyled">
-                    <!-- Ingredients will be dynamically inserted here -->
-                </ul>
-            </div>
-            <div class="modal-footer d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <a href="#" class="add-to-cart" id="modal-add-to-cart" title="Add to Cart">
-                    <img src="/static/images/cart-icon.png" alt="Add to Cart">
-                </a>
-            </div>
+    <main class="cart-content">
+        <div class="empty-cart">
+            <div class="empty-cart__icon">🛒</div>
+            <p class="empty-cart__text" data-i18n="emptyCart">შენი კალათა ცარიელია</p>
+            <a href="{{ url_for('menu_bp.home', slug=session.get('venue_slug','demo'), table_id=table_id) }}" class="empty-cart__btn" data-i18n="menu">მენიუ</a>
         </div>
-    </div>
+    </main>
+
+    {% include 'navigation.html' %}
 </div>
 
+{% include 'item_preorder.html' %}
 {% include 'footer.html' %}
-
-<!-- Include JavaScript files -->
-<script src="{{ url_for('static', filename='js/items.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>

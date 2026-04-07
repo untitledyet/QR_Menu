@@ -1,0 +1,75 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Menu Management{% endblock %}
+{% block content %}
+<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <h1>Menu Items</h1>
+    </div>
+    <a href="{{ url_for('bo_bp.add_item') }}" class="bo-btn bo-btn--primary">
+        <i class="fas fa-plus"></i> Add Item
+    </a>
+</div>
+
+<div class="bo-filters">
+    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-filter-pill {{ 'active' if not selected_cat }}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('bo_bp.menu_list', category=cat.CategoryID) }}" class="bo-filter-pill {{ 'active' if selected_cat == cat.CategoryID }}">{{ cat.CategoryName }}</a>
+    {% endfor %}
+</div>
+
+<div class="bo-table-wrap">
+    <table class="bo-table">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Customization</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><img src="{{ url_for('static', filename='images/' ~ (item.ImageFilename or 'default-image.png')) }}" class="bo-table__img"></td>
+                <td>
+                    <div class="bo-table__name">{{ item.FoodName }}</div>
+                    <div class="bo-table__sub">{{ item.Ingredients[:60] }}{% if item.Ingredients|length > 60 %}...{% endif %}</div>
+                </td>
+                <td>₾{{ "%.2f"|format(item.Price) }}</td>
+                <td>
+                    <button class="bo-toggle {{ 'active' if item.allow_customization }}" onclick="toggleCustomization({{ item.FoodItemID }}, this)">
+                        <span class="bo-toggle__dot"></span>
+                    </button>
+                </td>
+                <td>
+                    <button class="bo-toggle {{ 'active' if item.is_active }}" onclick="toggleActive({{ item.FoodItemID }}, this)">
+                        <span class="bo-toggle__dot"></span>
+                    </button>
+                </td>
+                <td>
+                    <div class="bo-table__actions">
+                        <a href="{{ url_for('bo_bp.edit_item', item_id=item.FoodItemID) }}" class="bo-icon-btn" title="Edit"><i class="fas fa-pen"></i></a>
+                        <form method="POST" action="{{ url_for('bo_bp.delete_item', item_id=item.FoodItemID) }}" style="display:inline;" onsubmit="return confirm('Delete {{ item.FoodName }}?')">
+                            <button type="submit" class="bo-icon-btn bo-icon-btn--danger" title="Delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function toggleCustomization(id, btn) {
+    fetch(`/backoffice/menu/toggle-customization/${id}`, {method:'POST'})
+        .then(r=>r.json()).then(d => btn.classList.toggle('active', d.allow_customization));
+}
+function toggleActive(id, btn) {
+    fetch(`/backoffice/menu/toggle-active/${id}`, {method:'POST'})
+        .then(r=>r.json()).then(d => btn.classList.toggle('active', d.is_active));
+}
+</script>
+{% endblock %}

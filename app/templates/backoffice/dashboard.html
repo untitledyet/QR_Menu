@@ -1,0 +1,60 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>Dashboard</h1>
+    <p class="bo-header__sub">{% if admin.is_super %}Super Admin{% else %}{{ venue.name }}{% endif %}</p>
+</div>
+
+{% if admin.is_super %}
+<div class="bo-section">
+    <h2 class="bo-section__title">Venues</h2>
+    <div class="bo-card-grid">
+        {% for v in venues %}
+        <div class="bo-card">
+            <div class="bo-card__icon"><i class="fas fa-store"></i></div>
+            <div class="bo-card__body">
+                <h3>{{ v.name }}</h3>
+                <span class="bo-badge {{ 'bo-badge--green' if v.is_active else 'bo-badge--red' }}">
+                    {{ 'Active' if v.is_active else 'Inactive' }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="bo-stats">
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value" id="stat-items">—</div>
+            <div class="bo-stat-card__label">Menu Items</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-tags"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value" id="stat-promos">—</div>
+            <div class="bo-stat-card__label">Promotions</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-layer-group"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value" id="stat-cats">—</div>
+            <div class="bo-stat-card__label">Categories</div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/backoffice/api/stats').then(r=>r.json()).then(d => {
+        document.getElementById('stat-items').textContent = d.items;
+        document.getElementById('stat-promos').textContent = d.promos;
+        document.getElementById('stat-cats').textContent = d.categories;
+    }).catch(() => {});
+});
+</script>
+{% endif %}
+{% endblock %}

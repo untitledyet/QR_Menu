@@ -1,26 +1,14 @@
-<div class="promotion-detail-section position-relative">
-    <!-- Close Button -->
-    <button class="close-button position-absolute" aria-label="Close">&times;</button>
-
-    <!-- Promotion Card -->
-    <div class="card shadow-lg border-0">
-        <div class="row no-gutters">
-            <!-- Promotion Image -->
-            <div class="col-md-5">
-                <img src="{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}" class="card-img" alt="{{ promotion.PromotionName }}" style="border-radius: 12px 0 0 12px; object-fit: cover; height: 100%;">
-            </div>
-            <!-- Promotion Content -->
-            <div class="col-md-7">
-                <div class="card-body">
-                    <h4 class="card-title font-weight-bold text-primary">{{ promotion.PromotionName }}</h4>
-                    <p class="card-text text-muted">{{ promotion.Description }}</p>
-                    <p class="card-text">
-                        <strong class="text-success">Discount: {{ promotion.Discount }}%</strong>
-                    </p>
-                    <p class="card-text"><small class="text-muted">Valid from {{ promotion.StartDate }} to {{ promotion.EndDate }}</small></p>
-                    <button class="btn btn-primary mt-3">Learn More</button>
-                </div>
-            </div>
+<div class="promo-detail" style="position:relative;">
+    <button class="promo-detail__close close-button" aria-label="Close">&times;</button>
+    <img class="promo-detail__img" src="{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}" alt="{{ promotion.PromotionName }}">
+    <div class="promo-detail__body">
+        <div class="promo-detail__title">{{ promotion.PromotionName }}</div>
+        <div class="promo-detail__text">{{ promotion.Description }}</div>
+        {% if promotion.Discount %}
+        <span class="promo-detail__discount">{{ promotion.Discount }}% <span data-i18n="discount">ფასდაკლება</span></span>
+        {% endif %}
+        <div class="promo-detail__text" style="margin-top:8px;">
+            <small>{{ promotion.StartDate }} — {{ promotion.EndDate }}</small>
         </div>
     </div>
 </div>

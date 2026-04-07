@@ -1,0 +1,71 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Super Admin{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>Super Admin Dashboard</h1>
+</div>
+
+<div class="bo-stats">
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-store"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ venues|length }}</div>
+            <div class="bo-stat-card__label">Venues</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ total_items }}</div>
+            <div class="bo-stat-card__label">Total Items</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-receipt"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ total_orders }}</div>
+            <div class="bo-stat-card__label">Total Orders</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:flex; align-items:center; justify-content:space-between; margin:24px 0 16px;">
+    <h2>Venues</h2>
+    <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Venue</a>
+</div>
+
+<div class="bo-table-wrap">
+    <table class="bo-table">
+        <thead>
+            <tr><th>Name</th><th>Slug</th><th>Plan</th><th>Status</th><th>Items</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for v in venues %}
+            <tr>
+                <td><strong>{{ v.name }}</strong></td>
+                <td><code>/{{ v.slug }}/table/1</code></td>
+                <td><span class="bo-badge bo-badge--plan-{{ v.plan }}">{{ v.plan_display }}</span></td>
+                <td>
+                    <button class="bo-toggle {{ 'active' if v.is_active }}" onclick="toggleVenue({{ v.id }}, this)">
+                        <span class="bo-toggle__dot"></span>
+                    </button>
+                </td>
+                <td>{{ v.categories|length }} cats</td>
+                <td>
+                    <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost" style="padding:6px 12px; font-size:.8rem;">
+                        <i class="fas fa-cog"></i> Features
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function toggleVenue(id, btn) {
+    fetch(`/backoffice/venues/${id}/toggle-active`, {method:'POST'})
+        .then(r=>r.json()).then(d => btn.classList.toggle('active', d.is_active));
+}
+</script>
+{% endblock %}

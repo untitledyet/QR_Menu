@@ -1,0 +1,28 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Venues{% endblock %}
+{% block content %}
+<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <h1>All Venues</h1>
+    <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Venue</a>
+</div>
+
+<div class="bo-card-grid">
+    {% for v in venues %}
+    <div class="bo-card" style="flex-direction:column; align-items:stretch; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="bo-card__icon"><i class="fas fa-store"></i></div>
+            <div>
+                <h3>{{ v.name }}</h3>
+                <small style="color:var(--bo-text-2);">/{{ v.slug }}</small>
+            </div>
+            <span class="bo-badge bo-badge--plan-{{ v.plan }}" style="margin-left:auto;">{{ v.plan_display }}</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost bo-btn--full" style="font-size:.8rem;">
+                <i class="fas fa-cog"></i> Features
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

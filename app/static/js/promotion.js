@@ -1,66 +1,84 @@
-/**
- * Fetch promotion details by its ID
- * @param {number} promotionId - The ID of the promotion to fetch details for
- * @returns {Promise} - A promise that resolves to the promotion data
- */
 function fetchPromotionDetails(promotionId) {
-    return fetch(`/promotion/${promotionId}`).then(response => response.text());
+    const slug = document.body.dataset.venue || 'demo';
+    return fetch(`/${slug}/promotion/${promotionId}`).then(r => r.text());
 }
 
-/**
- * Handle click event for promotion cards
- */
 function handlePromotionClick(card, promotionId) {
     const detailContainer = document.getElementById('promotion-detail-container');
-
-    // Check if the clicked promotion is already active
     const isAlreadyActive = detailContainer.dataset.activePromotionId === promotionId.toString();
 
     if (isAlreadyActive) {
-        // If already active, hide the container and remove the active ID
         detailContainer.innerHTML = '';
         detailContainer.removeAttribute('data-active-promotion-id');
     } else {
-        // Fetch and display the promotion details
-        fetchPromotionDetails(promotionId)
-            .then(data => {
-                detailContainer.innerHTML = data;
-                detailContainer.dataset.activePromotionId = promotionId;
+        fetchPromotionDetails(promotionId).then(data => {
+            detailContainer.innerHTML = data;
+            detailContainer.dataset.activePromotionId = promotionId;
 
-                // Add event listener for the close button
-                const closeButton = detailContainer.querySelector('.close-button');
+            const closeButton = detailContainer.querySelector('.close-button');
+            if (closeButton) {
                 closeButton.addEventListener('click', function () {
                     detailContainer.innerHTML = '';
                     detailContainer.removeAttribute('data-active-promotion-id');
                 });
-
-                // Only scroll to the promotion detail section if it wasn't already visible
-                if (!detailContainer.hasAttribute('data-active-promotion-id')) {
-                    detailContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            })
-            .catch(error => console.error('Error:', error));
+            }
+        });
     }
 }
 
-/**
- * Initialize promotion card click events
- */
-function initializePromotionCards() {
-    const promotionCards = document.querySelectorAll('.promotion-card');
-    promotionCards.forEach(card => {
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.promo-card').forEach(card => {
         card.addEventListener('click', function () {
             const promotionId = this.dataset.promotionId;
-            if (promotionId) {
-                handlePromotionClick(this, promotionId);
-            } else {
-                console.error('Promotion ID is undefined.');
-            }
+            if (promotionId) handlePromotionClick(this, promotionId);
         });
     });
-}
 
-// Initialize promotion cards on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function () {
-    initializePromotionCards();
+    initPromoDots();
 });
+
+function initPromoDots() {
+    const grid = document.querySelector('.promo-grid');
+    const cards = grid ? grid.querySelectorAll('.promo-card') : [];
+    if (!grid || cards.length < 2) return;
+
+    const dotsContainer = document.createElement('div');
+    dotsContainer.classList.add('promo-dots');
+    cards.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.classList.add('promo-dot');
+        if (i === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => {
+            cards[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        });
+        dotsContainer.appendChild(dot);
+    });
+    grid.parentNode.insertBefore(dotsContainer, grid.nextSibling);
+
+    const dots = dotsContainer.querySelectorAll('.promo-dot');
+
+    grid.addEventListener('scroll', function () {
+        const scrollLeft = grid.scrollLeft;
+        const maxScroll = grid.scrollWidth - grid.clientWidth;
+
+        // If scrolled to the end, activate last dot
+        if (maxScroll - scrollLeft < 2) {
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === cards.length - 1));
+            return;
+        }
+
+        // Find which card is most visible
+        let activeIndex = 0;
+        let minDistance = Infinity;
+        cards.forEach((card, i) => {
+            const cardLeft = card.offsetLeft - grid.offsetLeft;
+            const distance = Math.abs(scrollLeft - cardLeft);
+            if (distance < minDistance) {
+                minDistance = distance;
+                activeIndex = i;
+            }
+        });
+
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === activeIndex));
+    });
+}

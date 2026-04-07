@@ -1,0 +1,55 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}{{ venue.name }} — Features{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>{{ venue.name }}</h1>
+    <p class="bo-header__sub">Feature Management</p>
+</div>
+
+<form method="POST">
+    <!-- Plan selector -->
+    <div class="bo-setting-card" style="margin-bottom:20px;">
+        <div class="bo-setting-card__icon"><i class="fas fa-crown"></i></div>
+        <div class="bo-setting-card__body">
+            <h3>Subscription Plan</h3>
+            <p>Select the base plan. You can override individual features below.</p>
+        </div>
+        <select name="plan" class="bo-plan-select">
+            {% for p in plans %}
+            <option value="{{ p }}" {{ 'selected' if venue.plan == p }}>{{ p|capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <h2 style="margin:24px 0 12px;">Features</h2>
+    <p class="bo-header__sub" style="margin-bottom:16px;">
+        Toggle features individually. Overrides are marked with <span class="bo-badge bo-badge--override">override</span>
+    </p>
+
+    <div class="bo-settings-grid">
+        {% for key, label, icon, desc in feature_list %}
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="{{ icon }}"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>{{ label }}
+                    {% if key in overrides %}
+                    <span class="bo-badge bo-badge--override">override</span>
+                    {% endif %}
+                </h3>
+                <p>{{ desc }}</p>
+                <small style="color:var(--bo-text-2);">Plan default: {{ '✓' if plan_defaults.get(key, False) else '✕' }}</small>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="{{ key }}" {{ 'checked' if features.get(key, False) }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px;">
+        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">Back</a>
+        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> Save Features</button>
+    </div>
+</form>
+{% endblock %}

@@ -1,1 +1,1 @@
-from app.routes import menu_routes, api_routes, auth_routes
+from app.routes import menu_routes, api_routes, backoffice_routes

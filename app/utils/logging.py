@@ -7,11 +7,19 @@ def setup_logging(app):
     if not os.path.exists('logs'):
         os.mkdir('logs')
 
-    file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+    file_handler = RotatingFileHandler('logs/menu_app.log', maxBytes=10240, backupCount=10)
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     ))
     file_handler.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)
+
+    if app.config.get("LOG_TO_STDOUT"):
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        app.logger.addHandler(stream_handler)
+
     app.logger.setLevel(logging.INFO)
-    app.logger.info('App startup')
+    app.logger.info('MenuApp startup')

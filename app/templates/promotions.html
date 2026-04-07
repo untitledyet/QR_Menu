@@ -1,23 +1,16 @@
-<div class="mb-4 promotion-section">
-    <h2>Promotions</h2>
-    <div class="promotion-carousel">
-        <div class="promotion-scroll">
-            {% for promotion in promotions %}
-                <div class="promotion-card"
-                     style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');"
-                     data-promotion-id="{{ promotion.PromotionID }}">
-                    <div class="promotion-content">
-                        <h5 class="promotion-title">{{ promotion.PromotionName }}</h5>
-                        <p class="promotion-description">{{ promotion.Description }}</p>
-                    </div>
-                </div>
-            {% endfor %}
+<section class="promo-section">
+    <h2 class="section-title" data-i18n="promotions">აქციები</h2>
+    <div class="promo-grid">
+        {% for promotion in promotions %}
+        <div class="promo-card" data-promotion-id="{{ promotion.PromotionID }}">
+            <div class="promo-card__bg" style="background-image: url('{{ url_for('static', filename='images/promotions/' ~ promotion.BackgroundImage) }}');"></div>
+            <div class="promo-card__overlay"></div>
+            <div class="promo-card__content">
+                <span class="promo-card__badge" data-i18n="promo">აქცია</span>
+                <div class="promo-card__title">{{ promotion.PromotionName }}</div>
+                <div class="promo-card__desc">{{ promotion.Description }}</div>
+            </div>
         </div>
-        <button class="carousel-control-prev" aria-label="Previous">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <button class="carousel-control-next" aria-label="Next">
-            <i class="fas fa-chevron-right"></i>
-        </button>
+        {% endfor %}
     </div>
-</div>
+</section>

@@ -1,0 +1,74 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Settings — {{ venue.name }}{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>Settings</h1>
+    <p class="bo-header__sub">{{ venue.name }}</p>
+</div>
+
+<form method="POST" class="bo-settings-form">
+    <div class="bo-settings-grid">
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="fas fa-credit-card"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>Payments</h3>
+                <p>Enable online payment at checkout</p>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="enable_payments" {{ 'checked' if settings.enable_payments }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="fas fa-sliders-h"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>Ingredient Customization</h3>
+                <p>Allow customers to modify ingredients</p>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="enable_ingredient_customization" {{ 'checked' if settings.enable_ingredient_customization }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="fas fa-tags"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>Promotions</h3>
+                <p>Show promotions on the menu page</p>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="enable_promotions" {{ 'checked' if settings.enable_promotions }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="fas fa-shopping-cart"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>Cart</h3>
+                <p>Enable cart and ordering functionality</p>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="enable_cart" {{ 'checked' if settings.enable_cart }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+
+        <div class="bo-setting-card">
+            <div class="bo-setting-card__icon"><i class="fas fa-star"></i></div>
+            <div class="bo-setting-card__body">
+                <h3>Ratings & Reviews</h3>
+                <p>Allow customers to rate dishes</p>
+            </div>
+            <label class="bo-switch">
+                <input type="checkbox" name="enable_ratings" {{ 'checked' if settings.enable_ratings }}>
+                <span class="bo-switch__slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <button type="submit" class="bo-btn bo-btn--primary" style="margin-top:24px;">Save Settings</button>
+</form>
+{% endblock %}

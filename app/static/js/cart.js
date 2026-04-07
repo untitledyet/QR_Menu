@@ -1,124 +1,93 @@
 document.addEventListener('DOMContentLoaded', function () {
     const trashIcon = document.querySelector('.trash-icon');
     const cartContent = document.querySelector('.cart-content');
-    const emptyCartMessage = document.querySelector('.empty-cart');
-
-    // Retrieve cart items from sessionStorage
+    const emptyCart = document.querySelector('.empty-cart');
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
 
-    // Function to render the cart items
-    function renderCartItems() {
-        if (!cartContent || !emptyCartMessage) {
-            return;
-        }
-
-        cartContent.innerHTML = ''; // Clear existing content
+    function render() {
+        if (!cartContent || !emptyCart) return;
+        cartContent.querySelectorAll('.cart-item').forEach(el => el.remove());
 
         if (cart.length === 0) {
-            emptyCartMessage.style.display = 'block';
+            emptyCart.style.display = 'block';
         } else {
-            emptyCartMessage.style.display = 'none';
-
+            emptyCart.style.display = 'none';
             cart.forEach(item => {
-                const imageFilename = item.imageFilename ? item.imageFilename : 'default-image.png'; // Ensure the image exists
-                const itemElement = document.createElement('div');
-                itemElement.classList.add('cart-item', 'd-flex', 'align-items-center', 'justify-content-between', 'mb-3', 'p-3', 'border', 'rounded');
-
-                // Create the HTML structure for the cart item
-                itemElement.innerHTML = `
-                    <div class="item-image">
-                        <img src="/static/images/${imageFilename}" alt="${item.name || 'Item'}" class="img-fluid rounded">
+                const el = document.createElement('div');
+                el.classList.add('cart-item');
+                el.innerHTML = `
+                    <img class="cart-item__img" src="/static/images/${item.imageFilename || 'default-image.png'}" alt="${item.name}">
+                    <div class="cart-item__info">
+                        <div class="cart-item__name">${item.name}</div>
+                        <div class="cart-item__mods">${buildModTags(item)}</div>
                     </div>
-                    <div class="item-details flex-grow-1">
-                        <h5 class="item-name">${item.name || 'Unnamed Item'}</h5>
-                        <p class="item-comment">${generateCommentText(item.ingredients || [])}</p>
-                    </div>
-                    <div class="item-quantity d-flex align-items-center">
-                        <button class="btn btn-sm btn-outline-secondary quantity-decrease" data-item-id="${item.id}">-</button>
-                        <input type="number" class="quantity-value" value="${item.quantity || 1}" min="1" data-item-id="${item.id}">
-                        <button class="btn btn-sm btn-outline-secondary quantity-increase" data-item-id="${item.id}">+</button>
-                    </div>
-                    <div class="cart-item-price">
-                        <strong>$${(item.price * (item.quantity || 1)).toFixed(2)}</strong>
-                    </div>
-                    <div class="cart-item-actions">
-                        <button class="btn btn-sm btn-danger remove-item" data-item-id="${item.id}">Remove</button>
+                    <div class="cart-item__right">
+                        <div class="cart-item__qty">
+                            <button class="cart-item__qty-btn" data-action="decrease">−</button>
+                            <span class="cart-item__qty-num">${item.quantity}</span>
+                            <button class="cart-item__qty-btn" data-action="increase">+</button>
+                        </div>
+                        <div class="cart-item__price">₾${(item.price * item.quantity).toFixed(2)}</div>
+                        <button class="cart-item__remove" aria-label="Remove"><i class="fas fa-times"></i></button>
                     </div>
                 `;
+                cartContent.appendChild(el);
 
-                // Add the item element to the cart content
-                cartContent.appendChild(itemElement);
-
-                // Add event listeners for quantity buttons and remove button
-                itemElement.querySelector('.quantity-decrease').addEventListener('click', function () {
-                    updateItemQuantity(item.id, 'decrease');
-                });
-
-                itemElement.querySelector('.quantity-increase').addEventListener('click', function () {
-                    updateItemQuantity(item.id, 'increase');
-                });
-
-                itemElement.querySelector('.remove-item').addEventListener('click', function () {
-                    removeCartItem(item.id);
-                });
+                el.querySelector('[data-action="decrease"]').addEventListener('click', () => updateQty(item.id, item.ingredientKey, -1));
+                el.querySelector('[data-action="increase"]').addEventListener('click', () => updateQty(item.id, item.ingredientKey, 1));
+                el.querySelector('.cart-item__remove').addEventListener('click', () => removeItem(item.id, item.ingredientKey));
             });
         }
     }
 
-    // Function to generate comment text based on modified ingredients
-    function generateCommentText(ingredients) {
-        if (!Array.isArray(ingredients) || ingredients.length === 0) {
-            return ""; // Return an empty string if there are no ingredients
+    function buildModTags(item) {
+        let html = '';
+        const withoutLabel = typeof t === 'function' ? t('without') : 'without';
+        const extraLabel = typeof t === 'function' ? t('extra') : 'extra';
+
+        if (Array.isArray(item.ingredients)) {
+            item.ingredients.forEach(ing => {
+                if (!ing) return;
+                if (ing.action === 'remove') {
+                    html += `<span class="cart-item__tag cart-item__tag--remove">✕ ${ing.name}</span>`;
+                } else if (ing.action === 'add') {
+                    html += `<span class="cart-item__tag cart-item__tag--add">✦ ${ing.name}</span>`;
+                }
+            });
         }
-
-        const comments = ingredients.map(ingredient => {
-            if (!ingredient) return "";
-            if (ingredient.action === 'remove') {
-                return `remove: ${ingredient.name}`;
-            } else if (ingredient.action === 'add') {
-                return `add: ${ingredient.name}`;
-            }
-            return ''; // For default or unchanged ingredients, return an empty string
-        }).filter(comment => comment !== ""); // Filter out empty strings
-
-        return comments.length > 0 ? comments.join(', ') : ""; // Join the comments with commas or return empty string if no changes
+        if (item.comment) {
+            html += `<span class="cart-item__tag cart-item__tag--comment">💬 ${item.comment}</span>`;
+        }
+        return html;
     }
 
-    // Function to update item quantity by increment/decrement
-    function updateItemQuantity(itemId, action) {
-        const cartItem = cart.find(item => item.id === itemId);
-        if (cartItem) {
-            if (action === 'decrease' && cartItem.quantity > 1) {
-                cartItem.quantity -= 1;
-            } else if (action === 'increase') {
-                cartItem.quantity += 1;
-            }
-            sessionStorage.setItem('cart', JSON.stringify(cart));
-            renderCartItems();
-        }
+    function updateQty(id, key, delta) {
+        const item = cart.find(i => i.id === id && i.ingredientKey === key);
+        if (!item) return;
+        item.quantity = Math.max(1, item.quantity + delta);
+        save();
     }
 
-    // Function to remove an item from the cart
-    // Function to remove an item from the cart
-    function removeCartItem(itemId, ingredientKey) {
-        cart = cart.filter(item => !(item.id === itemId && item.ingredientKey === ingredientKey));
+    function removeItem(id, key) {
+        cart = cart.filter(i => !(i.id === id && i.ingredientKey === key));
+        save();
+    }
+
+    function save() {
         sessionStorage.setItem('cart', JSON.stringify(cart));
-        renderCartItems(); // Re-render the cart after removing the item
-        updateCartItemCount(); // Update the cart item count after removing an item
+        render();
+        if (typeof updateCartItemCount === 'function') updateCartItemCount();
     }
 
-
-    // Clear cart event
     if (trashIcon) {
-        trashIcon.addEventListener('click', function () {
-            if (confirm('დარწმუნებული ხართ, რომ გსურთ კალათის გასუფთავება?')) {
+        trashIcon.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (confirm(typeof t === 'function' ? t('clearConfirm') : 'Clear cart?')) {
                 cart = [];
-                sessionStorage.setItem('cart', JSON.stringify(cart));
-                renderCartItems(); // Re-render the cart after clearing it
+                save();
             }
         });
     }
 
-    // Initial render of cart items
-    renderCartItems();
+    render();
 });

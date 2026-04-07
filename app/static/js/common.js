@@ -1,257 +1,229 @@
 /**
- * Create an item card element for a food item
- * @param {Object} item - The item data
- * @returns {HTMLElement} - The item card element
+ * Atomically replace container children without emptying it.
+ * replaceChildren() is a single DOM operation — the container never
+ * becomes empty, so the browser's scroll anchor is never lost.
  */
+
+/**
+ * Lock the page height to its current value so that scroll position
+ * cannot change when content shrinks. Call before any DOM mutation.
+ */
+function lockPageHeight() {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    shell.style.setProperty('--locked-height', document.documentElement.scrollHeight + 'px');
+    shell.classList.add('app-shell--locked');
+}
+
+function unlockPageHeight() {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    shell.classList.remove('app-shell--locked');
+    shell.style.removeProperty('--locked-height');
+}
+
 function createItemCard(item) {
-    const itemCard = document.createElement('div');
-    itemCard.classList.add('col-12', 'col-sm-6', 'col-lg-4', 'mb-4');
-    itemCard.innerHTML = `
-        <div class="card shadow-sm">
-            <img src="/static/images/${item.ImageFilename || 'default-image.png'}" class="card-img-top" alt="${item.FoodName || 'Unnamed Item'}">
-            <div class="card-body">
-                <h5 class="card-title">${item.FoodName || 'Unnamed Item'}</h5>
-                <p class="card-text">${item.Ingredients || 'No ingredients specified'}</p>
-                <p class="card-text"><strong>$${item.Price.toFixed(2)}</strong></p>
-                <a href="#" class="add-to-cart" data-item-id="${item.FoodItemID}">
-                    <img src="/static/images/cart-icon.png" alt="Add to Cart" title="Add to Cart">
-                </a>
+    const card = document.createElement('div');
+    card.classList.add('food-card');
+    card.innerHTML = `
+        <img class="food-card__img" src="/static/images/${item.ImageFilename || 'default-image.png'}" alt="${item.FoodName || ''}">
+        <div class="food-card__body">
+            <div class="food-card__name">${item.FoodName || 'Unnamed'}</div>
+            <div class="food-card__desc">${item.Ingredients || ''}</div>
+            <div class="food-card__footer">
+                <span class="food-card__price">₾${item.Price.toFixed(2)}</span>
+                <button class="food-card__add" data-item-id="${item.FoodItemID}" aria-label="Add to cart">+</button>
             </div>
         </div>
     `;
-
-    // Add click event for the "Add to Cart" button
-    itemCard.querySelector('.add-to-cart').addEventListener('click', function (event) {
-        event.preventDefault();
+    card.querySelector('.food-card__add').addEventListener('click', function (e) {
+        e.stopPropagation();
         showItemPopup(item);
     });
-
-    return itemCard;
+    card.addEventListener('click', function () { showItemPopup(item); });
+    return card;
 }
 
-/**
- * Populate the items container with popular dishes
- * @param {Array} dishes - The list of popular dishes to display
- * @param {HTMLElement} container - The container to populate
- */
 function populateItemsContainer(dishes, container) {
-    container.innerHTML = '';
-    dishes.forEach(dish => {
-        container.appendChild(createItemCard(dish));
-    });
+    lockPageHeight();
+    const newCards = dishes.map(dish => createItemCard(dish));
+    container.replaceChildren(...newCards);
+    requestAnimationFrame(() => unlockPageHeight());
 }
 
-/**
- * Show a popup with item details
- * @param {Object} item - The item data
- */
+function showLoadingSkeleton(container, count) {
+    lockPageHeight();
+    const skeletons = [];
+    for (let i = 0; i < count; i++) {
+        const skel = document.createElement('div');
+        skel.classList.add('skeleton-card');
+        skel.innerHTML = `
+            <div class="skeleton-card__img"></div>
+            <div class="skeleton-card__body">
+                <div class="skeleton-card__line"></div>
+                <div class="skeleton-card__line skeleton-card__line--short"></div>
+                <div class="skeleton-card__line skeleton-card__line--price"></div>
+            </div>
+        `;
+        skeletons.push(skel);
+    }
+    container.replaceChildren(...skeletons);
+    requestAnimationFrame(() => unlockPageHeight());
+}
+
 function showItemPopup(item) {
-    const modalImage = document.querySelector('#item-modal .modal-body img');
-    const modalTitle = document.querySelector('#item-modal .modal-title');
-    const modalIngredientsList = document.querySelector('#item-modal .modal-body ul');
+    const modal = document.getElementById('item-modal');
+    const modalImage = modal.querySelector('.modal-body img');
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalList = modal.querySelector('.modal-body ul');
 
     modalImage.src = `/static/images/${item.ImageFilename || 'default-image.png'}`;
-    modalImage.alt = item.FoodName || 'Unnamed Item';
-    modalTitle.textContent = item.FoodName || 'Unnamed Item';
+    modalImage.alt = item.FoodName || '';
+    modalTitle.textContent = item.FoodName || '';
+    modalList.innerHTML = '';
+    modalList.classList.add('ingredients-list');
 
-    // Clear existing ingredients
-    modalIngredientsList.innerHTML = '';
-
-    // Store modified ingredients
     const modifiedIngredients = [];
-
-    // Add ingredients to the list
     const ingredients = item.Ingredients ? item.Ingredients.split(',') : [];
-    ingredients.forEach((ingredient, index) => {
-        if (!ingredient) return;
+    const canCustomize = item.AllowCustomization !== false; // default true if field missing
 
-        const li = document.createElement('li');
-        li.classList.add('ingredient-item');
+    const removedLabel = typeof t === 'function' ? t('without') : 'without';
+    const extraLabel = typeof t === 'function' ? t('extra') : 'extra';
 
-        li.innerHTML = `
-            <button class="btn btn-minus">-</button>
-            <span class="ingredient-name">${ingredient.trim()}</span>
-            <button class="btn btn-plus">+</button>
-        `;
+    if (canCustomize) {
+        ingredients.forEach((ingredient, index) => {
+            if (!ingredient) return;
+            const name = ingredient.trim();
+            const li = document.createElement('li');
+            li.classList.add('ingredient-item');
+            li.innerHTML = `
+                <span class="ingredient-name">${name}</span>
+                <div class="ingredient-item__actions">
+                    <button class="ing-btn ing-btn--remove" aria-label="Remove" title="${removedLabel}">−</button>
+                    <button class="ing-btn ing-btn--extra" aria-label="Extra" title="${extraLabel}">+</button>
+                </div>
+            `;
+            modalList.appendChild(li);
 
-        modalIngredientsList.appendChild(li);
+            const removeBtn = li.querySelector('.ing-btn--remove');
+            const extraBtn = li.querySelector('.ing-btn--extra');
 
-        // Add event listeners for the buttons
-        li.querySelector('.btn-minus').addEventListener('click', function () {
-            handleIngredientChange(li, 'minus', index, modifiedIngredients, ingredient.trim());
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isActive = removeBtn.classList.contains('active');
+                removeBtn.classList.toggle('active');
+                extraBtn.classList.remove('active');
+                li.className = isActive ? 'ingredient-item' : 'ingredient-item ingredient-item--removed';
+                modifiedIngredients[index] = { name, action: isActive ? 'default' : 'remove' };
+            });
+
+            extraBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isActive = extraBtn.classList.contains('active');
+                extraBtn.classList.toggle('active');
+                removeBtn.classList.remove('active');
+                li.className = isActive ? 'ingredient-item' : 'ingredient-item ingredient-item--extra';
+                modifiedIngredients[index] = { name, action: isActive ? 'default' : 'add' };
+            });
         });
+    } else {
+        // Read-only: show ingredients as inline tags
+        const tagsLi = document.createElement('li');
+        tagsLi.classList.add('ingredient-tags-readonly');
+        tagsLi.innerHTML = ingredients
+            .filter(i => i && i.trim())
+            .map(i => `<span class="ingredient-tag-ro">${i.trim()}</span>`)
+            .join('');
+        modalList.appendChild(tagsLi);
+    }
 
-        li.querySelector('.btn-plus').addEventListener('click', function () {
-            handleIngredientChange(li, 'plus', index, modifiedIngredients, ingredient.trim());
-        });
+    const addBtn = document.getElementById('modal-add-to-cart');
+    const newBtn = addBtn.cloneNode(true);
+    addBtn.parentNode.replaceChild(newBtn, addBtn);
 
-        // Initially check the button states
-        updateButtonStates(li);
-    });
+    const commentField = document.getElementById('item-comment');
+    if (commentField) {
+        commentField.value = '';
+        commentField.placeholder = typeof t === 'function' ? t('commentPlaceholder') : 'Add a comment...';
+    }
 
-    // Add event listener to the "Add to Cart" button
-    document.getElementById('modal-add-to-cart').replaceWith(document.getElementById('modal-add-to-cart').cloneNode(true));
+    newBtn.addEventListener('click', () => addToCart(item, modifiedIngredients));
 
-    document.getElementById('modal-add-to-cart').addEventListener('click', function () {
-        addToCart(item, modifiedIngredients);
-    });
-
-    // Show the modal
     $('#item-modal').modal('show');
 }
 
-/**
- * Handle ingredient changes within the modal
- * @param {HTMLElement} li - The list item element
- * @param {string} action - The action ('plus' or 'minus')
- * @param {number} index - The index of the ingredient
- * @param {Array} modifiedIngredients - The array to store modified ingredients
- * @param {string} ingredientName - The name of the ingredient
- */
-function handleIngredientChange(li, action, index, modifiedIngredients, ingredientName) {
-    if (action === 'minus') {
-        if (li.classList.contains('extra')) {
-            li.classList.remove('extra');
-            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
-        } else if (!li.classList.contains('strikethrough')) {
-            li.classList.add('strikethrough');
-            modifiedIngredients[index] = {name: ingredientName, action: 'remove'};
-        }
-    } else if (action === 'plus') {
-        if (li.classList.contains('strikethrough')) {
-            li.classList.remove('strikethrough');
-            modifiedIngredients[index] = {name: ingredientName, action: 'default'};
-        } else if (!li.classList.contains('extra')) {
-            li.classList.add('extra');
-            modifiedIngredients[index] = {name: ingredientName, action: 'add'};
-        }
-    }
-    updateButtonStates(li);
-}
-
-/**
- * Update the states of the ingredient buttons
- * @param {HTMLElement} li - The list item element
- */
-function updateButtonStates(li) {
-    const minusBtn = li.querySelector('.btn-minus');
-    const plusBtn = li.querySelector('.btn-plus');
-
-    if (li.classList.contains('strikethrough')) {
-        minusBtn.disabled = true;
-        plusBtn.disabled = false;
-    } else if (li.classList.contains('extra')) {
-        plusBtn.disabled = true;
-        minusBtn.disabled = false;
-    } else {
-        minusBtn.disabled = false;
-        plusBtn.disabled = false;
-    }
-}
-
-/**
- * Add the item to the cart with the modified ingredients
- * @param {Object} item - The item data
- * @param {Array} modifiedIngredients - The modified ingredients
- */
 function addToCart(item, modifiedIngredients) {
     let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    const comment = (document.getElementById('item-comment')?.value || '').trim();
 
-    // Generate a unique key based on the item's ID and modified ingredients
     const ingredientKey = item.FoodItemID + '-' +
         (modifiedIngredients.length > 0
             ? modifiedIngredients.sort((a, b) => a.name.localeCompare(b.name)).map(ing => `${ing.name}-${ing.action}`).join('|')
-            : item.Ingredients ? item.Ingredients.split(',').sort().map(name => `${name.trim()}-default`).join('|')
-                : 'default');
+            : item.Ingredients ? item.Ingredients.split(',').sort().map(name => `${name.trim()}-default`).join('|') : 'default')
+        + (comment ? '-c:' + comment : '');
 
-    // Check if an item with the same ID and ingredientKey exists in the cart
-    const existingItemIndex = cart.findIndex(cartItem =>
-        cartItem.id === item.FoodItemID &&
-        cartItem.ingredientKey === ingredientKey
-    );
-
-    if (existingItemIndex !== -1) {
-        cart[existingItemIndex].quantity += 1;
+    const existingIdx = cart.findIndex(c => c.id === item.FoodItemID && c.ingredientKey === ingredientKey);
+    if (existingIdx !== -1) {
+        cart[existingIdx].quantity += 1;
     } else {
-        const cartItem = {
-            id: item.FoodItemID,
-            name: item.FoodName || 'Unnamed Item',
-            price: item.Price,
+        cart.push({
+            id: item.FoodItemID, name: item.FoodName || 'Unnamed', price: item.Price,
             imageFilename: item.ImageFilename || 'default-image.png',
-            ingredients: modifiedIngredients.length > 0 ? modifiedIngredients : item.Ingredients ? item.Ingredients.split(',').map(name => ({
-                name: name.trim(),
-                action: 'default'
-            })) : [],
-            quantity: 1,
-            ingredientKey: ingredientKey // Ensure this key is used in both addition and removal
-        };
-
-        cart.push(cartItem);
+            ingredients: modifiedIngredients.length > 0 ? modifiedIngredients :
+                (item.Ingredients ? item.Ingredients.split(',').map(n => ({ name: n.trim(), action: 'default' })) : []),
+            quantity: 1, ingredientKey: ingredientKey,
+            comment: comment
+        });
     }
-
     sessionStorage.setItem('cart', JSON.stringify(cart));
-    updateCartItemCount(); // Update the cart item count after adding an item
+    updateCartItemCount();
+    showCartToast(item.FoodName || 'Item');
     $('#item-modal').modal('hide');
 }
 
-/**
- * Update the cart item count display on the cart icon
- */
+function showCartToast(itemName) {
+    const toast = document.getElementById('cart-toast');
+    if (!toast) return;
+    toast.textContent = `${itemName} ${t('addedToCart')}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
 function updateCartItemCount() {
     const cart = JSON.parse(sessionStorage.getItem('cart')) || [];
-    const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
-    const cartItemCountElement = document.querySelector('.cart-item-count');
-
-    if (cartItemCountElement) {
-        cartItemCountElement.textContent = cartItemCount;
-    } else {
-        // If the cart item count element doesn't exist, create it
-        const cartIcon = document.querySelector('.footer-nav .nav-item:last-child'); // Assuming the cart icon is the last nav item
-        const countElement = document.createElement('span');
-        countElement.classList.add('cart-item-count');
-        countElement.textContent = cartItemCount;
-        cartIcon.appendChild(countElement);
+    const count = cart.reduce((t, i) => t + i.quantity, 0);
+    const badge = document.querySelector('.cart-item-count');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+        badge.classList.remove('bounce');
+        void badge.offsetWidth;
+        badge.classList.add('bounce');
     }
 }
 
-/**
- * Load popular dishes and new dishes on DOMContentLoaded
- */
+function setActiveNavTab() {
+    const page = document.body.dataset.page;
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.nav === page);
+    });
+}
+
 (function () {
-    if (window.hasInitialized) {
-        return;
-    }
-
-    window.hasInitialized = true;
-
+    if (window._qrMenuInit) return;
+    window._qrMenuInit = true;
     document.addEventListener('DOMContentLoaded', function () {
         const itemsContainer = document.getElementById('items-container');
-        const newItemsContainer = document.getElementById('new-dishes-container');
-
+        const newContainer = document.getElementById('new-dishes-container');
         try {
-            const popularDishesDataElement = document.querySelector('#popular-dishes');
-            if (popularDishesDataElement) {
-                const popularDishes = JSON.parse(popularDishesDataElement.textContent);
-                populateItemsContainer(popularDishes, itemsContainer);
-            } else {
-                console.error('#popular-dishes element not found.');
-            }
-        } catch (error) {
-            console.error('Error loading popular dishes:', error);
-        }
-
+            const el = document.querySelector('#popular-dishes');
+            if (el && itemsContainer) populateItemsContainer(JSON.parse(el.textContent), itemsContainer);
+        } catch (e) { console.error('Popular dishes error:', e); }
         try {
-            const newDishesDataElement = document.querySelector('#new-dishes-data');
-            if (newDishesDataElement) {
-                const newDishes = JSON.parse(newDishesDataElement.textContent);
-                populateItemsContainer(newDishes, newItemsContainer);
-            } else {
-                console.error('#new-dishes-data element not found.');
-            }
-        } catch (error) {
-            console.error('Error loading new dishes:', error);
-        }
-
+            const el = document.querySelector('#new-dishes-data');
+            if (el && newContainer) populateItemsContainer(JSON.parse(el.textContent), newContainer);
+        } catch (e) { console.error('New dishes error:', e); }
         updateCartItemCount();
+        setActiveNavTab();
     });
 })();

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.db
+instance/
+logs/
+.idea/
+.DS_Store
+*.sqlite3
+Nyx.xml

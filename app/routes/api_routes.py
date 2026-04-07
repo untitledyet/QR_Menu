@@ -1,13 +1,14 @@
-from flask import Blueprint, jsonify, request
-from app.models import FoodItem, Category, Subcategory
-from app import db
+from flask import Blueprint, jsonify
+from app.models import FoodItem, Category, Venue
 
-api_bp = Blueprint('api_bp', __name__)  # Blueprint-ის სახელის ცვლილება
+api_bp = Blueprint('api_bp', __name__)
 
-@api_bp.route('/api/table/<int:table_id>/items', methods=['GET'])
-def get_items(table_id):
-    # table_id გამოიყენება ფილტრაციისთვის (მაგალითად, თუკი მაგიდა უკავშირდება კონკრეტულ კატეგორიას ან მომხმარებელს)
-    items = FoodItem.query.filter_by(TableID=table_id).all()  # თუ TableID გამოიყენება, შეგიძლიათ დაამატოთ ფილტრაცია
+
+@api_bp.route('/api/<slug>/items')
+def get_items(slug):
+    venue = Venue.query.filter_by(slug=slug, is_active=True).first_or_404()
+    items = FoodItem.query.filter(
+        FoodItem.CategoryID.in_([c.CategoryID for c in venue.categories]),
+        FoodItem.is_active == True
+    ).all()
     return jsonify([item.to_dict() for item in items])
-
-# სხვა API როუტებიც ასევე შეიძლება იყოს დაკავშირებული table_id-სთან

@@ -1,15 +1,11 @@
-<div class="mb-4">
-    <h2>Categories</h2>
-    <div class="category-scroll">
+<div class="categories-section">
+    <h2 class="section-title" data-i18n="categories" style="margin-top:0;">კატეგორიები</h2>
+    <div class="categories-scroll">
         {% for category in categories %}
-            <div class="card category-card shadow-sm" data-category-id="{{ category.CategoryID }}"
-                 data-category-name="{{ category.CategoryName }}">
-                <img src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}"
-                     alt="{{ category.CategoryName }}">
-                <div class="card-body-category">
-                    <h5 class="card-title">{{ category.CategoryName }}</h5>
-                </div>
-            </div>
+        <div class="cat-chip" data-category-id="{{ category.CategoryID }}" data-category-name="{{ category.CategoryName }}">
+            <img class="cat-chip__img" src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}" alt="{{ category.CategoryName }}">
+            <span class="cat-chip__name">{{ category.CategoryName }}</span>
+        </div>
         {% endfor %}
     </div>
 </div>

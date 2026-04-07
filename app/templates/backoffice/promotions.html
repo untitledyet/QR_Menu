@@ -1,0 +1,36 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Promotions{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>Promotions</h1>
+</div>
+
+<div class="bo-card-grid">
+    {% for promo in promotions %}
+    <div class="bo-promo-card">
+        <img src="{{ url_for('static', filename='images/promotions/' ~ promo.BackgroundImage) }}" class="bo-promo-card__img">
+        <div class="bo-promo-card__body">
+            <h3>{{ promo.PromotionName }}</h3>
+            <p>{{ promo.Description }}</p>
+            <div class="bo-promo-card__meta">
+                {% if promo.Discount %}<span class="bo-badge bo-badge--green">{{ promo.Discount }}%</span>{% endif %}
+                <span class="bo-badge">{{ promo.StartDate }} — {{ promo.EndDate }}</span>
+            </div>
+            <div class="bo-promo-card__actions">
+                <span>Active</span>
+                <button class="bo-toggle {{ 'active' if promo.is_active }}" onclick="togglePromo({{ promo.PromotionID }}, this)">
+                    <span class="bo-toggle__dot"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function togglePromo(id, btn) {
+    fetch(`/backoffice/promotions/toggle/${id}`, {method:'POST'})
+        .then(r=>r.json()).then(d => btn.classList.toggle('active', d.is_active));
+}
+</script>
+{% endblock %}
