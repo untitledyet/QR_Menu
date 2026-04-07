@@ -5,8 +5,12 @@ from datetime import date, datetime
 app = create_app()
 
 with app.app_context():
-    db.drop_all()
     db.create_all()
+
+    # Only seed if database is empty (idempotent for Railway deploys)
+    if Venue.query.first():
+        print("Database already seeded, skipping.")
+        exit(0)
 
     # === Venues (create first so categories can reference them) ===
     venues_data = [

@@ -3,32 +3,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class Config:
-    # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your_secret_key_here'
-    DEBUG = os.environ.get('FLASK_DEBUG') or True
 
-    # SQLAlchemy settings
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+mysqlconnector://root:Test1234%40@localhost:3306/testing'
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    DEBUG = os.environ.get('FLASK_DEBUG', '0') == '1'
+
+    # Railway provides DATABASE_URL; fallback to SQLite for local dev
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///menu.db')
+    # Railway Postgres URLs start with postgres:// but SQLAlchemy needs postgresql://
+    if SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Feature Flags settings
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', '1')
+
     FEATURE_FLAGS = {
         'enable_login': True,
         'enable_new_dishes': True,
         'enable_promotions': True,
-        'enable_cart_functionality': True,  # False by default, to be enabled for premium users
+        'enable_cart_functionality': True,
     }
 
-    # Logging settings
-    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
-
-    # Other configurations
-    ITEMS_PER_PAGE = 10
-    UPLOAD_FOLDER = 'static/uploads'
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-    # Security settings
-    SESSION_COOKIE_SECURE = True
-    REMEMBER_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_DEBUG', '0') != '1'
+    REMEMBER_COOKIE_SECURE = os.environ.get('FLASK_DEBUG', '0') != '1'
