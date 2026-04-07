@@ -201,9 +201,20 @@ def venue_has_feature(feature_key):
 def menu_list():
     admin = get_current_admin()
     venue = admin.venue
-    categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
-    cat_id = request.args.get('category', type=int)
-    items = FoodItem.query.filter_by(CategoryID=cat_id).all() if cat_id else FoodItem.query.all()
+    if venue:
+        categories = Category.query.filter_by(venue_id=venue.id).all()
+        cat_ids = [c.CategoryID for c in categories]
+        cat_id = request.args.get('category', type=int)
+        if cat_id and cat_id in cat_ids:
+            items = FoodItem.query.filter_by(CategoryID=cat_id).all()
+        else:
+            items = FoodItem.query.filter(FoodItem.CategoryID.in_(cat_ids)).all() if cat_ids else []
+            cat_id = None
+    else:
+        categories = Category.query.all()
+        cat_id = request.args.get('category', type=int)
+        items = FoodItem.query.filter_by(CategoryID=cat_id).all() if cat_id else FoodItem.query.all()
+
     features = venue.get_all_features() if venue else {}
     return render_template('backoffice/menu.html', admin=admin, categories=categories,
                            items=items, selected_cat=cat_id, features=features)
