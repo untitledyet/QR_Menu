@@ -247,20 +247,8 @@ body {
   /* Cards */
   .bo-card-grid { grid-template-columns: 1fr; }
 
-  /* Table → card layout on mobile */
-  .bo-table thead { display: none; }
-  .bo-table, .bo-table tbody, .bo-table tr, .bo-table td {
-    display: block; width: 100%;
-  }
-  .bo-table tr {
-    background: var(--bo-surface); border: 1px solid var(--bo-border);
-    border-radius: var(--bo-radius); margin-bottom: 10px;
-    padding: 12px; position: relative;
-  }
-  .bo-table td { padding: 4px 0; border: none; }
-  .bo-table td:first-child { float: left; margin-right: 12px; }
-  .bo-table__img { width: 56px; height: 56px; }
-  .bo-table__actions { margin-top: 8px; }
+  /* Table — hide on mobile, use card layout instead */
+  .bo-table-wrap { display: none; }
 
   /* Settings */
   .bo-setting-card { flex-wrap: wrap; padding: 14px; gap: 10px; }
@@ -430,3 +418,58 @@ body {
   font-family: inherit; width: 140px; outline: none;
 }
 .bo-sub-add input:focus { border-color: var(--bo-primary); }
+
+/* Desktop/Mobile visibility helpers */
+.bo-desktop-only { display: block; }
+.bo-mobile-only { display: none; }
+@media (max-width: 768px) {
+  .bo-desktop-only { display: none !important; }
+  .bo-mobile-only { display: block !important; }
+}
+
+/* Mobile menu cards */
+.bo-menu-cards { display: flex; flex-direction: column; gap: 10px; }
+
+.bo-menu-card {
+  background: var(--bo-surface);
+  border: 1px solid var(--bo-border);
+  border-radius: var(--bo-radius);
+  overflow: hidden;
+}
+.bo-menu-card__top {
+  display: flex; gap: 12px; padding: 12px;
+}
+.bo-menu-card__img {
+  width: 72px; height: 72px;
+  border-radius: 10px; object-fit: cover; flex-shrink: 0;
+}
+.bo-menu-card__info { flex: 1; min-width: 0; }
+.bo-menu-card__name {
+  font-size: .92rem; font-weight: 600; color: var(--bo-text);
+  margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bo-menu-card__sub {
+  font-size: .75rem; color: var(--bo-text-2); margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bo-menu-card__price {
+  font-size: .95rem; font-weight: 700; color: var(--bo-primary);
+}
+
+.bo-menu-card__controls {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; border-top: 1px solid var(--bo-border);
+  background: var(--bo-surface-2);
+}
+.bo-menu-card__toggle {
+  display: flex; align-items: center; gap: 6px;
+}
+.bo-menu-card__label {
+  font-size: .68rem; color: var(--bo-text-2); font-weight: 500;
+  white-space: nowrap;
+}
+.bo-menu-card__actions {
+  margin-left: auto;
+  display: flex; gap: 6px;
+}

@@ -1,13 +1,9 @@
 {% extends 'backoffice/base.html' %}
 {% block title %}Menu Management{% endblock %}
 {% block content %}
-<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
-    <div>
-        <h1>Menu Items</h1>
-    </div>
-    <a href="{{ url_for('bo_bp.add_item') }}" class="bo-btn bo-btn--primary">
-        <i class="fas fa-plus"></i> Add Item
-    </a>
+<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <h1>Menu Items</h1>
+    <a href="{{ url_for('bo_bp.add_item') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Item</a>
 </div>
 
 <div class="bo-filters">
@@ -17,17 +13,11 @@
     {% endfor %}
 </div>
 
-<div class="bo-table-wrap">
+<!-- Desktop table -->
+<div class="bo-table-wrap bo-desktop-only">
     <table class="bo-table">
         <thead>
-            <tr>
-                <th>Image</th>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Customization</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
+            <tr><th>Image</th><th>Name</th><th>Price</th><th>Customization</th><th>Active</th><th>Actions</th></tr>
         </thead>
         <tbody>
             {% for item in items %}
@@ -61,6 +51,49 @@
         </tbody>
     </table>
 </div>
+
+<!-- Mobile cards -->
+<div class="bo-mobile-only bo-menu-cards">
+    {% for item in items %}
+    <div class="bo-menu-card">
+        <div class="bo-menu-card__top">
+            <img src="{{ url_for('static', filename='images/' ~ (item.ImageFilename or 'default-image.png')) }}" class="bo-menu-card__img">
+            <div class="bo-menu-card__info">
+                <div class="bo-menu-card__name">{{ item.FoodName }}</div>
+                <div class="bo-menu-card__sub">{{ item.Ingredients[:40] }}{% if item.Ingredients|length > 40 %}...{% endif %}</div>
+                <div class="bo-menu-card__price">₾{{ "%.2f"|format(item.Price) }}</div>
+            </div>
+        </div>
+        <div class="bo-menu-card__controls">
+            <div class="bo-menu-card__toggle">
+                <span class="bo-menu-card__label">Customization</span>
+                <button class="bo-toggle {{ 'active' if item.allow_customization }}" onclick="toggleCustomization({{ item.FoodItemID }}, this)">
+                    <span class="bo-toggle__dot"></span>
+                </button>
+            </div>
+            <div class="bo-menu-card__toggle">
+                <span class="bo-menu-card__label">Active</span>
+                <button class="bo-toggle {{ 'active' if item.is_active }}" onclick="toggleActive({{ item.FoodItemID }}, this)">
+                    <span class="bo-toggle__dot"></span>
+                </button>
+            </div>
+            <div class="bo-menu-card__actions">
+                <a href="{{ url_for('bo_bp.edit_item', item_id=item.FoodItemID) }}" class="bo-icon-btn"><i class="fas fa-pen"></i></a>
+                <form method="POST" action="{{ url_for('bo_bp.delete_item', item_id=item.FoodItemID) }}" style="display:inline;" onsubmit="return confirm('Delete {{ item.FoodName }}?')">
+                    <button type="submit" class="bo-icon-btn bo-icon-btn--danger"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not items %}
+<div style="text-align:center; padding:60px 20px; color:var(--bo-text-2);">
+    <i class="fas fa-utensils" style="font-size:3rem; opacity:.3; margin-bottom:16px; display:block;"></i>
+    <p>No items yet. Add your first menu item.</p>
+</div>
+{% endif %}
 
 <script>
 function toggleCustomization(id, btn) {
