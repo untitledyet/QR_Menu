@@ -5,7 +5,7 @@
     <title>მენიუ</title>
     {% include 'header.html' %}
 </head>
-<body data-page="home" data-venue="{{ session.get('venue_slug', 'demo') }}">
+<body data-page="home" data-venue="{{ session.get('venue_slug', 'demo') }}" data-table="{{ table_id }}">
 
 <div class="app-shell">
     <!-- Top bar: dark mode + language -->

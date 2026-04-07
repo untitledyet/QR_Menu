@@ -152,8 +152,19 @@ function showItemPopup(item) {
     $('#item-modal').modal('show');
 }
 
+/**
+ * Venue + table scoped cart key.
+ * Each venue's each table has its own cart.
+ * Uses localStorage so cart survives tab close/reopen.
+ */
+function getCartKey() {
+    const slug = document.body.dataset.venue || 'default';
+    const table = document.body.dataset.table || '0';
+    return `cart_${slug}_${table}`;
+}
+
 function addToCart(item, modifiedIngredients) {
-    let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    let cart = JSON.parse(localStorage.getItem(getCartKey())) || [];
     const comment = (document.getElementById('item-comment')?.value || '').trim();
 
     const ingredientKey = item.FoodItemID + '-' +
@@ -175,7 +186,7 @@ function addToCart(item, modifiedIngredients) {
             comment: comment
         });
     }
-    sessionStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem(getCartKey(), JSON.stringify(cart));
     updateCartItemCount();
     showCartToast(item.FoodName || 'Item');
     $('#item-modal').modal('hide');
@@ -190,7 +201,7 @@ function showCartToast(itemName) {
 }
 
 function updateCartItemCount() {
-    const cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    const cart = JSON.parse(localStorage.getItem(getCartKey())) || [];
     const count = cart.reduce((t, i) => t + i.quantity, 0);
     const badge = document.querySelector('.cart-item-count');
     if (badge) {

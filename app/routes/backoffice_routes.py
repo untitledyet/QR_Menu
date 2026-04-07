@@ -35,6 +35,33 @@ def get_current_admin():
     return AdminUser.query.get(session['admin_id']) if 'admin_id' in session else None
 
 
+def verify_item_ownership(item_id):
+    """Verify that the item belongs to the current admin's venue."""
+    admin = get_current_admin()
+    item = FoodItem.query.get_or_404(item_id)
+    if admin and admin.venue:
+        cat = Category.query.get(item.CategoryID)
+        if not cat or cat.venue_id != admin.venue.id:
+            return None
+    return item
+
+
+def verify_category_ownership(cat_id):
+    admin = get_current_admin()
+    cat = Category.query.get_or_404(cat_id)
+    if admin and admin.venue and cat.venue_id != admin.venue.id:
+        return None
+    return cat
+
+
+def verify_promo_ownership(promo_id):
+    admin = get_current_admin()
+    promo = Promotion.query.get_or_404(promo_id)
+    if admin and admin.venue and promo.venue_id != admin.venue.id:
+        return None
+    return promo
+
+
 # ============================================================
 # Auth
 # ============================================================
@@ -223,7 +250,9 @@ def menu_list():
 @bo_bp.route('/menu/toggle-customization/<int:item_id>', methods=['POST'])
 @login_required
 def toggle_customization(item_id):
-    item = FoodItem.query.get_or_404(item_id)
+    item = verify_item_ownership(item_id)
+    if not item:
+        return jsonify(success=False, error='Access denied'), 403
     item.allow_customization = not item.allow_customization
     db.session.commit()
     return jsonify(success=True, allow_customization=item.allow_customization)
@@ -232,7 +261,9 @@ def toggle_customization(item_id):
 @bo_bp.route('/menu/toggle-active/<int:item_id>', methods=['POST'])
 @login_required
 def toggle_item_active(item_id):
-    item = FoodItem.query.get_or_404(item_id)
+    item = verify_item_ownership(item_id)
+    if not item:
+        return jsonify(success=False, error='Access denied'), 403
     item.is_active = not item.is_active
     db.session.commit()
     return jsonify(success=True, is_active=item.is_active)
@@ -291,7 +322,10 @@ def add_item():
 def edit_item(item_id):
     admin = get_current_admin()
     venue = admin.venue
-    item = FoodItem.query.get_or_404(item_id)
+    item = verify_item_ownership(item_id)
+    if not item:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.menu_list'))
     categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
     subcategories = Subcategory.query.all()
     features = venue.get_all_features() if venue else {}
@@ -323,7 +357,10 @@ def edit_item(item_id):
 @bo_bp.route('/menu/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_item(item_id):
-    item = FoodItem.query.get_or_404(item_id)
+    item = verify_item_ownership(item_id)
+    if not item:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.menu_list'))
     name = item.FoodName
     db.session.delete(item)
     db.session.commit()
@@ -344,7 +381,9 @@ def promotions_list():
 @bo_bp.route('/promotions/toggle/<int:promo_id>', methods=['POST'])
 @login_required
 def toggle_promotion(promo_id):
-    promo = Promotion.query.get_or_404(promo_id)
+    promo = verify_promo_ownership(promo_id)
+    if not promo:
+        return jsonify(success=False, error='Access denied'), 403
     promo.is_active = not promo.is_active
     db.session.commit()
     return jsonify(success=True, is_active=promo.is_active)
@@ -369,6 +408,11 @@ def api_stats():
 @bo_bp.route('/api/subcategories/<int:category_id>')
 @login_required
 def api_subcategories(category_id):
+    admin = get_current_admin()
+    if admin and admin.venue:
+        cat = Category.query.filter_by(CategoryID=category_id, venue_id=admin.venue.id).first()
+        if not cat:
+            return jsonify([])
     subs = Subcategory.query.filter_by(CategoryID=category_id).all()
     return jsonify([{'id': s.SubcategoryID, 'name': s.SubcategoryName} for s in subs])
 
@@ -423,7 +467,10 @@ def add_category():
 @login_required
 def edit_category(cat_id):
     admin = get_current_admin()
-    cat = Category.query.get_or_404(cat_id)
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.categories_list'))
 
     if request.method == 'POST':
         cat.CategoryName = request.form.get('name', '').strip() or cat.CategoryName
@@ -447,7 +494,10 @@ def edit_category(cat_id):
 @bo_bp.route('/categories/delete/<int:cat_id>', methods=['POST'])
 @login_required
 def delete_category(cat_id):
-    cat = Category.query.get_or_404(cat_id)
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.categories_list'))
     # Check if category has items
     items_count = FoodItem.query.filter_by(CategoryID=cat.CategoryID).count()
     if items_count > 0:
@@ -466,7 +516,10 @@ def delete_category(cat_id):
 @bo_bp.route('/categories/<int:cat_id>/subcategories/add', methods=['POST'])
 @login_required
 def add_subcategory(cat_id):
-    cat = Category.query.get_or_404(cat_id)
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.categories_list'))
     name = request.form.get('name', '').strip()
     if name:
         sub = Subcategory(SubcategoryName=name, CategoryID=cat.CategoryID)
@@ -480,6 +533,11 @@ def add_subcategory(cat_id):
 @login_required
 def delete_subcategory(sub_id):
     sub = Subcategory.query.get_or_404(sub_id)
+    # Verify ownership via parent category
+    cat = verify_category_ownership(sub.CategoryID)
+    if not cat:
+        flash('Access denied')
+        return redirect(url_for('bo_bp.categories_list'))
     # Unlink items from this subcategory
     FoodItem.query.filter_by(SubcategoryID=sub.SubcategoryID).update({'SubcategoryID': None})
     name = sub.SubcategoryName

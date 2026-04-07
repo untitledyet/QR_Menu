@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const trashIcon = document.querySelector('.trash-icon');
     const cartContent = document.querySelector('.cart-content');
     const emptyCart = document.querySelector('.empty-cart');
-    let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    const cartKey = typeof getCartKey === 'function' ? getCartKey() : 'cart_default';
+    let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
     function render() {
         if (!cartContent || !emptyCart) return;
@@ -32,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
                 cartContent.appendChild(el);
-
                 el.querySelector('[data-action="decrease"]').addEventListener('click', () => updateQty(item.id, item.ingredientKey, -1));
                 el.querySelector('[data-action="increase"]').addEventListener('click', () => updateQty(item.id, item.ingredientKey, 1));
                 el.querySelector('.cart-item__remove').addEventListener('click', () => removeItem(item.id, item.ingredientKey));
@@ -42,22 +42,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function buildModTags(item) {
         let html = '';
-        const withoutLabel = typeof t === 'function' ? t('without') : 'without';
-        const extraLabel = typeof t === 'function' ? t('extra') : 'extra';
-
         if (Array.isArray(item.ingredients)) {
             item.ingredients.forEach(ing => {
                 if (!ing) return;
-                if (ing.action === 'remove') {
-                    html += `<span class="cart-item__tag cart-item__tag--remove">✕ ${ing.name}</span>`;
-                } else if (ing.action === 'add') {
-                    html += `<span class="cart-item__tag cart-item__tag--add">✦ ${ing.name}</span>`;
-                }
+                if (ing.action === 'remove') html += `<span class="cart-item__tag cart-item__tag--remove">✕ ${ing.name}</span>`;
+                else if (ing.action === 'add') html += `<span class="cart-item__tag cart-item__tag--add">✦ ${ing.name}</span>`;
             });
         }
-        if (item.comment) {
-            html += `<span class="cart-item__tag cart-item__tag--comment">💬 ${item.comment}</span>`;
-        }
+        if (item.comment) html += `<span class="cart-item__tag cart-item__tag--comment">💬 ${item.comment}</span>`;
         return html;
     }
 
@@ -74,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function save() {
-        sessionStorage.setItem('cart', JSON.stringify(cart));
+        localStorage.setItem(cartKey, JSON.stringify(cart));
         render();
         if (typeof updateCartItemCount === 'function') updateCartItemCount();
     }
