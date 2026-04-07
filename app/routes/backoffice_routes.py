@@ -371,3 +371,119 @@ def api_stats():
 def api_subcategories(category_id):
     subs = Subcategory.query.filter_by(CategoryID=category_id).all()
     return jsonify([{'id': s.SubcategoryID, 'name': s.SubcategoryName} for s in subs])
+
+
+# ============================================================
+# Category & Subcategory CRUD
+# ============================================================
+
+@bo_bp.route('/categories')
+@login_required
+def categories_list():
+    admin = get_current_admin()
+    venue = admin.venue
+    categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
+    return render_template('backoffice/categories.html', admin=admin, categories=categories)
+
+
+@bo_bp.route('/categories/add', methods=['GET', 'POST'])
+@login_required
+def add_category():
+    admin = get_current_admin()
+    venue = admin.venue
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+
+        if not name:
+            flash('Category name is required')
+            return redirect(url_for('bo_bp.add_category'))
+
+        icon_filename = None
+        file = request.files.get('icon')
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            upload_dir = os.path.join(current_app.root_path, 'static', 'images', 'categories')
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, filename))
+            icon_filename = filename
+
+        cat = Category(CategoryName=name, Description=description,
+                       CategoryIcon=icon_filename, venue_id=venue.id if venue else None)
+        db.session.add(cat)
+        db.session.commit()
+        flash(f'Category "{name}" created')
+        return redirect(url_for('bo_bp.categories_list'))
+
+    return render_template('backoffice/category_form.html', admin=admin, category=None, title='Add Category')
+
+
+@bo_bp.route('/categories/edit/<int:cat_id>', methods=['GET', 'POST'])
+@login_required
+def edit_category(cat_id):
+    admin = get_current_admin()
+    cat = Category.query.get_or_404(cat_id)
+
+    if request.method == 'POST':
+        cat.CategoryName = request.form.get('name', '').strip() or cat.CategoryName
+        cat.Description = request.form.get('description', '').strip()
+
+        file = request.files.get('icon')
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            upload_dir = os.path.join(current_app.root_path, 'static', 'images', 'categories')
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, filename))
+            cat.CategoryIcon = filename
+
+        db.session.commit()
+        flash(f'Category "{cat.CategoryName}" updated')
+        return redirect(url_for('bo_bp.categories_list'))
+
+    return render_template('backoffice/category_form.html', admin=admin, category=cat, title='Edit Category')
+
+
+@bo_bp.route('/categories/delete/<int:cat_id>', methods=['POST'])
+@login_required
+def delete_category(cat_id):
+    cat = Category.query.get_or_404(cat_id)
+    # Check if category has items
+    items_count = FoodItem.query.filter_by(CategoryID=cat.CategoryID).count()
+    if items_count > 0:
+        flash(f'Cannot delete "{cat.CategoryName}" — it has {items_count} items. Remove items first.')
+        return redirect(url_for('bo_bp.categories_list'))
+
+    name = cat.CategoryName
+    # Delete subcategories too
+    Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
+    db.session.delete(cat)
+    db.session.commit()
+    flash(f'Category "{name}" deleted')
+    return redirect(url_for('bo_bp.categories_list'))
+
+
+@bo_bp.route('/categories/<int:cat_id>/subcategories/add', methods=['POST'])
+@login_required
+def add_subcategory(cat_id):
+    cat = Category.query.get_or_404(cat_id)
+    name = request.form.get('name', '').strip()
+    if name:
+        sub = Subcategory(SubcategoryName=name, CategoryID=cat.CategoryID)
+        db.session.add(sub)
+        db.session.commit()
+        flash(f'Subcategory "{name}" added')
+    return redirect(url_for('bo_bp.categories_list'))
+
+
+@bo_bp.route('/subcategories/delete/<int:sub_id>', methods=['POST'])
+@login_required
+def delete_subcategory(sub_id):
+    sub = Subcategory.query.get_or_404(sub_id)
+    # Unlink items from this subcategory
+    FoodItem.query.filter_by(SubcategoryID=sub.SubcategoryID).update({'SubcategoryID': None})
+    name = sub.SubcategoryName
+    db.session.delete(sub)
+    db.session.commit()
+    flash(f'Subcategory "{name}" deleted')
+    return redirect(url_for('bo_bp.categories_list'))

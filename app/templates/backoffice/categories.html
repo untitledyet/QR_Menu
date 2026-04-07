@@ -1,0 +1,55 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <h1>Categories</h1>
+    <a href="{{ url_for('bo_bp.add_category') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Category</a>
+</div>
+
+{% for cat in categories %}
+<div class="bo-cat-card">
+    <div class="bo-cat-card__header">
+        {% if cat.CategoryIcon %}
+        <img src="{{ url_for('static', filename='images/categories/' ~ cat.CategoryIcon) }}" class="bo-cat-card__icon">
+        {% else %}
+        <div class="bo-cat-card__icon-placeholder"><i class="fas fa-folder"></i></div>
+        {% endif %}
+        <div class="bo-cat-card__info">
+            <h3>{{ cat.CategoryName }}</h3>
+            <small>{{ cat.Description or '' }} · {{ cat.subcategories|length }} subcategories</small>
+        </div>
+        <div class="bo-table__actions">
+            <a href="{{ url_for('bo_bp.edit_category', cat_id=cat.CategoryID) }}" class="bo-icon-btn" title="Edit"><i class="fas fa-pen"></i></a>
+            <form method="POST" action="{{ url_for('bo_bp.delete_category', cat_id=cat.CategoryID) }}" style="display:inline;" onsubmit="return confirm('Delete {{ cat.CategoryName }}?')">
+                <button type="submit" class="bo-icon-btn bo-icon-btn--danger" title="Delete"><i class="fas fa-trash"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Subcategories -->
+    <div class="bo-cat-card__subs">
+        {% for sub in cat.subcategories %}
+        <div class="bo-sub-chip">
+            <span>{{ sub.SubcategoryName }}</span>
+            <form method="POST" action="{{ url_for('bo_bp.delete_subcategory', sub_id=sub.SubcategoryID) }}" style="display:inline;">
+                <button type="submit" class="bo-sub-chip__remove" title="Remove"><i class="fas fa-times"></i></button>
+            </form>
+        </div>
+        {% endfor %}
+
+        <!-- Add subcategory inline -->
+        <form method="POST" action="{{ url_for('bo_bp.add_subcategory', cat_id=cat.CategoryID) }}" class="bo-sub-add">
+            <input type="text" name="name" placeholder="New subcategory..." required>
+            <button type="submit" class="bo-icon-btn" title="Add"><i class="fas fa-plus"></i></button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+{% if not categories %}
+<div style="text-align:center; padding:60px 20px; color:var(--bo-text-2);">
+    <i class="fas fa-folder-open" style="font-size:3rem; opacity:.3; margin-bottom:16px; display:block;"></i>
+    <p>No categories yet. Create your first category to start adding menu items.</p>
+</div>
+{% endif %}
+{% endblock %}
