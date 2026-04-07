@@ -204,7 +204,9 @@ body {
 .bo-login-card__title { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 24px; }
 .bo-login-card__error { padding: 8px 12px; border-radius: 8px; background: rgba(239,68,68,.12); color: var(--bo-red); font-size: .82rem; margin-bottom: 16px; text-align: center; }
 
-/* Responsive */
+/* ============================================================
+   Responsive — Mobile (< 768px)
+   ============================================================ */
 @media (max-width: 768px) {
   .bo-sidebar {
     position: fixed; top: 0; left: -260px; z-index: 100;
@@ -231,7 +233,74 @@ body {
   .bo-mobile-header__title {
     flex: 1; text-align: center; font-weight: 600; font-size: .95rem;
   }
+
+  /* Header */
+  .bo-header h1 { font-size: 1.2rem; }
+  .bo-header[style*="display:flex"] { flex-wrap: wrap; gap: 12px; }
+
+  /* Stats */
+  .bo-stats { grid-template-columns: 1fr; gap: 10px; }
+  .bo-stat-card { padding: 14px; }
+  .bo-stat-card__icon { width: 36px; height: 36px; font-size: 1.1rem; }
+  .bo-stat-card__value { font-size: 1.2rem; }
+
+  /* Cards */
+  .bo-card-grid { grid-template-columns: 1fr; }
+
+  /* Table → card layout on mobile */
+  .bo-table thead { display: none; }
+  .bo-table, .bo-table tbody, .bo-table tr, .bo-table td {
+    display: block; width: 100%;
+  }
+  .bo-table tr {
+    background: var(--bo-surface); border: 1px solid var(--bo-border);
+    border-radius: var(--bo-radius); margin-bottom: 10px;
+    padding: 12px; position: relative;
+  }
+  .bo-table td { padding: 4px 0; border: none; }
+  .bo-table td:first-child { float: left; margin-right: 12px; }
+  .bo-table__img { width: 56px; height: 56px; }
+  .bo-table__actions { margin-top: 8px; }
+
+  /* Settings */
+  .bo-setting-card { flex-wrap: wrap; padding: 14px; gap: 10px; }
+  .bo-setting-card__body { flex-basis: calc(100% - 56px); }
+
+  /* Forms */
+  .bo-form-grid { grid-template-columns: 1fr; gap: 16px; }
+  .bo-form-row { grid-template-columns: 1fr; }
+  .bo-form-actions { flex-direction: column; }
+  .bo-form-actions .bo-btn { width: 100%; text-align: center; }
+
+  /* Category cards */
+  .bo-cat-card__header { flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+  .bo-cat-card__subs { padding: 0 14px 12px; }
+
+  /* Login */
+  .bo-login-card { margin: 16px; padding: 24px; }
+
+  /* Filters scroll */
+  .bo-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
+  .bo-filter-pill { white-space: nowrap; flex-shrink: 0; }
 }
+
+/* ============================================================
+   Responsive — Tablet (769px - 1024px)
+   ============================================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .bo-sidebar { width: 200px; }
+  .bo-sidebar__logo { font-size: 1rem; padding: 0 14px 20px; }
+  .bo-nav { padding: 0 6px; }
+  .bo-nav__item { font-size: .82rem; padding: 8px 10px; }
+  .bo-main { margin-left: 200px; padding: 24px; }
+  .bo-header h1 { font-size: 1.4rem; }
+  .bo-card-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .bo-form-grid { grid-template-columns: 200px 1fr; gap: 24px; }
+}
+
+/* ============================================================
+   Desktop (> 1024px) — default styles, no changes needed
+   ============================================================ */
 @media (min-width: 769px) {
   .bo-mobile-header { display: none !important; }
   .bo-sidebar-overlay { display: none !important; }
