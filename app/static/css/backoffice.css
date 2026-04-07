@@ -17,10 +17,11 @@ body {
   font-family: 'Inter', -apple-system, sans-serif;
   background: var(--bo-bg); color: var(--bo-text);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* Layout */
-.bo-layout { display: flex; min-height: 100vh; }
+.bo-layout { display: flex; min-height: 100vh; overflow-x: hidden; }
 .bo-sidebar {
   width: 240px; background: var(--bo-surface);
   border-right: 1px solid var(--bo-border);
@@ -44,7 +45,7 @@ body {
 .bo-sidebar__footer { padding: 16px 20px; border-top: 1px solid var(--bo-border); }
 .bo-sidebar__user { font-size: .8rem; color: var(--bo-text-2); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 
-.bo-main { margin-left: 240px; flex: 1; padding: 32px 40px; }
+.bo-main { margin-left: 240px; flex: 1; padding: 32px 40px; overflow-x: hidden; min-width: 0; }
 
 /* Header */
 .bo-header { margin-bottom: 24px; }
