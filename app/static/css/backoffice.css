@@ -204,6 +204,10 @@ body {
 .bo-login-card__title { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 24px; }
 .bo-login-card__error { padding: 8px 12px; border-radius: 8px; background: rgba(239,68,68,.12); color: var(--bo-red); font-size: .82rem; margin-bottom: 16px; text-align: center; }
 
+/* Mobile header & overlay — hidden by default */
+.bo-mobile-header { display: none; }
+.bo-sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
+
 /* ============================================================
    Responsive — Mobile (< 768px)
    ============================================================ */
@@ -214,14 +218,10 @@ body {
     transition: left .3s ease;
   }
   .bo-sidebar.open { left: 0; }
-  .bo-sidebar-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.5); z-index: 99;
-  }
   .bo-sidebar-overlay.show { display: block; }
-  .bo-main { margin-left: 0; padding: 16px; padding-top: 60px; }
+  .bo-main { margin-left: 0; padding: 16px; padding-top: 64px; }
   .bo-mobile-header {
-    display: flex; position: fixed; top: 0; left: 0; right: 0;
+    display: flex !important; position: fixed; top: 0; left: 0; right: 0;
     height: 52px; background: var(--bo-surface);
     border-bottom: 1px solid var(--bo-border);
     align-items: center; padding: 0 16px; z-index: 98;
@@ -231,7 +231,7 @@ body {
     font-size: 1.3rem; cursor: pointer; padding: 8px;
   }
   .bo-mobile-header__title {
-    flex: 1; text-align: center; font-weight: 600; font-size: .95rem;
+    flex: 1; text-align: center; font-weight: 600; font-size: .95rem; color: var(--bo-text);
   }
 
   /* Header */
@@ -302,8 +302,7 @@ body {
    Desktop (> 1024px) — default styles, no changes needed
    ============================================================ */
 @media (min-width: 769px) {
-  .bo-mobile-header { display: none !important; }
-  .bo-sidebar-overlay { display: none !important; }
+  .bo-mobile-header { display: none; }
 }
 
 /* Item form */
