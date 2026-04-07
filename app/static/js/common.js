@@ -110,20 +110,34 @@ function showItemPopup(item) {
 
             removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isActive = removeBtn.classList.contains('active');
-                removeBtn.classList.toggle('active');
-                extraBtn.classList.remove('active');
-                li.className = isActive ? 'ingredient-item' : 'ingredient-item ingredient-item--removed';
-                modifiedIngredients[index] = { name, action: isActive ? 'default' : 'remove' };
+                if (li.classList.contains('ingredient-item--removed')) {
+                    // Already removed → back to default
+                    li.className = 'ingredient-item';
+                    removeBtn.classList.remove('active');
+                    modifiedIngredients[index] = { name, action: 'default' };
+                } else {
+                    // Default or extra → remove
+                    li.className = 'ingredient-item ingredient-item--removed';
+                    removeBtn.classList.add('active');
+                    extraBtn.classList.remove('active');
+                    modifiedIngredients[index] = { name, action: 'remove' };
+                }
             });
 
             extraBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isActive = extraBtn.classList.contains('active');
-                extraBtn.classList.toggle('active');
-                removeBtn.classList.remove('active');
-                li.className = isActive ? 'ingredient-item' : 'ingredient-item ingredient-item--extra';
-                modifiedIngredients[index] = { name, action: isActive ? 'default' : 'add' };
+                if (li.classList.contains('ingredient-item--extra')) {
+                    // Already extra → back to default
+                    li.className = 'ingredient-item';
+                    extraBtn.classList.remove('active');
+                    modifiedIngredients[index] = { name, action: 'default' };
+                } else {
+                    // Default or removed → extra
+                    li.className = 'ingredient-item ingredient-item--extra';
+                    extraBtn.classList.add('active');
+                    removeBtn.classList.remove('active');
+                    modifiedIngredients[index] = { name, action: 'add' };
+                }
             });
         });
     } else {

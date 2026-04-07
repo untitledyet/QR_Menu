@@ -206,8 +206,35 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .bo-sidebar { display: none; }
-  .bo-main { margin-left: 0; padding: 20px 16px; }
+  .bo-sidebar {
+    position: fixed; top: 0; left: -260px; z-index: 100;
+    width: 240px; height: 100vh;
+    transition: left .3s ease;
+  }
+  .bo-sidebar.open { left: 0; }
+  .bo-sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 99;
+  }
+  .bo-sidebar-overlay.show { display: block; }
+  .bo-main { margin-left: 0; padding: 16px; padding-top: 60px; }
+  .bo-mobile-header {
+    display: flex; position: fixed; top: 0; left: 0; right: 0;
+    height: 52px; background: var(--bo-surface);
+    border-bottom: 1px solid var(--bo-border);
+    align-items: center; padding: 0 16px; z-index: 98;
+  }
+  .bo-mobile-header__burger {
+    background: none; border: none; color: var(--bo-text);
+    font-size: 1.3rem; cursor: pointer; padding: 8px;
+  }
+  .bo-mobile-header__title {
+    flex: 1; text-align: center; font-weight: 600; font-size: .95rem;
+  }
+}
+@media (min-width: 769px) {
+  .bo-mobile-header { display: none !important; }
+  .bo-sidebar-overlay { display: none !important; }
 }
 
 /* Item form */

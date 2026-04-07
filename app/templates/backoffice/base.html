@@ -11,6 +11,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/backoffice.css') }}">
 </head>
 <body>
+    <div class="bo-mobile-header">
+        <button class="bo-mobile-header__burger" id="bo-burger"><i class="fas fa-bars"></i></button>
+        <span class="bo-mobile-header__title">QR Menu</span>
+        <span style="width:36px;"></span>
+    </div>
+    <div class="bo-sidebar-overlay" id="bo-overlay"></div>
     <div class="bo-layout">
         <aside class="bo-sidebar">
             <div class="bo-sidebar__logo"><i class="fas fa-utensils"></i><span>QR Menu</span></div>
@@ -57,5 +63,17 @@
             {% block content %}{% endblock %}
         </main>
     </div>
+<script>
+(function(){
+    var burger = document.getElementById('bo-burger');
+    var sidebar = document.querySelector('.bo-sidebar');
+    var overlay = document.getElementById('bo-overlay');
+    if(burger && sidebar && overlay){
+        burger.addEventListener('click', function(){ sidebar.classList.add('open'); overlay.classList.add('show'); });
+        overlay.addEventListener('click', function(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+        sidebar.querySelectorAll('.bo-nav__item').forEach(function(a){ a.addEventListener('click', function(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }); });
+    }
+})();
+</script>
 </body>
 </html>
