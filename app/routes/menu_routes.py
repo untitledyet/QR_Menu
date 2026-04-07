@@ -41,6 +41,10 @@ def cart_page(slug, table_id):
     venue = get_venue_or_404(slug)
     features = venue.get_all_features()
 
+    session['table_id'] = table_id
+    session['venue_slug'] = slug
+    session['venue_id'] = venue.id
+
     if not features.get('cart'):
         flash('Cart is not available.')
         return redirect(url_for('menu_bp.home', slug=slug, table_id=table_id))

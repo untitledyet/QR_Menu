@@ -3,10 +3,13 @@
         <i class="fas fa-home nav-tab__icon"></i>
         <span data-i18n="home">სახლი</span>
     </a>
+    {% set feat = session.get('features', {}) %}
+    {% if feat.get('cart', True) %}
     <a href="{{ url_for('menu_bp.cart_page', slug=session.get('venue_slug','demo'), table_id=session.get('table_id',1)) }}" class="nav-tab" data-nav="cart">
         <i class="fas fa-shopping-bag nav-tab__icon"></i>
         <span data-i18n="cart">კალათი</span>
         <span class="nav-tab__badge cart-item-count" style="display:none;">0</span>
     </a>
+    {% endif %}
 </nav>
 <div class="toast-notification" id="cart-toast"></div>
