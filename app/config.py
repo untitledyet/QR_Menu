@@ -28,3 +28,7 @@ class Config:
 
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_DEBUG', '0') != '1'
     REMEMBER_COOKIE_SECURE = os.environ.get('FLASK_DEBUG', '0') != '1'
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')

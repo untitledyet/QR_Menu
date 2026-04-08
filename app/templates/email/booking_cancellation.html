@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;">
+    <h2 style="color:#DC2626;">{{ 'ჯავშანი გაუქმებულია' if lang == 'ka' else 'Booking Cancelled' }}</h2>
+    <p>{{ 'თქვენი ჯავშანი' if lang == 'ka' else 'Your booking for' }} {{ date }} {{ time_slot }} {{ 'გაუქმდა.' if lang == 'ka' else 'has been cancelled.' }}</p>
+</body>
+</html>

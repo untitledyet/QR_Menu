@@ -96,3 +96,11 @@ def place_order(slug):
     if not table_id:
         return redirect(url_for('menu_bp.home', slug=slug, table_id=1))
     return jsonify({'status': 'Order placed', 'table_id': table_id, 'venue': venue.name})
+
+
+@menu_bp.route('/<slug>/reservations')
+def reservations_page(slug):
+    venue = get_venue_or_404(slug)
+    if not venue.has_feature('reservations'):
+        abort(404)
+    return render_template('reservation.html', venue=venue)

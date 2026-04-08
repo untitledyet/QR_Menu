@@ -1,0 +1,54 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Reservations{% endblock %}
+{% block content %}
+<div class="bo-header"><h1>Reservations</h1></div>
+
+<div class="bo-filters" style="margin-bottom:16px;">
+    <form method="GET" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="date" name="date" value="{{ filters.date or '' }}" class="bo-plan-select">
+        <select name="status" class="bo-plan-select">
+            <option value="">All statuses</option>
+            {% for key, label in statuses.items() %}
+            <option value="{{ key }}" {{ 'selected' if filters.status == key }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="table_id" class="bo-plan-select">
+            <option value="">All tables</option>
+            {% for t in tables %}
+            <option value="{{ t.id }}" {{ 'selected' if filters.table_id == t.id }}>{{ t.label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="bo-btn bo-btn--primary" style="padding:8px 16px;">Filter</button>
+    </form>
+</div>
+
+{% if bookings %}
+<div class="bo-table-wrap">
+    <table class="bo-table">
+        <thead><tr><th>Date</th><th>Time</th><th>Table</th><th>Guests</th><th>Name</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for b in bookings %}
+            <tr>
+                <td>{{ b.booking_date }}</td>
+                <td>{{ b.time_slot.strftime('%H:%M') }}</td>
+                <td>{{ b.table.label if b.table else '—' }}</td>
+                <td>{{ b.guest_count }}</td>
+                <td>{{ b.guest_name }}</td>
+                <td>{{ b.guest_phone }}</td>
+                <td><span class="bo-badge {{ 'bo-badge--green' if b.status == 'confirmed' else 'bo-badge--red' if b.status == 'cancelled' else '' }}">{{ b.status }}</span></td>
+                <td>
+                    {% if b.status in ('confirmed', 'pending_payment') %}
+                    <form method="POST" action="{{ url_for('bo_bp.admin_cancel_booking', booking_id=b.id) }}" style="display:inline;" onsubmit="return confirm('Cancel booking #{{ b.id }}?')">
+                        <button type="submit" class="bo-icon-btn bo-icon-btn--danger"><i class="fas fa-times"></i></button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p style="color:var(--bo-text-2); text-align:center; padding:40px;">No reservations found.</p>
+{% endif %}
+{% endblock %}

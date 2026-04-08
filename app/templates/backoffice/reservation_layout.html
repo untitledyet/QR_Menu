@@ -1,0 +1,60 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Layout Builder{% endblock %}
+{% block content %}
+<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <h1>Table Layout Builder</h1>
+    <button class="bo-btn bo-btn--primary" id="save-layout-btn"><i class="fas fa-save"></i> Save Layout</button>
+</div>
+
+<div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+    <button class="bo-btn bo-btn--ghost" onclick="addTable('circle')"><i class="fas fa-circle"></i> Circle</button>
+    <button class="bo-btn bo-btn--ghost" onclick="addTable('square')"><i class="fas fa-square"></i> Square</button>
+    <button class="bo-btn bo-btn--ghost" onclick="addTable('rectangle')"><i class="fas fa-rectangle-wide"></i> Rectangle</button>
+    <select id="capacity-select" class="bo-plan-select" style="width:auto;">
+        <option value="2">2 seats</option>
+        <option value="4" selected>4 seats</option>
+        <option value="6">6 seats</option>
+        <option value="8">8 seats</option>
+    </select>
+    <button class="bo-btn bo-btn--ghost" style="color:var(--bo-red);" onclick="removeSelected()"><i class="fas fa-trash"></i> Remove</button>
+</div>
+
+<div style="width:100%; min-height:500px; border:1px solid var(--bo-border); border-radius:var(--bo-radius); overflow:hidden;">
+    <canvas id="layout-canvas"></canvas>
+</div>
+
+<script src="{{ url_for('static', filename='js/floor-map.js') }}"></script>
+<script>
+let floorMap;
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('layout-canvas');
+    floorMap = new FloorMap(canvas, { editable: true });
+
+    // Load existing layout
+    fetch('/backoffice/api/reservations/layout').then(r => r.json()).then(d => {
+        if (d.tables && d.tables.length) floorMap.loadLayout(d.tables);
+    });
+
+    document.getElementById('save-layout-btn').addEventListener('click', saveLayout);
+});
+
+function addTable(shape) {
+    const cap = parseInt(document.getElementById('capacity-select').value);
+    floorMap.addTable(shape, cap);
+}
+
+function removeSelected() {
+    if (floorMap.selectedTableId) floorMap.removeTable(floorMap.selectedTableId);
+}
+
+function saveLayout() {
+    const tables = floorMap.getLayout();
+    fetch('/backoffice/api/reservations/layout', {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ tables, layout: tables })
+    }).then(r => r.json()).then(d => {
+        if (d.success) alert('Layout saved!');
+    });
+}
+</script>
+{% endblock %}

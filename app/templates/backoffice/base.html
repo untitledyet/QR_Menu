@@ -42,6 +42,17 @@
                         <i class="fas fa-tags"></i> Promotions
                     </a>
                     {% endif %}
+                    {% if vf.get('reservations') %}
+                    <a href="{{ url_for('bo_bp.reservations_list') }}" class="bo-nav__item {% if 'reservation' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-calendar-check"></i> Reservations
+                    </a>
+                    <a href="{{ url_for('bo_bp.reservation_layout') }}" class="bo-nav__item {% if 'layout' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-drafting-compass"></i> Layout Builder
+                    </a>
+                    <a href="{{ url_for('bo_bp.reservation_settings') }}" class="bo-nav__item {% if 'reservation_settings' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Res. Settings
+                    </a>
+                    {% endif %}
                 {% endif %}
             </nav>
             <div class="bo-sidebar__footer">

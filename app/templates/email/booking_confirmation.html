@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;">
+    <h2 style="color:#FF6B35;">{{ 'ჯავშანი დადასტურებულია!' if lang == 'ka' else 'Booking Confirmed!' }}</h2>
+    <table style="width:100%; border-collapse:collapse;">
+        <tr><td style="padding:8px 0; color:#666;">{{ 'რესტორანი' if lang == 'ka' else 'Restaurant' }}</td><td style="padding:8px 0; font-weight:bold;">{{ venue_name }}</td></tr>
+        <tr><td style="padding:8px 0; color:#666;">{{ 'თარიღი' if lang == 'ka' else 'Date' }}</td><td style="padding:8px 0; font-weight:bold;">{{ date }}</td></tr>
+        <tr><td style="padding:8px 0; color:#666;">{{ 'დრო' if lang == 'ka' else 'Time' }}</td><td style="padding:8px 0; font-weight:bold;">{{ time_slot }}</td></tr>
+        <tr><td style="padding:8px 0; color:#666;">{{ 'მაგიდა' if lang == 'ka' else 'Table' }}</td><td style="padding:8px 0; font-weight:bold;">{{ table_label }}</td></tr>
+        <tr><td style="padding:8px 0; color:#666;">{{ 'სტუმრები' if lang == 'ka' else 'Guests' }}</td><td style="padding:8px 0; font-weight:bold;">{{ guest_count }}</td></tr>
+    </table>
+    <p style="margin-top:20px;"><a href="{{ cancel_url }}" style="color:#DC2626;">{{ 'ჯავშნის გაუქმება' if lang == 'ka' else 'Cancel Booking' }}</a></p>
+</body>
+</html>

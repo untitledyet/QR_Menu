@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;">
+    <h2 style="color:#FF6B35;">{{ 'შეხსენება' if lang == 'ka' else 'Reminder' }}</h2>
+    <p>{{ 'ხვალ' if lang == 'ka' else 'Tomorrow at' }} {{ time_slot }} {{ 'გაქვთ ჯავშანი' if lang == 'ka' else 'you have a booking at' }} {{ venue_name }}.</p>
+    <p>{{ 'მაგიდა' if lang == 'ka' else 'Table' }}: {{ table_label }}, {{ 'სტუმრები' if lang == 'ka' else 'Guests' }}: {{ guest_count }}</p>
+</body>
+</html>

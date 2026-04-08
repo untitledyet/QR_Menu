@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
@@ -19,6 +19,7 @@ PLAN_FEATURES = {
         'payments': False,
         'ratings': False,
         'analytics': False,
+        'reservations': False,
     },
     'basic': {
         'menu': True,
@@ -30,6 +31,7 @@ PLAN_FEATURES = {
         'payments': False,
         'ratings': False,
         'analytics': False,
+        'reservations': False,
     },
     'premium': {
         'menu': True,
@@ -41,6 +43,7 @@ PLAN_FEATURES = {
         'payments': True,
         'ratings': True,
         'analytics': True,
+        'reservations': True,
     },
 }
 
@@ -56,6 +59,7 @@ FEATURE_LIST = [
     ('payments', 'Online Payments', 'fas fa-credit-card', 'Accept payments online'),
     ('ratings', 'Ratings & Reviews', 'fas fa-star', 'Customer ratings on dishes'),
     ('analytics', 'Analytics', 'fas fa-chart-bar', 'Venue performance analytics'),
+    ('reservations', 'Reservations', 'fas fa-calendar-check', 'Table reservation system'),
 ]
 
 
@@ -216,3 +220,99 @@ class Order(db.Model):
         self.TableID = TableID
         self.Items = Items
         self.venue_id = venue_id
+
+
+# ============================================================
+# Reservation constants
+# ============================================================
+
+BOOKING_DURATION = timedelta(hours=3)
+
+BOOKING_STATUSES = {
+    'pending_payment': 'Pending Payment',
+    'confirmed': 'Confirmed',
+    'cancelled': 'Cancelled',
+    'expired': 'Expired',
+    'completed': 'Completed',
+}
+
+
+# ============================================================
+# Reservation models
+# ============================================================
+
+class ReservationCustomer(db.Model):
+    __tablename__ = 'ReservationCustomers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    preferred_language = db.Column(db.String(5), default='ka')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+
+    def check_password(self, pw):
+        return check_password_hash(self.password_hash, pw)
+
+
+class RestaurantTable(db.Model):
+    __tablename__ = 'RestaurantTables'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    label = db.Column(db.String(20), nullable=False)
+    shape = db.Column(db.String(20), nullable=False, default='circle')
+    capacity = db.Column(db.Integer, nullable=False, default=4)
+    pos_x = db.Column(db.Float, nullable=False, default=0.0)
+    pos_y = db.Column(db.Float, nullable=False, default=0.0)
+    width = db.Column(db.Float, nullable=False, default=60.0)
+    height = db.Column(db.Float, nullable=False, default=60.0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    venue = db.relationship('Venue', backref=db.backref('tables', lazy=True))
+
+
+class Booking(db.Model):
+    __tablename__ = 'Bookings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    table_id = db.Column(db.Integer, db.ForeignKey('RestaurantTables.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('ReservationCustomers.id'), nullable=False)
+    booking_date = db.Column(db.Date, nullable=False)
+    time_slot = db.Column(db.Time, nullable=False)
+    guest_count = db.Column(db.Integer, nullable=False)
+    guest_name = db.Column(db.String(100), nullable=False)
+    guest_email = db.Column(db.String(150), nullable=False)
+    guest_phone = db.Column(db.String(20), nullable=False)
+    comment = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='pending_payment')
+    language = db.Column(db.String(5), nullable=False, default='ka')
+    cancellation_token = db.Column(db.String(64), unique=True, nullable=True)
+    payment_intent_id = db.Column(db.String(100), nullable=True)
+    deposit_amount = db.Column(db.Float, nullable=False, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    venue = db.relationship('Venue', backref=db.backref('bookings', lazy=True))
+    table = db.relationship('RestaurantTable', backref=db.backref('bookings', lazy=True))
+    customer = db.relationship('ReservationCustomer', backref=db.backref('bookings', lazy=True))
+
+
+class ReservationSettings(db.Model):
+    __tablename__ = 'ReservationSettings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), unique=True, nullable=False)
+    deposit_amount = db.Column(db.Float, nullable=False, default=0.0)
+    time_slots = db.Column(db.JSON, nullable=False, default=lambda: ["18:00", "19:00", "20:00", "21:00", "22:00"])
+    max_advance_days = db.Column(db.Integer, nullable=False, default=30)
+    floor_layout = db.Column(db.JSON, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    venue = db.relationship('Venue', backref=db.backref('reservation_settings', uselist=False))

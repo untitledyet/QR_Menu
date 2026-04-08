@@ -1,0 +1,23 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Reservation Settings{% endblock %}
+{% block content %}
+<div class="bo-header"><h1>Reservation Settings</h1></div>
+
+<form method="POST" style="max-width:500px;">
+    <div class="bo-form-group">
+        <label>Deposit Amount (₾)</label>
+        <input type="number" name="deposit_amount" step="0.01" min="0" value="{{ '%.2f'|format(settings.deposit_amount) }}">
+        <small class="bo-form-hint">Set to 0 for no deposit required.</small>
+    </div>
+    <div class="bo-form-group">
+        <label>Time Slots</label>
+        <input type="text" name="time_slots" value="{{ settings.time_slots|join(', ') }}">
+        <small class="bo-form-hint">Comma-separated. e.g. 18:00, 19:00, 20:00, 21:00</small>
+    </div>
+    <div class="bo-form-group">
+        <label>Max Advance Booking (days)</label>
+        <input type="number" name="max_advance_days" min="1" max="365" value="{{ settings.max_advance_days }}">
+    </div>
+    <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> Save Settings</button>
+</form>
+{% endblock %}

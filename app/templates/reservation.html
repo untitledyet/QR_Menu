@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <title>ჯავშანი</title>
+    {% include 'header.html' %}
+    <style>
+        .res-page { max-width: 600px; margin: 0 auto; padding: 16px 16px 100px; }
+        .res-section { margin-bottom: 20px; }
+        .res-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+        .res-form-group { margin-bottom: 12px; }
+        .res-form-group label { display: block; font-size: .8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+        .res-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-family: inherit; font-size: .88rem; outline: none; }
+        .res-input:focus { border-color: var(--primary); }
+        .res-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .res-slots { display: flex; gap: 8px; flex-wrap: wrap; }
+        .res-slot { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; font-size: .82rem; font-weight: 500; transition: all .2s; }
+        .res-slot:hover { border-color: var(--primary); color: var(--primary); }
+        .res-slot.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .res-btn { width: 100%; padding: 14px; border: none; border-radius: var(--radius-md); background: var(--primary); color: #fff; font-size: .95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .2s; }
+        .res-btn:hover { background: var(--primary-dark); }
+        .res-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .res-canvas-wrap { width: 100%; min-height: 300px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
+        .res-auth { background: var(--surface); border-radius: var(--radius-lg); padding: 20px; }
+        .res-msg { padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: .85rem; }
+        .res-msg--error { background: rgba(239,68,68,.1); color: #EF4444; }
+        .res-msg--success { background: rgba(16,185,129,.1); color: #10B981; }
+        .res-tabs { display: flex; gap: 0; margin-bottom: 16px; }
+        .res-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: .85rem; font-weight: 500; border-bottom: 2px solid var(--border); color: var(--text-secondary); transition: all .2s; }
+        .res-tab.active { border-color: var(--primary); color: var(--primary); }
+    </style>
+</head>
+<body data-page="reservation" data-venue="{{ venue.slug }}">
+<div class="res-page">
+    <h1 style="font-size:1.4rem; font-weight:700; margin-bottom:20px;">{{ venue.name }}</h1>
+
+    <!-- Auth section -->
+    <div id="auth-section" class="res-section res-auth">
+        <div class="res-tabs">
+            <div class="res-tab active" onclick="showAuthTab('login')">Login</div>
+            <div class="res-tab" onclick="showAuthTab('register')">Register</div>
+        </div>
+        <div id="auth-msg"></div>
+        <div id="login-form">
+            <div class="res-form-group"><label>Email</label><input type="email" id="login-email" class="res-input"></div>
+            <div class="res-form-group"><label>Password</label><input type="password" id="login-password" class="res-input"></div>
+            <button class="res-btn" onclick="doLogin()">Sign In</button>
+            <div style="text-align:center; margin:12px 0; color:var(--text-muted); font-size:.8rem;">or</div>
+            <button class="res-btn" style="background:#4285F4;" onclick="window.location.href='/auth/google/login?slug={{ venue.slug }}'">
+                <i class="fab fa-google" style="margin-right:8px;"></i> Sign in with Google
+            </button>
+        </div>
+        <div id="register-form" style="display:none;">
+            <div class="res-form-group"><label>Name</label><input type="text" id="reg-name" class="res-input"></div>
+            <div class="res-form-group"><label>Email</label><input type="email" id="reg-email" class="res-input"></div>
+            <div class="res-form-group"><label>Phone</label><input type="tel" id="reg-phone" class="res-input"></div>
+            <div class="res-form-group"><label>Password</label><input type="password" id="reg-password" class="res-input"></div>
+            <button class="res-btn" onclick="doRegister()">Register</button>
+        </div>
+    </div>
+
+    <!-- Booking section (hidden until logged in) -->
+    <div id="booking-section" style="display:none;">
+        <div class="res-section">
+            <h2>Select Date & Time</h2>
+            <div class="res-row">
+                <div class="res-form-group"><label>Date</label><input type="date" id="res-date" class="res-input"></div>
+                <div class="res-form-group"><label>Guests</label><input type="number" id="res-guests" class="res-input" min="1" max="20" value="2"></div>
+            </div>
+            <div class="res-form-group"><label>Time Slot</label><div id="time-slots" class="res-slots"></div></div>
+        </div>
+
+        <div class="res-section">
+            <h2>Select Table</h2>
+            <div class="res-canvas-wrap"><canvas id="res-floor-map"></canvas></div>
+            <p style="font-size:.75rem; color:var(--text-muted); margin-top:6px;">Click a green table to select, or leave empty for auto-assign.</p>
+        </div>
+
+        <div class="res-section">
+            <h2>Your Details</h2>
+            <div id="booking-msg"></div>
+            <div class="res-form-group"><label>Name</label><input type="text" id="book-name" class="res-input"></div>
+            <div class="res-row">
+                <div class="res-form-group"><label>Email</label><input type="email" id="book-email" class="res-input"></div>
+                <div class="res-form-group"><label>Phone</label><input type="tel" id="book-phone" class="res-input"></div>
+            </div>
+            <div class="res-form-group"><label>Comment (optional)</label><input type="text" id="book-comment" class="res-input" placeholder="e.g. window seat"></div>
+            <button class="res-btn" id="book-btn" onclick="doBook()" disabled>Book Now</button>
+        </div>
+
+        <div class="res-section">
+            <h2>My Bookings</h2>
+            <div id="my-bookings"></div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/floor-map.js') }}"></script>
+<script>
+const SLUG = '{{ venue.slug }}';
+let floorMap, selectedTableId = null, selectedTimeSlot = null;
+let currentCustomer = null;
+
+// Auto-login if coming from Google OAuth or already logged in
+(function() {
+    {% if session.get('customer_id') %}
+    currentCustomer = {
+        name: '{{ session.get("customer_name", "") }}',
+        email: '{{ session.get("customer_email", "") }}',
+        phone: '{{ session.get("customer_phone", "") }}'
+    };
+    document.addEventListener('DOMContentLoaded', function() { showBookingSection(); });
+    {% endif %}
+})();
+
+function showAuthTab(tab) {
+    document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
+    document.querySelectorAll('.res-tab').forEach((t, i) => t.classList.toggle('active', (tab === 'login' ? i === 0 : i === 1)));
+}
+
+async function doLogin() {
+    const email = document.getElementById('login-email').value;
+    const r = await fetch(`/api/${SLUG}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password: document.getElementById('login-password').value })
+    });
+    const d = await r.json();
+    if (d.success) {
+        currentCustomer = { name: d.name, email: email, phone: d.phone || '' };
+        showBookingSection();
+    } else {
+        document.getElementById('auth-msg').innerHTML = '<div class="res-msg res-msg--error">' + (d.message || 'Invalid email or password') + '</div>';
+    }
+}
+
+async function doRegister() {
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = document.getElementById('reg-phone').value;
+    const r = await fetch(`/api/${SLUG}/customers/register`, { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, email, phone, password: document.getElementById('reg-password').value })
+    });
+    const d = await r.json();
+    if (d.success) {
+        currentCustomer = { name, email, phone };
+        showBookingSection();
+    } else {
+        document.getElementById('auth-msg').innerHTML = '<div class="res-msg res-msg--error">' + (d.message || 'Registration failed') + '</div>';
+    }
+}
+
+function showBookingSection() {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('booking-section').style.display = '';
+
+    // Auto-fill booking form with customer data
+    if (currentCustomer) {
+        document.getElementById('book-name').value = currentCustomer.name || '';
+        document.getElementById('book-email').value = currentCustomer.email || '';
+        document.getElementById('book-phone').value = currentCustomer.phone || '';
+    }
+
+    initFloorMap();
+    loadMyBookings();
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('res-date').min = today;
+    document.getElementById('res-date').value = today;
+    document.getElementById('res-date').addEventListener('change', loadAvailability);
+    document.getElementById('res-guests').addEventListener('change', loadAvailability);
+    loadAvailability();
+}
+
+function initFloorMap() {
+    const canvas = document.getElementById('res-floor-map');
+    floorMap = new FloorMap(canvas, {
+        editable: false,
+        onTableSelect: function(table) {
+            if (table.available !== false) {
+                selectedTableId = table.id;
+                document.getElementById('book-btn').disabled = !selectedTimeSlot;
+            }
+        }
+    });
+}
+
+async function loadAvailability() {
+    const date = document.getElementById('res-date').value;
+    const guests = document.getElementById('res-guests').value;
+    if (!date || !guests) return;
+
+    const time = selectedTimeSlot || '19:00';
+    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&time=${time}&guests=${guests}`);
+    const d = await r.json();
+
+    // Render time slots
+    const slotsEl = document.getElementById('time-slots');
+    slotsEl.innerHTML = '';
+    (d.time_slots || []).forEach(s => {
+        const btn = document.createElement('div');
+        btn.className = 'res-slot' + (s === selectedTimeSlot ? ' active' : '');
+        btn.textContent = s;
+        btn.onclick = () => { selectedTimeSlot = s; loadAvailability(); document.getElementById('book-btn').disabled = false; };
+        slotsEl.appendChild(btn);
+    });
+
+    // Update floor map
+    if (d.tables) {
+        floorMap.loadLayout(d.tables);
+        const avail = {};
+        d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });
+        floorMap.setAvailability(avail);
+    }
+}
+
+async function doBook() {
+    const data = {
+        booking_date: document.getElementById('res-date').value,
+        time_slot: selectedTimeSlot,
+        guest_count: parseInt(document.getElementById('res-guests').value),
+        guest_name: document.getElementById('book-name').value,
+        guest_email: document.getElementById('book-email').value,
+        guest_phone: document.getElementById('book-phone').value,
+        comment: document.getElementById('book-comment').value,
+    };
+    if (selectedTableId) data.table_id = selectedTableId;
+
+    const r = await fetch(`/api/${SLUG}/reservations`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    const d = await r.json();
+    const msgEl = document.getElementById('booking-msg');
+    if (d.success) {
+        msgEl.innerHTML = '<div class="res-msg res-msg--success">Booking created! Status: ' + d.status + '</div>';
+        loadMyBookings();
+        loadAvailability();
+    } else {
+        msgEl.innerHTML = '<div class="res-msg res-msg--error">' + (d.message || 'Booking failed') + '</div>';
+    }
+}
+
+async function loadMyBookings() {
+    const r = await fetch(`/api/${SLUG}/reservations/my`);
+    const d = await r.json();
+    const el = document.getElementById('my-bookings');
+    if (!d.bookings || d.bookings.length === 0) { el.innerHTML = '<p style="color:var(--text-muted); font-size:.85rem;">No bookings yet.</p>'; return; }
+    el.innerHTML = d.bookings.map(b => `
+        <div style="background:var(--surface); border-radius:var(--radius-md); padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong>${b.date}</strong> ${b.time_slot} · Table ${b.table_label} · ${b.guest_count} guests
+                <br><span style="font-size:.75rem; color:var(--text-muted);">${b.status}</span>
+            </div>
+            ${b.status === 'confirmed' ? '<button onclick="cancelBooking(' + b.id + ')" style="background:#FEE2E2; color:#DC2626; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:.8rem;">Cancel</button>' : ''}
+        </div>
+    `).join('');
+}
+
+async function cancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    await fetch(`/api/${SLUG}/reservations/${id}/cancel`, { method: 'POST' });
+    loadMyBookings();
+    loadAvailability();
+}
+</script>
+</body>
+</html>

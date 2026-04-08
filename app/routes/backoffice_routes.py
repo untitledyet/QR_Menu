@@ -547,3 +547,138 @@ def delete_subcategory(sub_id):
     db.session.commit()
     flash(f'Subcategory "{name}" deleted')
     return redirect(url_for('bo_bp.categories_list'))
+
+
+# ============================================================
+# Reservation Management (Admin)
+# ============================================================
+
+from app.models import RestaurantTable, Booking, ReservationSettings, BOOKING_STATUSES
+from app.services.reservation_service import ReservationService
+
+
+@bo_bp.route('/reservations')
+@login_required
+@venue_has_feature('reservations')
+def reservations_list():
+    admin = get_current_admin()
+    venue = admin.venue
+    filters = {
+        'date': request.args.get('date'),
+        'status': request.args.get('status'),
+        'table_id': request.args.get('table_id', type=int),
+    }
+    bookings = ReservationService.get_bookings_for_venue(venue.id, filters)
+    tables = RestaurantTable.query.filter_by(venue_id=venue.id, is_active=True).all()
+    return render_template('backoffice/reservation_bookings.html', admin=admin,
+                           bookings=bookings, tables=tables, filters=filters, statuses=BOOKING_STATUSES)
+
+
+@bo_bp.route('/reservations/<int:booking_id>/cancel', methods=['POST'])
+@login_required
+@venue_has_feature('reservations')
+def admin_cancel_booking(booking_id):
+    admin = get_current_admin()
+    booking = Booking.query.filter_by(id=booking_id, venue_id=admin.venue.id).first_or_404()
+    try:
+        ReservationService.cancel_booking(booking_id, cancelled_by='admin')
+        flash(f'Booking #{booking_id} cancelled')
+    except ValueError as e:
+        flash(str(e))
+    return redirect(url_for('bo_bp.reservations_list'))
+
+
+@bo_bp.route('/reservations/layout')
+@login_required
+@venue_has_feature('reservations')
+def reservation_layout():
+    admin = get_current_admin()
+    return render_template('backoffice/reservation_layout.html', admin=admin)
+
+
+@bo_bp.route('/api/reservations/layout', methods=['GET'])
+@login_required
+@venue_has_feature('reservations')
+def get_layout():
+    admin = get_current_admin()
+    venue = admin.venue
+    settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
+    layout = settings.floor_layout if settings else None
+    tables = RestaurantTable.query.filter_by(venue_id=venue.id).all()
+    return jsonify(
+        layout=layout,
+        tables=[{
+            'id': t.id, 'label': t.label, 'shape': t.shape, 'capacity': t.capacity,
+            'pos_x': t.pos_x, 'pos_y': t.pos_y, 'width': t.width, 'height': t.height,
+            'is_active': t.is_active,
+        } for t in tables]
+    )
+
+
+@bo_bp.route('/api/reservations/layout', methods=['PUT'])
+@login_required
+@venue_has_feature('reservations')
+def save_layout():
+    admin = get_current_admin()
+    venue = admin.venue
+    data = request.get_json() or {}
+    tables_data = data.get('tables', [])
+
+    # Sync tables to DB
+    existing_ids = set()
+    for td in tables_data:
+        if td.get('id') and not str(td['id']).startswith('new_'):
+            table = RestaurantTable.query.filter_by(id=td['id'], venue_id=venue.id).first()
+            if table:
+                table.label = td.get('label', table.label)
+                table.shape = td.get('shape', table.shape)
+                table.capacity = td.get('capacity', table.capacity)
+                table.pos_x = td.get('pos_x', table.pos_x)
+                table.pos_y = td.get('pos_y', table.pos_y)
+                table.width = td.get('width', table.width)
+                table.height = td.get('height', table.height)
+                existing_ids.add(table.id)
+        else:
+            table = RestaurantTable(
+                venue_id=venue.id, label=td.get('label', 'T'),
+                shape=td.get('shape', 'circle'), capacity=td.get('capacity', 4),
+                pos_x=td.get('pos_x', 0), pos_y=td.get('pos_y', 0),
+                width=td.get('width', 60), height=td.get('height', 60),
+            )
+            db.session.add(table)
+            db.session.flush()
+            existing_ids.add(table.id)
+
+    # Save layout JSON to settings
+    settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
+    if not settings:
+        settings = ReservationSettings(venue_id=venue.id)
+        db.session.add(settings)
+    settings.floor_layout = data.get('layout')
+
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/reservations/settings', methods=['GET', 'POST'])
+@login_required
+@venue_has_feature('reservations')
+def reservation_settings():
+    admin = get_current_admin()
+    venue = admin.venue
+    settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
+    if not settings:
+        settings = ReservationSettings(venue_id=venue.id)
+        db.session.add(settings)
+        db.session.commit()
+
+    if request.method == 'POST':
+        settings.deposit_amount = request.form.get('deposit_amount', type=float) or 0.0
+        slots_str = request.form.get('time_slots', '')
+        settings.time_slots = [s.strip() for s in slots_str.split(',') if s.strip()]
+        settings.max_advance_days = request.form.get('max_advance_days', type=int) or 30
+        db.session.commit()
+        flash('Reservation settings saved')
+        return redirect(url_for('bo_bp.reservation_settings'))
+
+    return render_template('backoffice/reservation_settings.html', admin=admin, settings=settings)
