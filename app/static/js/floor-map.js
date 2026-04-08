@@ -84,24 +84,30 @@ class FloorMap {
         const w = this.canvas.width;
         const h = this.canvas.height;
 
-        // Background
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bo-bg').trim() || '#0F1117';
+        // Background — use CSS variable or fallback
+        const styles = getComputedStyle(document.documentElement);
+        const bgColor = styles.getPropertyValue('--surface').trim() || styles.getPropertyValue('--bo-bg').trim() || '#1E1E2A';
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, w, h);
 
         // Grid dots
-        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillStyle = 'rgba(128,128,128,0.1)';
         for (let x = 0; x < w; x += 20) {
             for (let y = 0; y < h; y += 20) {
                 ctx.fillRect(x, y, 1, 1);
             }
         }
 
+        // Get text color from CSS
+        const textColor = styles.getPropertyValue('--text').trim() || '#E8E8F0';
+        const mutedColor = styles.getPropertyValue('--text-muted').trim() || '#9CA3B8';
+
         // Tables
         this.tables.forEach(t => {
             const isSelected = t.id === this.selectedTableId;
             const status = this.availability[t.id];
-            let fillColor = '#2A2A3A';
-            let strokeColor = '#3A3A4E';
+            let fillColor = styles.getPropertyValue('--card').trim() || '#2A2A3A';
+            let strokeColor = styles.getPropertyValue('--border').trim() || '#3A3A4E';
 
             if (status === 'available') { fillColor = 'rgba(16,185,129,0.15)'; strokeColor = '#10B981'; }
             else if (status === 'reserved') { fillColor = 'rgba(239,68,68,0.15)'; strokeColor = '#EF4444'; }
@@ -127,7 +133,7 @@ class FloorMap {
             }
 
             // Label
-            ctx.fillStyle = '#E8E8F0';
+            ctx.fillStyle = textColor;
             ctx.font = 'bold 11px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -136,7 +142,7 @@ class FloorMap {
             ctx.fillText(t.label, cx, cy - 6);
 
             ctx.font = '9px Inter, sans-serif';
-            ctx.fillStyle = '#9CA3B8';
+            ctx.fillStyle = mutedColor;
             ctx.fillText(t.capacity + ' 👤', cx, cy + 8);
 
             ctx.restore();

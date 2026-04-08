@@ -153,7 +153,6 @@ function showBookingSection() {
     document.getElementById('auth-section').style.display = 'none';
     document.getElementById('booking-section').style.display = '';
 
-    // Auto-fill booking form with customer data
     if (currentCustomer) {
         document.getElementById('book-name').value = currentCustomer.name || '';
         document.getElementById('book-email').value = currentCustomer.email || '';
@@ -165,9 +164,43 @@ function showBookingSection() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('res-date').min = today;
     document.getElementById('res-date').value = today;
-    document.getElementById('res-date').addEventListener('change', loadTimeSlots);
-    document.getElementById('res-guests').addEventListener('change', loadTimeSlots);
-    loadTimeSlots();
+    document.getElementById('res-date').addEventListener('change', refreshAll);
+    document.getElementById('res-guests').addEventListener('change', refreshAll);
+    // Load tables layout + time slots immediately
+    refreshAll();
+}
+
+async function refreshAll() {
+    await loadTablesAndSlots();
+    if (selectedTimeSlot) await loadAvailability();
+}
+
+async function loadTablesAndSlots() {
+    const date = document.getElementById('res-date').value;
+    const guests = document.getElementById('res-guests').value;
+    // Fetch without time — just get layout + time slots
+    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&guests=${guests}`);
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Render time slots
+    const slotsEl = document.getElementById('time-slots');
+    slotsEl.innerHTML = '';
+    (d.time_slots || []).forEach(s => {
+        const btn = document.createElement('div');
+        btn.className = 'res-slot' + (s === selectedTimeSlot ? ' active' : '');
+        btn.textContent = s;
+        btn.onclick = () => { selectedTimeSlot = s; refreshAll(); document.getElementById('book-btn').disabled = false; };
+        slotsEl.appendChild(btn);
+    });
+
+    // Load tables on map (all shown as available until time is selected)
+    if (d.tables) {
+        floorMap.loadLayout(d.tables);
+        const avail = {};
+        d.tables.forEach(t => { avail[t.id] = 'available'; });
+        floorMap.setAvailability(avail);
+    }
 }
 
 function initFloorMap() {
@@ -192,38 +225,8 @@ async function loadAvailability() {
     if (!r.ok) return;
     const d = await r.json();
 
-    // Update floor map
+    // Update floor map with actual availability
     if (d.tables) {
-        floorMap.loadLayout(d.tables);
-        const avail = {};
-        d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });
-        floorMap.setAvailability(avail);
-    }
-}
-
-async function loadTimeSlots() {
-    const date = document.getElementById('res-date').value;
-    const guests = document.getElementById('res-guests').value;
-    if (!date || !guests) return;
-
-    // Fetch with a dummy time just to get time_slots list
-    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&time=18:00&guests=${guests}`);
-    if (!r.ok) return;
-    const d = await r.json();
-
-    // Render time slots
-    const slotsEl = document.getElementById('time-slots');
-    slotsEl.innerHTML = '';
-    (d.time_slots || []).forEach(s => {
-        const btn = document.createElement('div');
-        btn.className = 'res-slot' + (s === selectedTimeSlot ? ' active' : '');
-        btn.textContent = s;
-        btn.onclick = () => { selectedTimeSlot = s; loadTimeSlots(); loadAvailability(); document.getElementById('book-btn').disabled = false; };
-        slotsEl.appendChild(btn);
-    });
-
-    // Also update floor map if time slot is selected
-    if (d.tables && selectedTimeSlot) {
         floorMap.loadLayout(d.tables);
         const avail = {};
         d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });

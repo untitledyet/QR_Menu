@@ -101,37 +101,32 @@ def get_availability(slug):
     time_str = request.args.get('time')
     guests = request.args.get('guests', type=int)
 
-    if not date_str or not time_str or not guests:
-        return jsonify(error='validation_error', message='date, time, guests required'), 400
-
-    from datetime import datetime, time as dt_time
-    try:
-        date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
-        parts = time_str.split(':')
-        time_val = dt_time(int(parts[0]), int(parts[1]))
-    except (ValueError, IndexError):
-        return jsonify(error='validation_error', message='Invalid date or time format'), 400
-
-    tables = ReservationService.get_available_tables(venue.id, date_val, time_val, guests)
-
-    # Also get all tables for the map (with availability status)
+    # If no time provided, return just tables layout (no availability)
     all_tables = RestaurantTable.query.filter_by(venue_id=venue.id, is_active=True).all()
-    available_ids = {t.id for t in tables}
-
-    result = []
-    for t in all_tables:
-        result.append({
-            'id': t.id, 'label': t.label, 'shape': t.shape,
-            'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
-            'width': t.width, 'height': t.height,
-            'available': t.id in available_ids,
-        })
-
-    # Get time slots from settings
     settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
     time_slots = settings.time_slots if settings else ["18:00", "19:00", "20:00", "21:00", "22:00"]
 
-    return jsonify(tables=result, time_slots=time_slots)
+    tables_data = [{
+        'id': t.id, 'label': t.label, 'shape': t.shape,
+        'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
+        'width': t.width, 'height': t.height,
+        'available': True,  # default when no time selected
+    } for t in all_tables]
+
+    if date_str and time_str and guests:
+        from datetime import datetime, time as dt_time
+        try:
+            date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
+            parts = time_str.split(':')
+            time_val = dt_time(int(parts[0]), int(parts[1]))
+            available_tables = ReservationService.get_available_tables(venue.id, date_val, time_val, guests)
+            available_ids = {t.id for t in available_tables}
+            for td in tables_data:
+                td['available'] = td['id'] in available_ids
+        except (ValueError, IndexError):
+            pass
+
+    return jsonify(tables=tables_data, time_slots=time_slots)
 
 
 @res_api_bp.route('/api/<slug>/reservations', methods=['POST'])
