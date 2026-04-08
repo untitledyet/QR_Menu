@@ -9,19 +9,22 @@ from app.models import Booking, RestaurantTable, ReservationSettings, BOOKING_DU
 class ReservationService:
 
     @staticmethod
-    def check_overlap(table_id, booking_date, start_time):
+    def check_overlap(table_id, booking_date, start_time, for_update=False):
         """Check if a booking would overlap with existing bookings.
 
         Uses half-open interval [start, start+3h).
-        Uses SELECT FOR UPDATE to prevent race conditions.
+        for_update=True uses SELECT FOR UPDATE (only during booking creation).
 
         Returns True if an overlap exists, False otherwise.
         """
         end_time = (datetime.combine(booking_date, start_time) + BOOKING_DURATION).time()
 
+        query = Booking.query
+        if for_update:
+            query = query.with_for_update()
+
         overlap_count = (
-            Booking.query
-            .with_for_update()
+            query
             .filter(
                 and_(
                     Booking.table_id == table_id,
@@ -123,7 +126,7 @@ class ReservationService:
                 raise ValueError("Table capacity is less than guest count")
 
         # Check for overlap
-        if ReservationService.check_overlap(table_id, booking_date, time_slot_val):
+        if ReservationService.check_overlap(table_id, booking_date, time_slot_val, for_update=True):
             raise ValueError("Table is already booked for the selected time slot")
 
         # Get deposit amount from venue settings
