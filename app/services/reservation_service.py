@@ -125,17 +125,9 @@ class ReservationService:
             if table.capacity < guest_count:
                 raise ValueError("Table capacity is less than guest count")
 
-        # Check for overlap (within transaction for Postgres FOR UPDATE)
-        try:
-            if ReservationService.check_overlap(table_id, booking_date, time_slot_val, for_update=True):
-                raise ValueError("Table is already booked for the selected time slot")
-        except Exception as e:
-            if 'FOR UPDATE' in str(e) or 'outside of transaction' in str(e):
-                # Fallback without FOR UPDATE (e.g. some Postgres configs)
-                if ReservationService.check_overlap(table_id, booking_date, time_slot_val, for_update=False):
-                    raise ValueError("Table is already booked for the selected time slot")
-            else:
-                raise
+        # Check for overlap
+        if ReservationService.check_overlap(table_id, booking_date, time_slot_val):
+            raise ValueError("Table is already booked for the selected time slot")
 
         # Get deposit amount from venue settings
         settings = ReservationSettings.query.filter_by(venue_id=venue_id).first()

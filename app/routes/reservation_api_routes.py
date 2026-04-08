@@ -106,25 +106,54 @@ def get_availability(slug):
     settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
     time_slots = settings.time_slots if settings else ["18:00", "19:00", "20:00", "21:00", "22:00"]
 
-    tables_data = [{
-        'id': t.id, 'label': t.label, 'shape': t.shape,
-        'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
-        'width': t.width, 'height': t.height,
-        'available': True if (not guests or t.capacity >= guests) else False,
-    } for t in all_tables]
+    # Best-fit tier logic: show only the smallest capacity tier that has available tables
+    # E.g. 2 guests → show only 2-seat tables. If all 2-seat booked → show 4-seat, etc.
+    if guests:
+        # Group tables by capacity
+        capacity_tiers = sorted(set(t.capacity for t in all_tables if t.capacity >= guests))
+        allowed_ids = set()
 
-    if date_str and time_str and guests:
-        from datetime import datetime, time as dt_time
-        try:
-            date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
-            parts = time_str.split(':')
-            time_val = dt_time(int(parts[0]), int(parts[1]))
-            available_tables = ReservationService.get_available_tables(venue.id, date_val, time_val, guests)
-            available_ids = {t.id for t in available_tables}
-            for td in tables_data:
-                td['available'] = td['id'] in available_ids
-        except (ValueError, IndexError):
-            pass
+        if date_str and time_str:
+            from datetime import datetime, time as dt_time
+            try:
+                date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
+                parts = time_str.split(':')
+                time_val = dt_time(int(parts[0]), int(parts[1]))
+
+                for tier_cap in capacity_tiers:
+                    tier_tables = [t for t in all_tables if t.capacity == tier_cap]
+                    tier_available = [t for t in tier_tables if not ReservationService.check_overlap(t.id, date_val, time_val)]
+                    if tier_available:
+                        allowed_ids = {t.id for t in tier_available}
+                        break
+                    # If no available in this tier, try next bigger tier
+
+                tables_data = [{
+                    'id': t.id, 'label': t.label, 'shape': t.shape,
+                    'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
+                    'width': t.width, 'height': t.height,
+                    'available': t.id in allowed_ids,
+                } for t in all_tables]
+            except (ValueError, IndexError):
+                pass
+        else:
+            # No time selected — show smallest fitting tier as available
+            if capacity_tiers:
+                smallest_tier = capacity_tiers[0]
+                allowed_ids = {t.id for t in all_tables if t.capacity == smallest_tier}
+            tables_data = [{
+                'id': t.id, 'label': t.label, 'shape': t.shape,
+                'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
+                'width': t.width, 'height': t.height,
+                'available': t.id in allowed_ids,
+            } for t in all_tables]
+    else:
+        tables_data = [{
+            'id': t.id, 'label': t.label, 'shape': t.shape,
+            'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
+            'width': t.width, 'height': t.height,
+            'available': True,
+        } for t in all_tables]
 
     return jsonify(tables=tables_data, time_slots=time_slots)
 
