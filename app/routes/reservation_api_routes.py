@@ -279,7 +279,11 @@ def google_login():
     slug = request.args.get('slug', 'demo')
     session['oauth_venue_slug'] = slug
     oauth = get_oauth()
-    redirect_uri = request.url_root.rstrip('/') + '/auth/google/callback'
+    # Use PREFERRED_URL_SCHEME or detect from headers for Railway (behind proxy)
+    base_url = request.url_root.rstrip('/')
+    if request.headers.get('X-Forwarded-Proto') == 'https':
+        base_url = base_url.replace('http://', 'https://')
+    redirect_uri = base_url + '/auth/google/callback'
     return oauth.google.authorize_redirect(redirect_uri)
 
 
