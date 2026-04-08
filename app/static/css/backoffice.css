@@ -429,7 +429,10 @@ body {
 }
 
 /* Mobile menu cards */
-.bo-menu-cards { display: flex; flex-direction: column; gap: 10px; }
+.bo-menu-cards { flex-direction: column; gap: 10px; }
+@media (max-width: 768px) {
+  .bo-menu-cards { display: flex; }
+}
 
 .bo-menu-card {
   background: var(--bo-surface);
