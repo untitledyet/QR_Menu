@@ -165,9 +165,9 @@ function showBookingSection() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('res-date').min = today;
     document.getElementById('res-date').value = today;
-    document.getElementById('res-date').addEventListener('change', loadAvailability);
-    document.getElementById('res-guests').addEventListener('change', loadAvailability);
-    loadAvailability();
+    document.getElementById('res-date').addEventListener('change', loadTimeSlots);
+    document.getElementById('res-guests').addEventListener('change', loadTimeSlots);
+    loadTimeSlots();
 }
 
 function initFloorMap() {
@@ -186,10 +186,29 @@ function initFloorMap() {
 async function loadAvailability() {
     const date = document.getElementById('res-date').value;
     const guests = document.getElementById('res-guests').value;
+    if (!date || !guests || !selectedTimeSlot) return;
+
+    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&time=${selectedTimeSlot}&guests=${guests}`);
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Update floor map
+    if (d.tables) {
+        floorMap.loadLayout(d.tables);
+        const avail = {};
+        d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });
+        floorMap.setAvailability(avail);
+    }
+}
+
+async function loadTimeSlots() {
+    const date = document.getElementById('res-date').value;
+    const guests = document.getElementById('res-guests').value;
     if (!date || !guests) return;
 
-    const time = selectedTimeSlot || '19:00';
-    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&time=${time}&guests=${guests}`);
+    // Fetch with a dummy time just to get time_slots list
+    const r = await fetch(`/api/${SLUG}/reservations/availability?date=${date}&time=18:00&guests=${guests}`);
+    if (!r.ok) return;
     const d = await r.json();
 
     // Render time slots
@@ -199,12 +218,12 @@ async function loadAvailability() {
         const btn = document.createElement('div');
         btn.className = 'res-slot' + (s === selectedTimeSlot ? ' active' : '');
         btn.textContent = s;
-        btn.onclick = () => { selectedTimeSlot = s; loadAvailability(); document.getElementById('book-btn').disabled = false; };
+        btn.onclick = () => { selectedTimeSlot = s; loadTimeSlots(); loadAvailability(); document.getElementById('book-btn').disabled = false; };
         slotsEl.appendChild(btn);
     });
 
-    // Update floor map
-    if (d.tables) {
+    // Also update floor map if time slot is selected
+    if (d.tables && selectedTimeSlot) {
         floorMap.loadLayout(d.tables);
         const avail = {};
         d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });

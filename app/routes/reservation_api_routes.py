@@ -92,7 +92,6 @@ def login_customer(slug):
 # ============================================================
 
 @res_api_bp.route('/api/<slug>/reservations/availability')
-@customer_login_required
 def get_availability(slug):
     venue = get_venue_or_abort(slug)
     if isinstance(venue, tuple):
