@@ -194,11 +194,11 @@ async function loadTablesAndSlots() {
         slotsEl.appendChild(btn);
     });
 
-    // Load tables on map (all shown as available until time is selected)
+    // Load tables on map — filter by guest count
     if (d.tables) {
         floorMap.loadLayout(d.tables);
         const avail = {};
-        d.tables.forEach(t => { avail[t.id] = 'available'; });
+        d.tables.forEach(t => { avail[t.id] = t.available ? 'available' : 'reserved'; });
         floorMap.setAvailability(avail);
     }
 }
@@ -208,7 +208,9 @@ function initFloorMap() {
     floorMap = new FloorMap(canvas, {
         editable: false,
         onTableSelect: function(table) {
-            if (table.available !== false) {
+            // Only allow selecting available tables
+            const avail = floorMap.availability[table.id];
+            if (avail === 'available') {
                 selectedTableId = table.id;
                 document.getElementById('book-btn').disabled = !selectedTimeSlot;
             }

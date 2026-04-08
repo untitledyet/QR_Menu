@@ -110,7 +110,7 @@ def get_availability(slug):
         'id': t.id, 'label': t.label, 'shape': t.shape,
         'capacity': t.capacity, 'pos_x': t.pos_x, 'pos_y': t.pos_y,
         'width': t.width, 'height': t.height,
-        'available': True,  # default when no time selected
+        'available': True if (not guests or t.capacity >= guests) else False,
     } for t in all_tables]
 
     if date_str and time_str and guests:
