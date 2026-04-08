@@ -67,12 +67,14 @@
                 </select>
             </div>
 
+            {% if features.get('ingredient_customization', False) %}
             <div class="bo-form-group">
                 <label class="bo-checkbox-label">
                     <input type="checkbox" name="allow_customization" {{ 'checked' if not item or item.allow_customization }}>
                     <span>Allow ingredient customization</span>
                 </label>
             </div>
+            {% endif %}
 
             <div class="bo-form-actions">
                 <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost">Cancel</a>

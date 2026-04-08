@@ -1,4 +1,5 @@
 import os
+import json
 from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
@@ -156,7 +157,8 @@ def venue_features(venue_id):
 
     return render_template('backoffice/super_venue_features.html', admin=admin, venue=venue,
                            features=features, plan_defaults=plan_defaults, overrides=overrides,
-                           feature_list=FEATURE_LIST, plans=list(PLAN_FEATURES.keys()))
+                           feature_list=FEATURE_LIST, plans=list(PLAN_FEATURES.keys()),
+                           plan_features_json=json.dumps(PLAN_FEATURES))
 
 
 @bo_bp.route('/venues/<int:venue_id>/toggle-active', methods=['POST'])

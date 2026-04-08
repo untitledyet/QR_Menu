@@ -1,6 +1,8 @@
 {% extends 'backoffice/base.html' %}
 {% block title %}Menu Management{% endblock %}
 {% block content %}
+{% set has_customization = features.get('ingredient_customization', False) %}
+
 <div class="bo-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
     <h1>Menu Items</h1>
     <a href="{{ url_for('bo_bp.add_item') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Item</a>
@@ -17,7 +19,11 @@
 <div class="bo-table-wrap bo-desktop-only">
     <table class="bo-table">
         <thead>
-            <tr><th>Image</th><th>Name</th><th>Price</th><th>Customization</th><th>Active</th><th>Actions</th></tr>
+            <tr>
+                <th>Image</th><th>Name</th><th>Price</th>
+                {% if has_customization %}<th>Customization</th>{% endif %}
+                <th>Active</th><th>Actions</th>
+            </tr>
         </thead>
         <tbody>
             {% for item in items %}
@@ -28,11 +34,13 @@
                     <div class="bo-table__sub">{{ item.Ingredients[:60] }}{% if item.Ingredients|length > 60 %}...{% endif %}</div>
                 </td>
                 <td>₾{{ "%.2f"|format(item.Price) }}</td>
+                {% if has_customization %}
                 <td>
                     <button class="bo-toggle {{ 'active' if item.allow_customization }}" onclick="toggleCustomization({{ item.FoodItemID }}, this)">
                         <span class="bo-toggle__dot"></span>
                     </button>
                 </td>
+                {% endif %}
                 <td>
                     <button class="bo-toggle {{ 'active' if item.is_active }}" onclick="toggleActive({{ item.FoodItemID }}, this)">
                         <span class="bo-toggle__dot"></span>
@@ -65,12 +73,14 @@
             </div>
         </div>
         <div class="bo-menu-card__controls">
+            {% if has_customization %}
             <div class="bo-menu-card__toggle">
                 <span class="bo-menu-card__label">Customization</span>
                 <button class="bo-toggle {{ 'active' if item.allow_customization }}" onclick="toggleCustomization({{ item.FoodItemID }}, this)">
                     <span class="bo-toggle__dot"></span>
                 </button>
             </div>
+            {% endif %}
             <div class="bo-menu-card__toggle">
                 <span class="bo-menu-card__label">Active</span>
                 <button class="bo-toggle {{ 'active' if item.is_active }}" onclick="toggleActive({{ item.FoodItemID }}, this)">
