@@ -63,10 +63,14 @@ class FloorMap {
 
     addTable(shape, capacity) {
         const id = 'new_' + Date.now();
+        // Size based on capacity: 6+ gets rectangular
+        let w = 60, h = 60;
+        if (capacity >= 8) { w = 120; h = 60; }
+        else if (capacity >= 6) { w = 100; h = 60; }
         this.tables.push({
-            id, label: 'T' + (this.tables.length + 1), shape: shape || 'circle',
+            id, label: 'T' + (this.tables.length + 1), shape: capacity >= 6 ? 'rectangle' : (shape || 'circle'),
             capacity: capacity || 4, pos_x: 50 + Math.random() * 200,
-            pos_y: 50 + Math.random() * 200, width: 60, height: 60,
+            pos_y: 50 + Math.random() * 200, width: w, height: h,
         });
         this.render();
         if (this.onLayoutChange) this.onLayoutChange(this.getLayout());
@@ -138,39 +142,39 @@ class FloorMap {
                     ctx.fill();
                 }
             } else {
-                // Square/rectangle: distribute chairs evenly on 4 sides
+                // Square/rectangle: specific chair layout based on capacity
                 const halfTW = tw / 2;
                 const halfTH = (t.shape === 'square' ? tw : th) / 2;
                 const chairPositions = [];
 
-                // For 2: top + bottom
-                // For 4: top, bottom, left, right
-                // For 6: 2 top, 2 bottom, left, right
-                // For 8: 2 top, 2 bottom, 2 left, 2 right
-                const top = Math.ceil(chairs / 4);
-                const bottom = Math.ceil((chairs - top) / 3);
-                const left = Math.ceil((chairs - top - bottom) / 2);
-                const right = chairs - top - bottom - left;
-
-                // Top chairs
-                for (let i = 0; i < top; i++) {
-                    const spacing = tw / (top + 1);
-                    chairPositions.push({ x: cx - halfTW + spacing * (i + 1), y: cy - halfTH - gap - chairR });
-                }
-                // Bottom chairs
-                for (let i = 0; i < bottom; i++) {
-                    const spacing = tw / (bottom + 1);
-                    chairPositions.push({ x: cx - halfTW + spacing * (i + 1), y: cy + halfTH + gap + chairR });
-                }
-                // Left chairs
-                for (let i = 0; i < left; i++) {
-                    const spacing = (t.shape === 'square' ? tw : th) / (left + 1);
-                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy - halfTH + spacing * (i + 1) });
-                }
-                // Right chairs
-                for (let i = 0; i < right; i++) {
-                    const spacing = (t.shape === 'square' ? tw : th) / (right + 1);
-                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy - halfTH + spacing * (i + 1) });
+                if (chairs <= 2) {
+                    // 2: left + right
+                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy });
+                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy });
+                } else if (chairs <= 4) {
+                    // 4: top, bottom, left, right
+                    chairPositions.push({ x: cx, y: cy - halfTH - gap - chairR });
+                    chairPositions.push({ x: cx, y: cy + halfTH + gap + chairR });
+                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy });
+                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy });
+                } else if (chairs <= 6) {
+                    // 6: long sides 2-2, short sides 1-1
+                    const longSpacing = tw / 3;
+                    chairPositions.push({ x: cx - longSpacing / 2, y: cy - halfTH - gap - chairR });
+                    chairPositions.push({ x: cx + longSpacing / 2, y: cy - halfTH - gap - chairR });
+                    chairPositions.push({ x: cx - longSpacing / 2, y: cy + halfTH + gap + chairR });
+                    chairPositions.push({ x: cx + longSpacing / 2, y: cy + halfTH + gap + chairR });
+                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy });
+                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy });
+                } else {
+                    // 8: long sides 3-3, short sides 1-1
+                    const longSpacing = tw / 4;
+                    for (let i = 0; i < 3; i++) {
+                        chairPositions.push({ x: cx - tw / 2 + longSpacing * (i + 0.5) + longSpacing / 2, y: cy - halfTH - gap - chairR });
+                        chairPositions.push({ x: cx - tw / 2 + longSpacing * (i + 0.5) + longSpacing / 2, y: cy + halfTH + gap + chairR });
+                    }
+                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy });
+                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy });
                 }
 
                 chairPositions.forEach(p => {

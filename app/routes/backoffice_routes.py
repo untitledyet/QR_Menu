@@ -651,6 +651,15 @@ def save_layout():
             )
             db.session.add(table)
 
+    # Delete tables that were removed from layout (not in incoming data)
+    for tid, table in existing_tables.items():
+        if tid not in incoming_ids:
+            # Only delete if no confirmed bookings
+            from app.models import Booking
+            has_bookings = Booking.query.filter_by(table_id=tid, status='confirmed').count() > 0
+            if not has_bookings:
+                db.session.delete(table)
+
     # Save layout JSON to settings
     settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
     if not settings:
