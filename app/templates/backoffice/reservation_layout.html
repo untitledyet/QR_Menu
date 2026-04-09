@@ -53,7 +53,13 @@ function saveLayout() {
         method: 'PUT', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ tables, layout: tables })
     }).then(r => r.json()).then(d => {
-        if (d.success) alert('Layout saved!');
+        if (d.success) {
+            // Reload from DB to get real IDs (prevents duplicates on next save)
+            fetch('/backoffice/api/reservations/layout').then(r => r.json()).then(data => {
+                if (data.tables && data.tables.length) floorMap.loadLayout(data.tables);
+                alert('Layout saved!');
+            });
+        }
     });
 }
 </script>

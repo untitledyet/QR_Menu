@@ -121,34 +121,61 @@ class FloorMap {
 
             ctx.save();
 
-            // Draw chairs around the table
+            // Draw chairs — simple symmetric placement
             const chairs = t.capacity || 4;
             ctx.fillStyle = chairColor;
-            const chairSize = 10;
+            const chairR = 6;
+            const gap = 8; // gap between chair and table edge
+
             if (t.shape === 'circle') {
                 for (let i = 0; i < chairs; i++) {
                     const angle = (i / chairs) * Math.PI * 2 - Math.PI / 2;
-                    const chairX = cx + Math.cos(angle) * (t.width / 2 + 6);
-                    const chairY = cy + Math.sin(angle) * (t.height / 2 + 6);
+                    const cr = tw / 2 + gap + chairR;
+                    const chairX = cx + Math.cos(angle) * cr;
+                    const chairY = cy + Math.sin(angle) * cr;
                     ctx.beginPath();
-                    ctx.arc(chairX, chairY, chairSize / 2, 0, Math.PI * 2);
+                    ctx.arc(chairX, chairY, chairR, 0, Math.PI * 2);
                     ctx.fill();
                 }
             } else {
-                // Rectangular/square — chairs on sides
-                const perSide = Math.ceil(chairs / 4);
-                const positions = [];
-                // Top
-                for (let i = 0; i < Math.min(perSide, chairs); i++) positions.push({ x: t.pos_x + tw * 0.2 + (i * tw * 0.6 / Math.max(perSide - 1, 1)) + (t.width - tw) / 2, y: t.pos_y - 4 });
-                // Bottom
-                for (let i = 0; i < Math.min(perSide, chairs - perSide); i++) positions.push({ x: t.pos_x + tw * 0.2 + (i * tw * 0.6 / Math.max(perSide - 1, 1)) + (t.width - tw) / 2, y: t.pos_y + t.height + 4 });
-                // Left
-                for (let i = 0; i < Math.min(1, chairs - perSide * 2); i++) positions.push({ x: t.pos_x - 4, y: cy });
-                // Right
-                for (let i = 0; i < Math.min(1, chairs - perSide * 2 - 1); i++) positions.push({ x: t.pos_x + t.width + 4, y: cy });
+                // Square/rectangle: distribute chairs evenly on 4 sides
+                const halfTW = tw / 2;
+                const halfTH = (t.shape === 'square' ? tw : th) / 2;
+                const chairPositions = [];
 
-                positions.slice(0, chairs).forEach(p => {
-                    this._roundRect(ctx, p.x - chairSize / 2, p.y - chairSize / 2, chairSize, chairSize, 3);
+                // For 2: top + bottom
+                // For 4: top, bottom, left, right
+                // For 6: 2 top, 2 bottom, left, right
+                // For 8: 2 top, 2 bottom, 2 left, 2 right
+                const top = Math.ceil(chairs / 4);
+                const bottom = Math.ceil((chairs - top) / 3);
+                const left = Math.ceil((chairs - top - bottom) / 2);
+                const right = chairs - top - bottom - left;
+
+                // Top chairs
+                for (let i = 0; i < top; i++) {
+                    const spacing = tw / (top + 1);
+                    chairPositions.push({ x: cx - halfTW + spacing * (i + 1), y: cy - halfTH - gap - chairR });
+                }
+                // Bottom chairs
+                for (let i = 0; i < bottom; i++) {
+                    const spacing = tw / (bottom + 1);
+                    chairPositions.push({ x: cx - halfTW + spacing * (i + 1), y: cy + halfTH + gap + chairR });
+                }
+                // Left chairs
+                for (let i = 0; i < left; i++) {
+                    const spacing = (t.shape === 'square' ? tw : th) / (left + 1);
+                    chairPositions.push({ x: cx - halfTW - gap - chairR, y: cy - halfTH + spacing * (i + 1) });
+                }
+                // Right chairs
+                for (let i = 0; i < right; i++) {
+                    const spacing = (t.shape === 'square' ? tw : th) / (right + 1);
+                    chairPositions.push({ x: cx + halfTW + gap + chairR, y: cy - halfTH + spacing * (i + 1) });
+                }
+
+                chairPositions.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, chairR, 0, Math.PI * 2);
                     ctx.fill();
                 });
             }
