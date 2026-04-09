@@ -624,21 +624,25 @@ def save_layout():
     data = request.get_json() or {}
     tables_data = data.get('tables', [])
 
-    # Sync tables to DB
-    existing_ids = set()
+    # Get existing table IDs for this venue
+    existing_tables = {t.id: t for t in RestaurantTable.query.filter_by(venue_id=venue.id).all()}
+    incoming_ids = set()
+
     for td in tables_data:
-        if td.get('id') and not str(td['id']).startswith('new_'):
-            table = RestaurantTable.query.filter_by(id=td['id'], venue_id=venue.id).first()
-            if table:
-                table.label = td.get('label', table.label)
-                table.shape = td.get('shape', table.shape)
-                table.capacity = td.get('capacity', table.capacity)
-                table.pos_x = td.get('pos_x', table.pos_x)
-                table.pos_y = td.get('pos_y', table.pos_y)
-                table.width = td.get('width', table.width)
-                table.height = td.get('height', table.height)
-                existing_ids.add(table.id)
+        tid = td.get('id')
+        # Update existing table
+        if tid and not str(tid).startswith('new_') and tid in existing_tables:
+            table = existing_tables[tid]
+            table.label = td.get('label', table.label)
+            table.shape = td.get('shape', table.shape)
+            table.capacity = td.get('capacity', table.capacity)
+            table.pos_x = td.get('pos_x', table.pos_x)
+            table.pos_y = td.get('pos_y', table.pos_y)
+            table.width = td.get('width', table.width)
+            table.height = td.get('height', table.height)
+            incoming_ids.add(tid)
         else:
+            # Create new table
             table = RestaurantTable(
                 venue_id=venue.id, label=td.get('label', 'T'),
                 shape=td.get('shape', 'circle'), capacity=td.get('capacity', 4),
@@ -646,8 +650,6 @@ def save_layout():
                 width=td.get('width', 60), height=td.get('height', 60),
             )
             db.session.add(table)
-            db.session.flush()
-            existing_ids.add(table.id)
 
     # Save layout JSON to settings
     settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()

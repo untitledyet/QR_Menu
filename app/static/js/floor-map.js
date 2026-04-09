@@ -102,33 +102,71 @@ class FloorMap {
         const textColor = styles.getPropertyValue('--text').trim() || '#E8E8F0';
         const mutedColor = styles.getPropertyValue('--text-muted').trim() || '#9CA3B8';
 
-        // Tables
+        // Tables — draw with chairs
         this.tables.forEach(t => {
             const isSelected = t.id === this.selectedTableId;
             const status = this.availability[t.id];
             let fillColor = styles.getPropertyValue('--card').trim() || '#2A2A3A';
             let strokeColor = styles.getPropertyValue('--border').trim() || '#3A3A4E';
+            let chairColor = 'rgba(128,128,128,0.3)';
 
-            if (status === 'available') { fillColor = 'rgba(16,185,129,0.15)'; strokeColor = '#10B981'; }
-            else if (status === 'reserved') { fillColor = 'rgba(239,68,68,0.15)'; strokeColor = '#EF4444'; }
-            if (isSelected) { fillColor = 'rgba(255,107,53,0.25)'; strokeColor = '#FF6B35'; }
+            if (status === 'available') { fillColor = 'rgba(16,185,129,0.2)'; strokeColor = '#10B981'; chairColor = 'rgba(16,185,129,0.4)'; }
+            else if (status === 'reserved') { fillColor = 'rgba(239,68,68,0.2)'; strokeColor = '#EF4444'; chairColor = 'rgba(239,68,68,0.3)'; }
+            if (isSelected) { fillColor = 'rgba(255,107,53,0.3)'; strokeColor = '#FF6B35'; chairColor = 'rgba(255,107,53,0.4)'; }
+
+            const cx = t.pos_x + t.width / 2;
+            const cy = t.pos_y + t.height / 2;
+            const tw = t.width * 0.6;  // table is smaller, chairs around it
+            const th = t.height * 0.6;
 
             ctx.save();
+
+            // Draw chairs around the table
+            const chairs = t.capacity || 4;
+            ctx.fillStyle = chairColor;
+            const chairSize = 10;
+            if (t.shape === 'circle') {
+                for (let i = 0; i < chairs; i++) {
+                    const angle = (i / chairs) * Math.PI * 2 - Math.PI / 2;
+                    const chairX = cx + Math.cos(angle) * (t.width / 2 + 6);
+                    const chairY = cy + Math.sin(angle) * (t.height / 2 + 6);
+                    ctx.beginPath();
+                    ctx.arc(chairX, chairY, chairSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else {
+                // Rectangular/square — chairs on sides
+                const perSide = Math.ceil(chairs / 4);
+                const positions = [];
+                // Top
+                for (let i = 0; i < Math.min(perSide, chairs); i++) positions.push({ x: t.pos_x + tw * 0.2 + (i * tw * 0.6 / Math.max(perSide - 1, 1)) + (t.width - tw) / 2, y: t.pos_y - 4 });
+                // Bottom
+                for (let i = 0; i < Math.min(perSide, chairs - perSide); i++) positions.push({ x: t.pos_x + tw * 0.2 + (i * tw * 0.6 / Math.max(perSide - 1, 1)) + (t.width - tw) / 2, y: t.pos_y + t.height + 4 });
+                // Left
+                for (let i = 0; i < Math.min(1, chairs - perSide * 2); i++) positions.push({ x: t.pos_x - 4, y: cy });
+                // Right
+                for (let i = 0; i < Math.min(1, chairs - perSide * 2 - 1); i++) positions.push({ x: t.pos_x + t.width + 4, y: cy });
+
+                positions.slice(0, chairs).forEach(p => {
+                    this._roundRect(ctx, p.x - chairSize / 2, p.y - chairSize / 2, chairSize, chairSize, 3);
+                    ctx.fill();
+                });
+            }
+
+            // Draw table surface
             ctx.fillStyle = fillColor;
             ctx.strokeStyle = strokeColor;
             ctx.lineWidth = isSelected ? 3 : 1.5;
 
             if (t.shape === 'circle') {
                 ctx.beginPath();
-                ctx.arc(t.pos_x + t.width / 2, t.pos_y + t.height / 2, t.width / 2, 0, Math.PI * 2);
-                ctx.fill(); ctx.stroke();
-            } else if (t.shape === 'rectangle') {
-                const r = 6;
-                this._roundRect(ctx, t.pos_x, t.pos_y, t.width, t.height, r);
+                ctx.arc(cx, cy, tw / 2, 0, Math.PI * 2);
                 ctx.fill(); ctx.stroke();
             } else {
                 const r = 6;
-                this._roundRect(ctx, t.pos_x, t.pos_y, t.width, t.width, r);
+                const tx = t.pos_x + (t.width - tw) / 2;
+                const ty = t.pos_y + (t.height - th) / 2;
+                this._roundRect(ctx, tx, ty, tw, t.shape === 'square' ? tw : th, r);
                 ctx.fill(); ctx.stroke();
             }
 
@@ -137,9 +175,7 @@ class FloorMap {
             ctx.font = 'bold 11px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const cx = t.pos_x + t.width / 2;
-            const cy = t.pos_y + (t.shape === 'square' ? t.width : t.height) / 2;
-            ctx.fillText(t.label, cx, cy - 6);
+            ctx.fillText(t.label, cx, cy - 5);
 
             ctx.font = '9px Inter, sans-serif';
             ctx.fillStyle = mutedColor;
