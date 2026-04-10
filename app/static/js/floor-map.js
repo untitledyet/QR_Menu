@@ -63,12 +63,10 @@ class FloorMap {
 
     addTable(shape, capacity) {
         const id = 'new_' + Date.now();
-        // Size based on capacity: 6+ gets rectangular
         let w = 60, h = 60;
-        if (capacity >= 8) { w = 120; h = 60; }
-        else if (capacity >= 6) { w = 100; h = 60; }
+        if (shape === 'rectangle') { w = 110; h = 60; }
         this.tables.push({
-            id, label: 'T' + (this.tables.length + 1), shape: capacity >= 6 ? 'rectangle' : (shape || 'circle'),
+            id, label: 'T' + (this.tables.length + 1), shape: shape || 'circle',
             capacity: capacity || 4, pos_x: 50 + Math.random() * 200,
             pos_y: 50 + Math.random() * 200, width: w, height: h,
         });

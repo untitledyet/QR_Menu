@@ -604,7 +604,7 @@ def get_layout():
     venue = admin.venue
     settings = ReservationSettings.query.filter_by(venue_id=venue.id).first()
     layout = settings.floor_layout if settings else None
-    tables = RestaurantTable.query.filter_by(venue_id=venue.id).all()
+    tables = RestaurantTable.query.filter_by(venue_id=venue.id, is_active=True).all()
     return jsonify(
         layout=layout,
         tables=[{
@@ -630,9 +630,14 @@ def save_layout():
 
     for td in tables_data:
         tid = td.get('id')
-        # Update existing table
-        if tid and not str(tid).startswith('new_') and tid in existing_tables:
-            table = existing_tables[tid]
+        # Try to match as integer ID from DB
+        try:
+            tid_int = int(tid) if tid and not str(tid).startswith('new_') else None
+        except (ValueError, TypeError):
+            tid_int = None
+
+        if tid_int and tid_int in existing_tables:
+            table = existing_tables[tid_int]
             table.label = td.get('label', table.label)
             table.shape = td.get('shape', table.shape)
             table.capacity = td.get('capacity', table.capacity)
@@ -640,9 +645,8 @@ def save_layout():
             table.pos_y = td.get('pos_y', table.pos_y)
             table.width = td.get('width', table.width)
             table.height = td.get('height', table.height)
-            incoming_ids.add(tid)
+            incoming_ids.add(tid_int)
         else:
-            # Create new table
             table = RestaurantTable(
                 venue_id=venue.id, label=td.get('label', 'T'),
                 shape=td.get('shape', 'circle'), capacity=td.get('capacity', 4),
