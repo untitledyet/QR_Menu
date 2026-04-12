@@ -11,9 +11,22 @@ def get_venue_or_404(slug):
     return venue
 
 
+def validate_table_id(venue, table_id):
+    """Check that table_id is within the venue's configured total_tables range."""
+    total = venue.total_tables or 0
+    if total > 0 and (table_id < 1 or table_id > total):
+        return False, total
+    return True, total
+
+
 @menu_bp.route('/<slug>/table/<int:table_id>')
 def home(slug, table_id):
     venue = get_venue_or_404(slug)
+
+    valid, total = validate_table_id(venue, table_id)
+    if not valid:
+        return render_template('table_error.html', venue=venue, table_id=table_id, total_tables=total), 404
+
     session['table_id'] = table_id
     session['venue_slug'] = slug
     session['venue_id'] = venue.id
@@ -39,6 +52,11 @@ def home(slug, table_id):
 @menu_bp.route('/<slug>/table/<int:table_id>/cart')
 def cart_page(slug, table_id):
     venue = get_venue_or_404(slug)
+
+    valid, total = validate_table_id(venue, table_id)
+    if not valid:
+        return render_template('table_error.html', venue=venue, table_id=table_id, total_tables=total), 404
+
     features = venue.get_all_features()
 
     session['table_id'] = table_id

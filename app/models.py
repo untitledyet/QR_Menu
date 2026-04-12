@@ -97,6 +97,7 @@ class Venue(db.Model):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
     plan = db.Column(db.String(20), nullable=False, default='free')
+    total_tables = db.Column(db.Integer, nullable=False, default=0)  # 0 = unlimited
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

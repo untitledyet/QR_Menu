@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>მაგიდა ვერ მოიძებნა</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <style>
+        .error-page {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; text-align: center; padding: 24px;
+        }
+        .error-icon { font-size: 4rem; margin-bottom: 16px; opacity: .4; }
+        .error-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .error-msg { font-size: .95rem; color: var(--text-secondary); margin-bottom: 24px; max-width: 360px; }
+        .error-hint { font-size: .95rem; color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="error-page">
+    <div class="error-icon">🍽️</div>
+    <div class="error-title">მაგიდა #{{ table_id }} ვერ მოიძებნა</div>
+    <div class="error-msg">
+        ეს მაგიდა არ არსებობს ან არ არის აქტიური.
+    </div>
+    <div class="error-hint">გთხოვთ, თავიდან დაასკანერეთ QR კოდი თქვენს მაგიდაზე.</div>
+</div>
+</body>
+</html>

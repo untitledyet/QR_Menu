@@ -53,6 +53,9 @@
                         <i class="fas fa-cog"></i> Res. Settings
                     </a>
                     {% endif %}
+                    <a href="{{ url_for('bo_bp.venue_settings') }}" class="bo-nav__item {% if 'venue_settings' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-sliders-h"></i> Venue Settings
+                    </a>
                 {% endif %}
             </nav>
             <div class="bo-sidebar__footer">

@@ -699,3 +699,29 @@ def reservation_settings():
         return redirect(url_for('bo_bp.reservation_settings'))
 
     return render_template('backoffice/reservation_settings.html', admin=admin, settings=settings)
+
+
+# ============================================================
+# Venue Settings (general)
+# ============================================================
+
+@bo_bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+def venue_settings():
+    admin = get_current_admin()
+    venue = admin.venue
+    if not venue:
+        flash('No venue assigned')
+        return redirect(url_for('bo_bp.dashboard'))
+
+    if request.method == 'POST':
+        total_tables = request.form.get('total_tables', type=int)
+        if total_tables is not None and total_tables >= 0:
+            venue.total_tables = total_tables
+            db.session.commit()
+            flash(f'Settings saved — {total_tables} tables configured')
+        else:
+            flash('Invalid value')
+        return redirect(url_for('bo_bp.venue_settings'))
+
+    return render_template('backoffice/venue_settings.html', admin=admin, venue=venue)
