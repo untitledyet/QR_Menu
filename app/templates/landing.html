@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tably — რესტორნის ციფრული პლატფორმა</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="t-nav">
+    <div class="t-nav__inner">
+        <a href="/" class="t-nav__logo">tab<span>ly</span></a>
+        <div class="t-nav__actions">
+            <button class="t-lang-btn" onclick="toggleLang()" id="lang-btn">EN</button>
+            <button class="t-btn t-btn--ghost t-btn--sm" onclick="openModal('login')" data-i18n="navLogin">შესვლა</button>
+            <button class="t-btn t-btn--primary t-btn--sm" onclick="openModal('register')" data-i18n="navRegister">რეგისტრაცია</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="t-hero">
+    <div class="t-container">
+        <div class="t-hero__badge" data-i18n="heroBadge">🚀 უფასო QR მენიუ ყველა რესტორნისთვის</div>
+        <h1 class="t-hero__title" data-i18n-html="heroTitle">შენი რესტორნის<br><span>ციფრული პლატფორმა</span></h1>
+        <p class="t-hero__sub" data-i18n="heroSub">QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში. დაიწყე უფასოდ, გაიზარდე ჩვენთან ერთად.</p>
+        <div class="t-hero__actions">
+            <button class="t-btn t-btn--primary t-btn--lg" onclick="openModal('register')" data-i18n="heroBtn">დაიწყე უფასოდ</button>
+            <a href="#services" class="t-btn t-btn--ghost t-btn--lg" data-i18n="heroBtn2">გაიგე მეტი</a>
+        </div>
+    </div>
+</section>
+
+<!-- Services -->
+<section class="t-section t-section--center" id="services">
+    <div class="t-container">
+        <div class="t-section__label" data-i18n="servicesLabel">სერვისები</div>
+        <h2 class="t-section__title" data-i18n="servicesTitle">ყველაფერი რაც რესტორანს სჭირდება</h2>
+        <p class="t-section__sub" data-i18n="servicesSub">დაიწყე QR მენიუთი, დაამატე ფიჩერები როცა მოინდომებ.</p>
+        <div class="t-services">
+            <div class="t-service-card">
+                <span class="t-badge--active t-service-card__badge" data-i18n="badgeActive">აქტიური</span>
+                <div class="t-service-card__icon t-service-card__icon--orange"><i class="fas fa-qrcode"></i></div>
+                <div class="t-service-card__name" data-i18n="svcQrName">QR მენიუ</div>
+                <div class="t-service-card__desc" data-i18n="svcQrDesc">ციფრული მენიუ QR კოდით. კატეგორიები, ქვეკატეგორიები, ინგრედიენტების კასტომიზაცია.</div>
+            </div>
+            <div class="t-service-card">
+                <span class="t-badge--active t-service-card__badge" data-i18n="badgeActive">აქტიური</span>
+                <div class="t-service-card__icon t-service-card__icon--green"><i class="fas fa-tags"></i></div>
+                <div class="t-service-card__name" data-i18n="svcPromoName">პრომოციები</div>
+                <div class="t-service-card__desc" data-i18n="svcPromoDesc">აქციები და ფასდაკლებები პირდაპირ მენიუში. მომხმარებელი ხედავს სკანირებისთანავე.</div>
+            </div>
+            <div class="t-service-card t-service-card--upcoming">
+                <span class="t-badge--soon t-service-card__badge" data-i18n="badgeSoon">მალე</span>
+                <div class="t-service-card__icon t-service-card__icon--blue"><i class="fas fa-calendar-check"></i></div>
+                <div class="t-service-card__name" data-i18n="svcResName">მაგიდის ჯავშანი</div>
+                <div class="t-service-card__desc" data-i18n="svcResDesc">ონლაინ ჯავშანი ინტერაქტიული რუკით. მომხმარებელი თავად ირჩევს მაგიდას.</div>
+            </div>
+            <div class="t-service-card t-service-card--upcoming">
+                <span class="t-badge--soon t-service-card__badge" data-i18n="badgeSoon">მალე</span>
+                <div class="t-service-card__icon t-service-card__icon--purple"><i class="fas fa-credit-card"></i></div>
+                <div class="t-service-card__name" data-i18n="svcPayName">ონლაინ გადახდა</div>
+                <div class="t-service-card__desc" data-i18n="svcPayDesc">შეკვეთის გადახდა პირდაპირ აპლიკაციიდან. Stripe ინტეგრაცია.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partners -->
+<section class="t-section t-section--center" id="partners">
+    <div class="t-container">
+        <div class="t-section__label" data-i18n="partnersLabel">პარტნიორები</div>
+        <h2 class="t-section__title" data-i18n="partnersTitle">ჩვენი პარტნიორი ობიექტები</h2>
+        <p class="t-section__sub" data-i18n="partnersSub">რესტორნები რომლებიც უკვე იყენებენ Tably-ს.</p>
+        <div class="t-partners">
+            {% for v in venues %}
+            <div class="t-partner-card">
+                <div class="t-partner-card__avatar">{{ v.name[0] }}</div>
+                <div>
+                    <div class="t-partner-card__name">{{ v.name }}</div>
+                    <div class="t-partner-card__plan">{{ v.plan_display }} plan</div>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not venues %}
+            <p style="color:var(--t-text-3); font-size:.9rem;" data-i18n="noPartners">ჯერ არ არის პარტნიორი. იყავი პირველი!</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="t-section t-section--center" style="padding-bottom:100px;">
+    <div class="t-container">
+        <h2 class="t-section__title" data-i18n="ctaTitle">მზად ხარ?</h2>
+        <p class="t-section__sub" data-i18n="ctaSub">დაარეგისტრირე შენი რესტორანი და მიიღე QR მენიუ წუთებში. უფასოდ.</p>
+        <button class="t-btn t-btn--primary t-btn--lg" onclick="openModal('register')" data-i18n="ctaBtn">დაიწყე ახლავე</button>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="t-footer">
+    <div class="t-container">
+        <p>© 2025 <a href="/">Tably</a>. <span data-i18n="footerRights">ყველა უფლება დაცულია.</span></p>
+    </div>
+</footer>
+
+<!-- Auth Modal -->
+<div class="t-modal-overlay" id="auth-modal">
+    <div class="t-modal">
+        <button class="t-modal__close" onclick="closeModal()">✕</button>
+        <div class="t-modal__tabs">
+            <div class="t-modal__tab active" onclick="switchTab('login')" id="tab-login" data-i18n="tabLogin">შესვლა</div>
+            <div class="t-modal__tab" onclick="switchTab('register')" id="tab-register" data-i18n="tabRegister">რეგისტრაცია</div>
+        </div>
+        <div id="auth-msg"></div>
+
+        <!-- Login Form -->
+        <div id="form-login">
+            <div class="t-form-group">
+                <label data-i18n="lblUsername">მომხმარებლის სახელი</label>
+                <input type="text" class="t-input" id="login-username" placeholder="username">
+            </div>
+            <div class="t-form-group">
+                <label data-i18n="lblPassword">პაროლი</label>
+                <input type="password" class="t-input" id="login-password" placeholder="••••••">
+            </div>
+            <button class="t-btn t-btn--primary" style="width:100%; margin-top:8px;" onclick="doLogin()" data-i18n="btnLogin">შესვლა</button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="form-register" style="display:none;">
+            <div class="t-form-group">
+                <label data-i18n="lblVenueName">რესტორნის სახელი</label>
+                <input type="text" class="t-input" id="reg-venue" placeholder="მაგ. Paulaner">
+            </div>
+            <div class="t-form-group">
+                <label data-i18n="lblUsername">მომხმარებლის სახელი</label>
+                <input type="text" class="t-input" id="reg-username" placeholder="admin username">
+            </div>
+            <div class="t-form-group">
+                <label data-i18n="lblEmail">ელ. ფოსტა</label>
+                <input type="email" class="t-input" id="reg-email" placeholder="[email]">
+            </div>
+            <div class="t-form-group">
+                <label data-i18n="lblPassword">პაროლი</label>
+                <input type="password" class="t-input" id="reg-password" placeholder="მინ. 6 სიმბოლო">
+            </div>
+            <button class="t-btn t-btn--primary" style="width:100%; margin-top:8px;" onclick="doRegister()" data-i18n="btnRegister">რეგისტრაცია</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ---- i18n ---- */
+const LANG = {
+    ka: {
+        navLogin: 'შესვლა', navRegister: 'რეგისტრაცია',
+        heroBadge: '🚀 უფასო QR მენიუ ყველა რესტორნისთვის',
+        heroTitle: 'შენი რესტორნის<br><span>ციფრული პლატფორმა</span>',
+        heroSub: 'QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში. დაიწყე უფასოდ, გაიზარდე ჩვენთან ერთად.',
+        heroBtn: 'დაიწყე უფასოდ', heroBtn2: 'გაიგე მეტი',
+        servicesLabel: 'სერვისები', servicesTitle: 'ყველაფერი რაც რესტორანს სჭირდება',
+        servicesSub: 'დაიწყე QR მენიუთი, დაამატე ფიჩერები როცა მოინდომებ.',
+        badgeActive: 'აქტიური', badgeSoon: 'მალე',
+        svcQrName: 'QR მენიუ', svcQrDesc: 'ციფრული მენიუ QR კოდით. კატეგორიები, ქვეკატეგორიები, ინგრედიენტების კასტომიზაცია.',
+        svcPromoName: 'პრომოციები', svcPromoDesc: 'აქციები და ფასდაკლებები პირდაპირ მენიუში. მომხმარებელი ხედავს სკანირებისთანავე.',
+        svcResName: 'მაგიდის ჯავშანი', svcResDesc: 'ონლაინ ჯავშანი ინტერაქტიული რუკით. მომხმარებელი თავად ირჩევს მაგიდას.',
+        svcPayName: 'ონლაინ გადახდა', svcPayDesc: 'შეკვეთის გადახდა პირდაპირ აპლიკაციიდან. Stripe ინტეგრაცია.',
+        partnersLabel: 'პარტნიორები', partnersTitle: 'ჩვენი პარტნიორი ობიექტები',
+        partnersSub: 'რესტორნები რომლებიც უკვე იყენებენ Tably-ს.',
+        noPartners: 'ჯერ არ არის პარტნიორი. იყავი პირველი!',
+        ctaTitle: 'მზად ხარ?', ctaSub: 'დაარეგისტრირე შენი რესტორანი და მიიღე QR მენიუ წუთებში. უფასოდ.',
+        ctaBtn: 'დაიწყე ახლავე', footerRights: 'ყველა უფლება დაცულია.',
+        tabLogin: 'შესვლა', tabRegister: 'რეგისტრაცია',
+        lblVenueName: 'რესტორნის სახელი', lblUsername: 'მომხმარებლის სახელი',
+        lblEmail: 'ელ. ფოსტა', lblPassword: 'პაროლი',
+        btnLogin: 'შესვლა', btnRegister: 'რეგისტრაცია',
+    },
+    en: {
+        navLogin: 'Sign In', navRegister: 'Register',
+        heroBadge: '🚀 Free QR Menu for every restaurant',
+        heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
+        heroSub: 'QR menu, table reservations, online ordering — all in one place. Start free, grow with us.',
+        heroBtn: 'Start Free', heroBtn2: 'Learn More',
+        servicesLabel: 'Services', servicesTitle: 'Everything your restaurant needs',
+        servicesSub: 'Start with QR menu, add features when you\'re ready.',
+        badgeActive: 'Active', badgeSoon: 'Soon',
+        svcQrName: 'QR Menu', svcQrDesc: 'Digital menu via QR code. Categories, subcategories, ingredient customization.',
+        svcPromoName: 'Promotions', svcPromoDesc: 'Deals and discounts right in the menu. Customers see them instantly.',
+        svcResName: 'Table Booking', svcResDesc: 'Online reservations with interactive floor map. Customers pick their table.',
+        svcPayName: 'Online Payments', svcPayDesc: 'Pay for orders directly from the app. Stripe integration.',
+        partnersLabel: 'Partners', partnersTitle: 'Our partner venues',
+        partnersSub: 'Restaurants already using Tably.',
+        noPartners: 'No partners yet. Be the first!',
+        ctaTitle: 'Ready?', ctaSub: 'Register your restaurant and get a QR menu in minutes. Free.',
+        ctaBtn: 'Start Now', footerRights: 'All rights reserved.',
+        tabLogin: 'Sign In', tabRegister: 'Register',
+        lblVenueName: 'Restaurant Name', lblUsername: 'Username',
+        lblEmail: 'Email', lblPassword: 'Password',
+        btnLogin: 'Sign In', btnRegister: 'Register',
+    }
+};
+
+let currentLang = 'ka';
+
+function toggleLang() {
+    currentLang = currentLang === 'ka' ? 'en' : 'ka';
+    document.getElementById('lang-btn').textContent = currentLang === 'ka' ? 'EN' : 'ქარ';
+    document.documentElement.lang = currentLang;
+    applyLang();
+}
+
+function applyLang() {
+    const t = LANG[currentLang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (t[key]) el.innerHTML = t[key];
+    });
+}
+
+/* ---- Modal ---- */
+function openModal(tab) {
+    document.getElementById('auth-modal').classList.add('active');
+    switchTab(tab || 'login');
+}
+function closeModal() {
+    document.getElementById('auth-modal').classList.remove('active');
+    document.getElementById('auth-msg').innerHTML = '';
+}
+function switchTab(tab) {
+    document.getElementById('form-login').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('auth-msg').innerHTML = '';
+}
+
+/* ---- Auth ---- */
+async function doLogin() {
+    const r = await fetch('/login-venue', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            username: document.getElementById('login-username').value,
+            password: document.getElementById('login-password').value
+        })
+    });
+    const d = await r.json();
+    if (d.success) { window.location.href = d.redirect; }
+    else { document.getElementById('auth-msg').innerHTML = '<div class="t-form-msg t-form-msg--error">' + d.error + '</div>'; }
+}
+
+async function doRegister() {
+    const r = await fetch('/register', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            venue_name: document.getElementById('reg-venue').value,
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value
+        })
+    });
+    const d = await r.json();
+    if (d.success) { window.location.href = d.redirect; }
+    else { document.getElementById('auth-msg').innerHTML = '<div class="t-form-msg t-form-msg--error">' + d.error + '</div>'; }
+}
+
+// Close modal on overlay click
+document.getElementById('auth-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

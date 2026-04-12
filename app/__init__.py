@@ -30,6 +30,8 @@ def create_app(config_class=Config):
     from app.routes.api_routes import api_bp
     from app.routes.backoffice_routes import bo_bp
     from app.routes.reservation_api_routes import res_api_bp
+    from app.routes.landing_routes import landing_bp
+    app.register_blueprint(landing_bp)
     app.register_blueprint(menu_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(bo_bp)
