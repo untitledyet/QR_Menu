@@ -1,11 +1,24 @@
 from app import create_app, db
 from app.models import Category, Subcategory, FoodItem, Promotion, Venue, AdminUser
 from datetime import date, datetime
+from sqlalchemy import inspect, text
 
 app = create_app()
 
 with app.app_context():
     db.create_all()
+
+    # Ensure total_tables column exists (migration for existing DBs)
+    try:
+        insp = inspect(db.engine)
+        cols = [c['name'] for c in insp.get_columns('Venues')]
+        if 'total_tables' not in cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "Venues" ADD COLUMN total_tables INTEGER NOT NULL DEFAULT 0'))
+                conn.commit()
+            print('Migration: added total_tables to Venues')
+    except Exception as e:
+        print(f'Migration warning: {e}')
 
     # Only seed if database is empty (idempotent for Railway deploys)
     if Venue.query.first():
