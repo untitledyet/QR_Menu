@@ -46,6 +46,16 @@ with app.app_context():
             conn.execute(text(
                 "UPDATE \"AdminUsers\" SET is_active=TRUE, email_verified=TRUE, phone_verified=TRUE WHERE role='super'"
             ))
+            # GlobalItems migration — add subcategory_id if missing
+            try:
+                if 'GlobalItems' in insp.get_table_names():
+                    gi_cols = [c['name'] for c in insp.get_columns('GlobalItems')]
+                    if 'subcategory_id' not in gi_cols:
+                        conn.execute(text('ALTER TABLE "GlobalItems" ADD COLUMN subcategory_id INTEGER'))
+                        print('Migration: added GlobalItems.subcategory_id')
+            except Exception as ge:
+                print(f'GlobalItems migration warning: {ge}')
+
             conn.commit()
     except Exception as e:
         print(f'Migration warning: {e}')

@@ -12,10 +12,18 @@ app = create_app()
 with app.app_context():
     db.create_all()
 
-    # Check if already migrated
-    if GlobalCategory.query.count() > 0:
-        print("GlobalLibrary already has data — skipping migration.")
+    # Check if already migrated (items must exist)
+    if GlobalItem.query.count() > 0:
+        print("GlobalLibrary already has items — skipping migration.")
         exit(0)
+
+    # Clean up any partial migration (categories without items)
+    if GlobalCategory.query.count() > 0:
+        print("Cleaning up partial migration...")
+        GlobalItem.query.delete()
+        GlobalSubcategory.query.delete()
+        GlobalCategory.query.delete()
+        db.session.commit()
 
     # Get Paulaner venue categories (venue_id=1)
     categories = Category.query.filter_by(venue_id=1).all()
