@@ -8,15 +8,45 @@ app = create_app()
 with app.app_context():
     db.create_all()
 
-    # Ensure total_tables column exists (migration for existing DBs)
+    # ============================================================
+    # Migrations for existing DBs
+    # ============================================================
     try:
         insp = inspect(db.engine)
-        cols = [c['name'] for c in insp.get_columns('Venues')]
-        if 'total_tables' not in cols:
-            with db.engine.connect() as conn:
-                conn.execute(text('ALTER TABLE "Venues" ADD COLUMN total_tables INTEGER NOT NULL DEFAULT 0'))
-                conn.commit()
-            print('Migration: added total_tables to Venues')
+
+        # Venues migrations
+        venue_cols = [c['name'] for c in insp.get_columns('Venues')]
+        with db.engine.connect() as conn:
+            for col, defn in [
+                ('total_tables', 'INTEGER NOT NULL DEFAULT 0'),
+                ('address', 'VARCHAR(300)'),
+                ('google_place_id', 'VARCHAR(100)'),
+            ]:
+                if col not in venue_cols:
+                    conn.execute(text(f'ALTER TABLE "Venues" ADD COLUMN {col} {defn}'))
+                    print(f'Migration: added Venues.{col}')
+
+            # AdminUsers migrations
+            admin_cols = [c['name'] for c in insp.get_columns('AdminUsers')]
+            for col, defn in [
+                ('email', 'VARCHAR(150)'),
+                ('phone', 'VARCHAR(20)'),
+                ('email_verified', 'BOOLEAN DEFAULT FALSE'),
+                ('email_token', 'VARCHAR(64)'),
+                ('phone_verified', 'BOOLEAN DEFAULT FALSE'),
+                ('sms_code', 'VARCHAR(6)'),
+                ('sms_code_expires', 'TIMESTAMP'),
+                ('is_active', 'BOOLEAN DEFAULT FALSE'),
+            ]:
+                if col not in admin_cols:
+                    conn.execute(text(f'ALTER TABLE "AdminUsers" ADD COLUMN {col} {defn}'))
+                    print(f'Migration: added AdminUsers.{col}')
+
+            # Activate existing super admins
+            conn.execute(text(
+                "UPDATE \"AdminUsers\" SET is_active=TRUE, email_verified=TRUE, phone_verified=TRUE WHERE role='super'"
+            ))
+            conn.commit()
     except Exception as e:
         print(f'Migration warning: {e}')
 
