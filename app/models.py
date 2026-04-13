@@ -250,12 +250,25 @@ class GlobalCategory(db.Model):
     items = db.relationship('GlobalItem', backref='category', lazy=True, cascade='all, delete-orphan')
 
 
+class GlobalSubcategory(db.Model):
+    """Platform-wide subcategories for global library."""
+    __tablename__ = 'GlobalSubcategories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+
+    category = db.relationship('GlobalCategory', backref=db.backref('subcategories', lazy=True))
+
+
 class GlobalItem(db.Model):
     """Platform-wide product library — not tied to any venue."""
     __tablename__ = 'GlobalItems'
 
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=True)
     ingredients = db.Column(db.String(500), nullable=True)
@@ -263,10 +276,13 @@ class GlobalItem(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    subcategory = db.relationship('GlobalSubcategory', backref=db.backref('items', lazy=True))
+
     def to_dict(self):
         return {
             'id': self.id,
             'category_id': self.category_id,
+            'subcategory_id': self.subcategory_id,
             'name': self.name,
             'description': self.description,
             'ingredients': self.ingredients,
