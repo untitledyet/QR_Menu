@@ -1,0 +1,78 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}Global Product Library{% endblock %}
+{% block content %}
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1>პროდუქტების ბიბლიოთეკა</h1>
+        <p class="bo-header__sub">გლობალური ბაზა — venue-ზე მიუბმელი</p>
+    </div>
+</div>
+
+<!-- Add Category -->
+<div class="bo-settings-grid" style="margin-bottom:24px;">
+    <div class="bo-setting-card" style="padding:16px;">
+        <h3 style="margin-bottom:12px;font-size:.95rem;">კატეგორიის დამატება</h3>
+        <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" name="name" class="bo-input" placeholder="კატეგორიის სახელი" required style="flex:1;min-width:160px;">
+            <input type="text" name="description" class="bo-input" placeholder="აღწერა (სურვ.)" style="flex:2;min-width:200px;">
+            <button type="submit" class="bo-btn bo-btn--primary">დამატება</button>
+        </form>
+    </div>
+</div>
+
+<!-- Categories & Items -->
+{% for cat in categories %}
+<div style="margin-bottom:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h2 style="font-size:1.05rem;font-weight:700;">{{ cat.name }}
+            <span style="font-size:.78rem;color:var(--bo-muted);font-weight:400;margin-left:8px;">{{ cat.items|length }} პროდუქტი</span>
+        </h2>
+        <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
+              onsubmit="return confirm('წაშლა?')">
+            <button type="submit" class="bo-btn bo-btn--ghost" style="color:var(--bo-red);font-size:.78rem;">წაშლა</button>
+        </form>
+    </div>
+
+    <!-- Add item to this category -->
+    <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data"
+          style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:12px;background:var(--bo-surface);border-radius:var(--bo-radius);">
+        <input type="hidden" name="category_id" value="{{ cat.id }}">
+        <input type="text" name="name" class="bo-input" placeholder="პროდუქტის სახელი" required style="flex:2;min-width:160px;">
+        <input type="text" name="description" class="bo-input" placeholder="აღწერა" style="flex:2;min-width:160px;">
+        <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები" style="flex:3;min-width:200px;">
+        <input type="file" name="image" accept="image/*" class="bo-input" style="flex:2;min-width:160px;">
+        <button type="submit" class="bo-btn bo-btn--primary">+ დამატება</button>
+    </form>
+
+    <!-- Items list -->
+    {% if cat.items %}
+    <table class="bo-table" style="width:100%;">
+        <thead><tr><th>სახელი</th><th>ინგრედიენტები</th><th>ფოტო</th><th></th></tr></thead>
+        <tbody>
+        {% for item in cat.items %}
+        <tr>
+            <td><strong>{{ item.name }}</strong><br><small style="color:var(--bo-muted);">{{ item.description or '' }}</small></td>
+            <td style="font-size:.82rem;color:var(--bo-muted);">{{ item.ingredients or '—' }}</td>
+            <td>
+                {% if item.image_filename %}
+                <img src="{{ url_for('static', filename='images/' + item.image_filename) }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('lib_bp.delete_global_item', item_id=item.id) }}"
+                      onsubmit="return confirm('წაშლა?')">
+                    <button type="submit" class="bo-btn bo-btn--ghost" style="color:var(--bo-red);font-size:.75rem;">წაშლა</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--bo-muted);font-size:.85rem;">ამ კატეგორიაში პროდუქტი არ არის.</p>
+    {% endif %}
+</div>
+{% else %}
+<p style="color:var(--bo-muted);">ბიბლიოთეკა ცარიელია. დაამატეთ კატეგორია.</p>
+{% endfor %}
+{% endblock %}

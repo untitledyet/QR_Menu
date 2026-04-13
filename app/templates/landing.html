@@ -13,7 +13,6 @@
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="t-nav">
     <div class="t-nav__inner">
         <a href="/" class="t-nav__logo">tab<span>ly</span></a>
@@ -25,7 +24,6 @@
     </div>
 </nav>
 
-<!-- Hero -->
 <section class="t-hero">
     <div class="t-container">
         <div class="t-hero__badge" data-i18n="heroBadge">🚀 უფასო QR მენიუ ყველა რესტორნისთვის</div>
@@ -38,7 +36,6 @@
     </div>
 </section>
 
-<!-- Services -->
 <section class="t-section t-section--center" id="services">
     <div class="t-container">
         <div class="t-section__label" data-i18n="servicesLabel">სერვისები</div>
@@ -55,25 +52,24 @@
                 <span class="t-badge--active t-service-card__badge" data-i18n="badgeActive">აქტიური</span>
                 <div class="t-service-card__icon t-service-card__icon--green"><i class="fas fa-tags"></i></div>
                 <div class="t-service-card__name" data-i18n="svcPromoName">პრომოციები</div>
-                <div class="t-service-card__desc" data-i18n="svcPromoDesc">აქციები და ფასდაკლებები პირდაპირ მენიუში. მომხმარებელი ხედავს სკანირებისთანავე.</div>
+                <div class="t-service-card__desc" data-i18n="svcPromoDesc">აქციები და ფასდაკლებები პირდაპირ მენიუში.</div>
             </div>
             <div class="t-service-card t-service-card--upcoming">
                 <span class="t-badge--soon t-service-card__badge" data-i18n="badgeSoon">მალე</span>
                 <div class="t-service-card__icon t-service-card__icon--blue"><i class="fas fa-calendar-check"></i></div>
                 <div class="t-service-card__name" data-i18n="svcResName">მაგიდის ჯავშანი</div>
-                <div class="t-service-card__desc" data-i18n="svcResDesc">ონლაინ ჯავშანი ინტერაქტიული რუკით. მომხმარებელი თავად ირჩევს მაგიდას.</div>
+                <div class="t-service-card__desc" data-i18n="svcResDesc">ონლაინ ჯავშანი ინტერაქტიული რუკით.</div>
             </div>
             <div class="t-service-card t-service-card--upcoming">
                 <span class="t-badge--soon t-service-card__badge" data-i18n="badgeSoon">მალე</span>
                 <div class="t-service-card__icon t-service-card__icon--purple"><i class="fas fa-credit-card"></i></div>
                 <div class="t-service-card__name" data-i18n="svcPayName">ონლაინ გადახდა</div>
-                <div class="t-service-card__desc" data-i18n="svcPayDesc">შეკვეთის გადახდა პირდაპირ აპლიკაციიდან. Stripe ინტეგრაცია.</div>
+                <div class="t-service-card__desc" data-i18n="svcPayDesc">შეკვეთის გადახდა პირდაპირ აპლიკაციიდან.</div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Partners -->
 <section class="t-section t-section--center" id="partners">
     <div class="t-container">
         <div class="t-section__label" data-i18n="partnersLabel">პარტნიორები</div>
@@ -90,13 +86,12 @@
             </div>
             {% endfor %}
             {% if not venues %}
-            <p style="color:var(--t-text-3); font-size:.9rem;" data-i18n="noPartners">ჯერ არ არის პარტნიორი. იყავი პირველი!</p>
+            <p style="color:var(--t-text-3);font-size:.9rem;" data-i18n="noPartners">ჯერ არ არის პარტნიორი. იყავი პირველი!</p>
             {% endif %}
         </div>
     </div>
 </section>
 
-<!-- CTA -->
 <section class="t-section t-section--center" style="padding-bottom:100px;">
     <div class="t-container">
         <h2 class="t-section__title" data-i18n="ctaTitle">მზად ხარ?</h2>
@@ -105,7 +100,6 @@
     </div>
 </section>
 
-<!-- Footer -->
 <footer class="t-footer">
     <div class="t-container">
         <p>© 2025 <a href="/">Tably</a>. <span data-i18n="footerRights">ყველა უფლება დაცულია.</span></p>
@@ -114,123 +108,125 @@
 
 <!-- Auth Modal -->
 <div class="t-modal-overlay" id="auth-modal">
-    <div class="t-modal">
-        <button class="t-modal__close" onclick="closeModal()">✕</button>
+    <div class="t-modal" style="max-height:90vh;overflow-y:auto;">
+        <button class="t-modal__close" onclick="closeModal()">&#x2715;</button>
         <div class="t-modal__tabs">
-            <div class="t-modal__tab active" onclick="switchTab('login')" id="tab-login" data-i18n="tabLogin">შესვლა</div>
-            <div class="t-modal__tab" onclick="switchTab('register')" id="tab-register" data-i18n="tabRegister">რეგისტრაცია</div>
+            <div class="t-modal__tab active" onclick="switchTab('login')" id="tab-login">შესვლა</div>
+            <div class="t-modal__tab" onclick="switchTab('register')" id="tab-register">რეგისტრაცია</div>
         </div>
         <div id="auth-msg"></div>
 
-        <!-- Login Form -->
+        <!-- LOGIN -->
         <div id="form-login">
-            <div class="t-form-group">
-                <label data-i18n="lblUsername">მომხმარებლის სახელი</label>
-                <input type="text" class="t-input" id="login-username" placeholder="username">
+            <div id="login-step-1">
+                <div class="t-form-group">
+                    <label>ელ. ფოსტა</label>
+                    <input type="email" class="t-input" id="login-email" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <div class="t-form-group">
+                    <label>პაროლი</label>
+                    <div style="position:relative;">
+                        <input type="password" class="t-input" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password" style="padding-right:44px;">
+                        <button type="button" onclick="togglePwd('login-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
+                    </div>
+                </div>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep1()">შესვლა</button>
             </div>
-            <div class="t-form-group">
-                <label data-i18n="lblPassword">პაროლი</label>
-                <input type="password" class="t-input" id="login-password" placeholder="••••••">
+            <div id="login-step-2" style="display:none;">
+                <p style="color:var(--t-text-2);font-size:.9rem;margin-bottom:16px;" id="login-sms-hint"></p>
+                <div class="t-form-group">
+                    <label>SMS კოდი</label>
+                    <input type="text" class="t-input" id="login-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
+                </div>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep2()">დადასტურება</button>
             </div>
-            <button class="t-btn t-btn--primary" style="width:100%; margin-top:8px;" onclick="doLogin()" data-i18n="btnLogin">შესვლა</button>
         </div>
 
-        <!-- Register Form -->
+        <!-- REGISTER -->
         <div id="form-register" style="display:none;">
-            <div class="t-form-group">
-                <label data-i18n="lblVenueName">რესტორნის სახელი</label>
-                <input type="text" class="t-input" id="reg-venue" placeholder="მაგ. Paulaner">
+            <!-- Main form -->
+            <div id="reg-main">
+                <div class="t-form-group">
+                    <label>ობიექტის სახელი</label>
+                    <input type="text" class="t-input" id="reg-venue" placeholder="მაგ. ჩემი რესტორანი" autocomplete="organization">
+                </div>
+                <div class="t-form-group">
+                    <label>მისამართი <span style="font-size:.72rem;color:var(--t-text-3);">(Google Maps)</span></label>
+                    <input type="text" class="t-input" id="reg-address" placeholder="ქ. თბილისი, რუსთაველის 1" oninput="onAddressInput()" onfocus="schedulePlacesSearch()" autocomplete="off">
+                    <input type="hidden" id="reg-place-id">
+                    <div id="place-confirmed" style="display:none;margin-top:6px;font-size:.78rem;color:#10B981;">
+                        <i class="fas fa-check-circle"></i> <span id="place-confirmed-text"></span>
+                    </div>
+                </div>
+                <div class="t-form-group">
+                    <label>ელ. ფოსტა</label>
+                    <input type="email" class="t-input" id="reg-email" placeholder="your@email.com" autocomplete="email">
+                </div>
+
+                <div class="t-form-group">
+                    <label style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>პაროლი</span>
+                        <button type="button" onclick="suggestPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;">&#x1F511; ავტო-გენერაცია</button>
+                    </label>
+                    <div style="position:relative;">
+                        <input type="password" class="t-input" id="reg-password" placeholder="მინ. 8 სიმბოლო" autocomplete="new-password" style="padding-right:44px;" oninput="checkPasswordStrength()">
+                        <button type="button" onclick="togglePwd('reg-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
+                    </div>
+                    <div id="pwd-strength" style="margin-top:6px;height:4px;border-radius:2px;background:var(--t-border);overflow:hidden;">
+                        <div id="pwd-strength-bar" style="height:100%;width:0;transition:width .3s,background .3s;"></div>
+                    </div>
+                    <div id="pwd-strength-label" style="font-size:.72rem;color:var(--t-text-3);margin-top:3px;"></div>
+                </div>
+
+                <!-- Phone — below password -->
+                <div class="t-form-group">
+                    <label>ტელეფონი</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="tel" class="t-input" id="reg-phone" placeholder="555123456"
+                               oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel" style="flex:1;">
+                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()"
+                                style="display:none;padding:0 16px;border-radius:10px;border:none;background:var(--t-primary);color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">
+                            კოდი
+                        </button>
+                    </div>
+                    <div id="phone-otp-wrap" style="display:none;margin-top:8px;">
+                        <input type="text" class="t-input" id="phone-otp-input" placeholder="6-ნიშნა კოდი"
+                               maxlength="6" inputmode="numeric"
+                               style="text-align:center;letter-spacing:.2em;font-size:1rem;"
+                               oninput="onOtpInput(this)">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+                            <div id="otp-timer-wrap" style="font-size:.72rem;color:var(--t-text-3);"></div>
+                            <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()"
+                                    style="display:none;background:none;border:none;color:var(--t-primary);font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;">
+                                ხელახლა გაგზავნა
+                            </button>
+                        </div>
+                    </div>
+                    <div id="phone-verified-badge" style="display:none;margin-top:6px;font-size:.78rem;color:#10B981;">
+                        <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
+                    </div>
+                </div>
+
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doRegister()">რეგისტრაცია</button>
             </div>
-            <div class="t-form-group">
-                <label data-i18n="lblUsername">მომხმარებლის სახელი</label>
-                <input type="text" class="t-input" id="reg-username" placeholder="admin username">
+
+            <!-- Email pending -->
+            <div id="reg-step-4" style="display:none;text-align:center;padding:16px 0;">
+                <div style="font-size:2.5rem;margin-bottom:12px;">&#x1F4E7;</div>
+                <h3 style="color:var(--t-text);margin-bottom:8px;">შეამოწმეთ ელ. ფოსტა</h3>
+                <p style="color:var(--t-text-2);font-size:.88rem;" id="reg-email-hint"></p>
             </div>
-            <div class="t-form-group">
-                <label data-i18n="lblEmail">ელ. ფოსტა</label>
-                <input type="email" class="t-input" id="reg-email" placeholder="[email]">
-            </div>
-            <div class="t-form-group">
-                <label data-i18n="lblPassword">პაროლი</label>
-                <input type="password" class="t-input" id="reg-password" placeholder="მინ. 6 სიმბოლო">
-            </div>
-            <button class="t-btn t-btn--primary" style="width:100%; margin-top:8px;" onclick="doRegister()" data-i18n="btnRegister">რეგისტრაცია</button>
         </div>
     </div>
 </div>
 
+<!-- Places dropdown — fixed position, outside modal overflow -->
+<div id="places-dropdown" style="display:none;position:fixed;background:var(--t-surface);border:1px solid var(--t-border);border-radius:10px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:300px;max-width:480px;"></div>
+
 <script>
-/* ---- i18n ---- */
-const LANG = {
-    ka: {
-        navLogin: 'შესვლა', navRegister: 'რეგისტრაცია',
-        heroBadge: '🚀 უფასო QR მენიუ ყველა რესტორნისთვის',
-        heroTitle: 'შენი რესტორნის<br><span>ციფრული პლატფორმა</span>',
-        heroSub: 'QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში. დაიწყე უფასოდ, გაიზარდე ჩვენთან ერთად.',
-        heroBtn: 'დაიწყე უფასოდ', heroBtn2: 'გაიგე მეტი',
-        servicesLabel: 'სერვისები', servicesTitle: 'ყველაფერი რაც რესტორანს სჭირდება',
-        servicesSub: 'დაიწყე QR მენიუთი, დაამატე ფიჩერები როცა მოინდომებ.',
-        badgeActive: 'აქტიური', badgeSoon: 'მალე',
-        svcQrName: 'QR მენიუ', svcQrDesc: 'ციფრული მენიუ QR კოდით. კატეგორიები, ქვეკატეგორიები, ინგრედიენტების კასტომიზაცია.',
-        svcPromoName: 'პრომოციები', svcPromoDesc: 'აქციები და ფასდაკლებები პირდაპირ მენიუში. მომხმარებელი ხედავს სკანირებისთანავე.',
-        svcResName: 'მაგიდის ჯავშანი', svcResDesc: 'ონლაინ ჯავშანი ინტერაქტიული რუკით. მომხმარებელი თავად ირჩევს მაგიდას.',
-        svcPayName: 'ონლაინ გადახდა', svcPayDesc: 'შეკვეთის გადახდა პირდაპირ აპლიკაციიდან. Stripe ინტეგრაცია.',
-        partnersLabel: 'პარტნიორები', partnersTitle: 'ჩვენი პარტნიორი ობიექტები',
-        partnersSub: 'რესტორნები რომლებიც უკვე იყენებენ Tably-ს.',
-        noPartners: 'ჯერ არ არის პარტნიორი. იყავი პირველი!',
-        ctaTitle: 'მზად ხარ?', ctaSub: 'დაარეგისტრირე შენი რესტორანი და მიიღე QR მენიუ წუთებში. უფასოდ.',
-        ctaBtn: 'დაიწყე ახლავე', footerRights: 'ყველა უფლება დაცულია.',
-        tabLogin: 'შესვლა', tabRegister: 'რეგისტრაცია',
-        lblVenueName: 'რესტორნის სახელი', lblUsername: 'მომხმარებლის სახელი',
-        lblEmail: 'ელ. ფოსტა', lblPassword: 'პაროლი',
-        btnLogin: 'შესვლა', btnRegister: 'რეგისტრაცია',
-    },
-    en: {
-        navLogin: 'Sign In', navRegister: 'Register',
-        heroBadge: '🚀 Free QR Menu for every restaurant',
-        heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
-        heroSub: 'QR menu, table reservations, online ordering — all in one place. Start free, grow with us.',
-        heroBtn: 'Start Free', heroBtn2: 'Learn More',
-        servicesLabel: 'Services', servicesTitle: 'Everything your restaurant needs',
-        servicesSub: 'Start with QR menu, add features when you\'re ready.',
-        badgeActive: 'Active', badgeSoon: 'Soon',
-        svcQrName: 'QR Menu', svcQrDesc: 'Digital menu via QR code. Categories, subcategories, ingredient customization.',
-        svcPromoName: 'Promotions', svcPromoDesc: 'Deals and discounts right in the menu. Customers see them instantly.',
-        svcResName: 'Table Booking', svcResDesc: 'Online reservations with interactive floor map. Customers pick their table.',
-        svcPayName: 'Online Payments', svcPayDesc: 'Pay for orders directly from the app. Stripe integration.',
-        partnersLabel: 'Partners', partnersTitle: 'Our partner venues',
-        partnersSub: 'Restaurants already using Tably.',
-        noPartners: 'No partners yet. Be the first!',
-        ctaTitle: 'Ready?', ctaSub: 'Register your restaurant and get a QR menu in minutes. Free.',
-        ctaBtn: 'Start Now', footerRights: 'All rights reserved.',
-        tabLogin: 'Sign In', tabRegister: 'Register',
-        lblVenueName: 'Restaurant Name', lblUsername: 'Username',
-        lblEmail: 'Email', lblPassword: 'Password',
-        btnLogin: 'Sign In', btnRegister: 'Register',
-    }
-};
+let placesTimer = null;
+let resendTimerInterval = null;
 
-let currentLang = 'ka';
-
-function toggleLang() {
-    currentLang = currentLang === 'ka' ? 'en' : 'ka';
-    document.getElementById('lang-btn').textContent = currentLang === 'ka' ? 'EN' : 'ქარ';
-    document.documentElement.lang = currentLang;
-    applyLang();
-}
-
-function applyLang() {
-    const t = LANG[currentLang];
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (t[key]) el.textContent = t[key];
-    });
-    document.querySelectorAll('[data-i18n-html]').forEach(el => {
-        const key = el.getAttribute('data-i18n-html');
-        if (t[key]) el.innerHTML = t[key];
-    });
-}
-
-/* ---- Modal ---- */
 function openModal(tab) {
     document.getElementById('auth-modal').classList.add('active');
     switchTab(tab || 'login');
@@ -246,40 +242,347 @@ function switchTab(tab) {
     document.getElementById('tab-register').classList.toggle('active', tab === 'register');
     document.getElementById('auth-msg').innerHTML = '';
 }
-
-/* ---- Auth ---- */
-async function doLogin() {
-    const r = await fetch('/login-venue', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            username: document.getElementById('login-username').value,
-            password: document.getElementById('login-password').value
-        })
-    });
-    const d = await r.json();
-    if (d.success) { window.location.href = d.redirect; }
-    else { document.getElementById('auth-msg').innerHTML = '<div class="t-form-msg t-form-msg--error">' + d.error + '</div>'; }
-}
-
-async function doRegister() {
-    const r = await fetch('/register', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            venue_name: document.getElementById('reg-venue').value,
-            username: document.getElementById('reg-username').value,
-            email: document.getElementById('reg-email').value,
-            password: document.getElementById('reg-password').value
-        })
-    });
-    const d = await r.json();
-    if (d.success) { window.location.href = d.redirect; }
-    else { document.getElementById('auth-msg').innerHTML = '<div class="t-form-msg t-form-msg--error">' + d.error + '</div>'; }
-}
-
-// Close modal on overlay click
 document.getElementById('auth-modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
+function showMsg(msg, type) {
+    document.getElementById('auth-msg').innerHTML =
+        '<div class="t-form-msg t-form-msg--' + type + '">' + msg + '</div>';
+}
+
+/* Password */
+function togglePwd(id, btn) {
+    var inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+async function suggestPassword() {
+    var r = await fetch('/api/suggest-password');
+    var d = await r.json();
+    var inp = document.getElementById('reg-password');
+    inp.type = 'text';
+    inp.value = d.password;
+    checkPasswordStrength();
+}
+function checkPasswordStrength() {
+    var pwd = document.getElementById('reg-password').value;
+    var bar = document.getElementById('pwd-strength-bar');
+    var label = document.getElementById('pwd-strength-label');
+    var score = 0;
+    if (pwd.length >= 8) score++;
+    if (pwd.length >= 12) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    var colors = ['#EF4444','#F97316','#EAB308','#22C55E','#10B981'];
+    var labels = ['ძალიან სუსტი','სუსტი','საშუალო','ძლიერი','ძალიან ძლიერი'];
+    bar.style.width = (score * 20) + '%';
+    bar.style.background = colors[score - 1] || '#EF4444';
+    label.textContent = pwd ? (labels[score - 1] || '') : '';
+    label.style.color = colors[score - 1] || '';
+}
+
+/* Google Places */
+var selectedPlace = null;
+function onAddressInput() {
+    document.getElementById('reg-place-id').value = '';
+    document.getElementById('place-confirmed').style.display = 'none';
+    selectedPlace = null;
+    schedulePlacesSearch();
+}
+function schedulePlacesSearch() {
+    clearTimeout(placesTimer);
+    placesTimer = setTimeout(doPlacesSearch, 400);
+}
+async function doPlacesSearch() {
+    var addr = document.getElementById('reg-address').value.trim();
+    if (addr.length < 2) { hidePlacesDropdown(); return; }
+    var name = document.getElementById('reg-venue').value.trim();
+    var query = name ? name + ' ' + addr : addr;
+    try {
+        var r = await fetch('/api/places/search?name=' + encodeURIComponent(name) + '&address=' + encodeURIComponent(addr));
+        var d = await r.json();
+        showPlacesDropdown(d.places || []);
+    } catch(e) { hidePlacesDropdown(); }
+}
+function showPlacesDropdown(places) {
+    var dd = document.getElementById('places-dropdown');
+    if (!places.length) { dd.style.display = 'none'; return; }
+    // Position below the address input
+    var inp = document.getElementById('reg-address');
+    var rect = inp.getBoundingClientRect();
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    dd.style.width = rect.width + 'px';
+    dd.innerHTML = places.map(function(p, i) {
+        return '<div onclick="selectPlace(' + i + ')" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--t-border);display:flex;gap:10px;align-items:flex-start;" onmouseover="this.style.background=\'var(--t-surface-2)\'" onmouseout="this.style.background=\'\'">' +
+            '<i class="fas fa-map-marker-alt" style="color:var(--t-primary);margin-top:2px;flex-shrink:0;font-size:.85rem;"></i>' +
+            '<div><div style="font-size:.88rem;font-weight:600;color:var(--t-text);">' + p.name + '</div>' +
+            '<div style="font-size:.75rem;color:var(--t-text-3);margin-top:2px;">' + p.address + '</div></div>' +
+            '</div>';
+    }).join('');
+    dd._places = places;
+    dd.style.display = 'block';
+}
+function hidePlacesDropdown() {
+    document.getElementById('places-dropdown').style.display = 'none';
+}
+function selectPlace(idx) {
+    var dd = document.getElementById('places-dropdown');
+    var place = dd._places[idx];
+    selectedPlace = place;
+    document.getElementById('reg-address').value = place.address;
+    document.getElementById('reg-place-id').value = place.place_id;
+    document.getElementById('place-confirmed-text').textContent = place.name + ' — ' + place.address;
+    document.getElementById('place-confirmed').style.display = 'block';
+    hidePlacesDropdown();
+}
+
+/* Phone formatting + inline SMS */
+var phoneVerified = false;
+var otpTimerInterval = null;
+
+function onPhoneInput(inp) {
+    var raw = inp.value.replace(/\D/g, '').substring(0, 9);
+    inp.value = raw;
+    var sendBtn = document.getElementById('send-sms-btn');
+    sendBtn.style.display = raw.length === 9 ? '' : 'none';
+}
+
+function onOtpInput(inp) {
+    var val = inp.value.replace(/\D/g, '').substring(0, 6);
+    inp.value = val;
+    if (val.length === 6) setTimeout(verifyPhoneOtp, 200);
+}
+
+async function sendPhoneSms() {
+    var phone = document.getElementById('reg-phone').value.replace(/\D/g, '');
+    if (phone.length !== 9) { showMsg('ტელეფონის ნომერი არასწორია', 'error'); return; }
+    var fullPhone = '995' + phone;
+    var btn = document.getElementById('send-sms-btn');
+    btn.disabled = true; btn.textContent = '...';
+    var r = await fetch('/api/send-phone-otp', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({phone: fullPhone})
+    });
+    var d = await r.json();
+    btn.disabled = false; btn.textContent = 'კოდი';
+    if (d.success) {
+        document.getElementById('phone-otp-wrap').style.display = '';
+        document.getElementById('phone-otp-input').focus();
+        startOtpTimer(60);
+        showMsg('', '');
+    } else {
+        showMsg(d.error || 'SMS გაგზავნა ვერ მოხერხდა', 'error');
+    }
+}
+
+async function verifyPhoneOtp() {
+    var code = document.getElementById('phone-otp-input').value.trim();
+    if (code.length !== 6) return;
+    var phone = '995' + document.getElementById('reg-phone').value.replace(/\D/g, '');
+    var r = await fetch('/api/verify-phone-otp', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({phone: phone, code: code})
+    });
+    var d = await r.json();
+    if (d.success) {
+        phoneVerified = true;
+        clearInterval(otpTimerInterval);
+        document.getElementById('phone-otp-wrap').style.display = 'none';
+        document.getElementById('phone-verified-badge').style.display = 'block';
+        document.getElementById('send-sms-btn').style.display = 'none';
+        document.getElementById('reg-phone').readOnly = true;
+        showMsg('', '');
+    } else {
+        document.getElementById('phone-otp-input').value = '';
+        showMsg(d.error || 'კოდი არასწორია', 'error');
+    }
+}
+
+async function resendPhoneSms() {
+    document.getElementById('resend-otp-btn').style.display = 'none';
+    await sendPhoneSms();
+}
+
+function startOtpTimer(seconds) {
+    clearInterval(otpTimerInterval);
+    var timerEl = document.getElementById('otp-timer-wrap');
+    var resendBtn = document.getElementById('resend-otp-btn');
+    resendBtn.style.display = 'none';
+    var remaining = seconds;
+    timerEl.textContent = remaining + 'წმ';
+    otpTimerInterval = setInterval(function() {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(otpTimerInterval);
+            timerEl.textContent = '';
+            resendBtn.style.display = '';
+        } else {
+            timerEl.textContent = remaining + 'წმ';
+        }
+    }, 1000);
+}
+
+/* Register */
+async function doRegister() {
+    var name = document.getElementById('reg-venue').value.trim();
+    var addr = document.getElementById('reg-address').value.trim();
+    var placeId = document.getElementById('reg-place-id').value;
+    if (!name) { showMsg('ობიექტის სახელი სავალდებულოა', 'error'); return; }
+    if (!addr) { showMsg('მისამართი სავალდებულოა', 'error'); return; }
+    if (!placeId) { showMsg('გთხოვთ, ობიექტი სიადან აირჩიეთ', 'error'); return; }
+    if (!phoneVerified) { showMsg('ტელეფონის ნომრის ვერიფიკაცია სავალდებულოა', 'error'); return; }
+    var data = {
+        venue_name: document.getElementById('reg-venue').value.trim(),
+        address: document.getElementById('reg-address').value.trim(),
+        place_id: document.getElementById('reg-place-id').value,
+        email: document.getElementById('reg-email').value.trim(),
+        phone: document.getElementById('reg-phone').value.trim(),
+        password: document.getElementById('reg-password').value,
+    };
+    var r = await fetch('/register', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+    });
+    var d = await r.json();
+    if (d.success) {
+        document.getElementById('reg-email-hint').textContent =
+            'ვერიფიკაციის ლინკი გაიგზავნა ' + document.getElementById('reg-email').value + '-ზე.';
+        document.getElementById('reg-main').style.display = 'none';
+        document.getElementById('reg-step-4').style.display = '';
+    } else {
+        showMsg(d.error, 'error');
+    }
+}
+async function doVerifyPhone() {
+    var code = document.getElementById('reg-sms-code').value.trim();
+    var r = await fetch('/verify-phone', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({code: code})
+    });
+    var d = await r.json();
+    if (d.success) {
+        if (d.redirect) { window.location.href = d.redirect; return; }
+        document.getElementById('reg-email-hint').textContent =
+            'ვერიფიკაციის ლინკი გაიგზავნა ' + document.getElementById('reg-email').value + '-ზე.';
+        document.getElementById('reg-step-3').style.display = 'none';
+        document.getElementById('reg-step-4').style.display = '';
+    } else {
+        showMsg(d.error, 'error');
+    }
+}
+async function resendSms() {
+    var r = await fetch('/resend-sms', {method: 'POST'});
+    var d = await r.json();
+    if (d.success) { showMsg(d.message, 'success'); startResendTimer(60); }
+    else { showMsg(d.error, 'error'); }
+}
+function startResendTimer(seconds) {
+    var btn = document.getElementById('resend-btn');
+    var timer = document.getElementById('resend-timer');
+    btn.style.display = 'none';
+    timer.style.display = 'block';
+    clearInterval(resendTimerInterval);
+    var remaining = seconds;
+    timer.textContent = remaining + ' წამში ხელახლა გაგზავნა';
+    resendTimerInterval = setInterval(function() {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(resendTimerInterval);
+            btn.style.display = '';
+            timer.style.display = 'none';
+        } else {
+            timer.textContent = remaining + ' წამში ხელახლა გაგზავნა';
+        }
+    }, 1000);
+}
+
+/* Login steps */
+async function doLoginStep1() {
+    var r = await fetch('/login-venue', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            step: 'credentials',
+            email: document.getElementById('login-email').value.trim(),
+            password: document.getElementById('login-password').value
+        })
+    });
+    var d = await r.json();
+    if (d.success) {
+        document.getElementById('login-sms-hint').textContent = d.message;
+        document.getElementById('login-step-1').style.display = 'none';
+        document.getElementById('login-step-2').style.display = '';
+    } else {
+        showMsg(d.error, 'error');
+    }
+}
+async function doLoginStep2() {
+    var r = await fetch('/login-venue', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            step: 'sms_2fa',
+            code: document.getElementById('login-sms-code').value.trim()
+        })
+    });
+    var d = await r.json();
+    if (d.success) { window.location.href = d.redirect; }
+    else { showMsg(d.error, 'error'); }
+}
+
+/* i18n */
+var LANG = {
+    ka: {
+        navLogin: 'შესვლა', navRegister: 'რეგისტრაცია',
+        heroBadge: 'უფასო QR მენიუ ყველა რესტორნისთვის',
+        heroTitle: 'შენი რესტორნის<br><span>ციფრული პლატფორმა</span>',
+        heroSub: 'QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში.',
+        heroBtn: 'დაიწყე უფასოდ', heroBtn2: 'გაიგე მეტი',
+        servicesLabel: 'სერვისები', servicesTitle: 'ყველაფერი რაც რესტორანს სჭირდება',
+        servicesSub: 'დაიწყე QR მენიუთი, დაამატე ფიჩერები როცა მოინდომებ.',
+        badgeActive: 'აქტიური', badgeSoon: 'მალე',
+        svcQrName: 'QR მენიუ', svcQrDesc: 'ციფრული მენიუ QR კოდით.',
+        svcPromoName: 'პრომოციები', svcPromoDesc: 'აქციები და ფასდაკლებები პირდაპირ მენიუში.',
+        svcResName: 'მაგიდის ჯავშანი', svcResDesc: 'ონლაინ ჯავშანი ინტერაქტიული რუკით.',
+        svcPayName: 'ონლაინ გადახდა', svcPayDesc: 'შეკვეთის გადახდა პირდაპირ აპლიკაციიდან.',
+        partnersLabel: 'პარტნიორები', partnersTitle: 'ჩვენი პარტნიორი ობიექტები',
+        partnersSub: 'რესტორნები რომლებიც უკვე იყენებენ Tably-ს.',
+        noPartners: 'ჯერ არ არის პარტნიორი. იყავი პირველი!',
+        ctaTitle: 'მზად ხარ?', ctaSub: 'დაარეგისტრირე შენი რესტორანი და მიიღე QR მენიუ წუთებში.',
+        ctaBtn: 'დაიწყე ახლავე', footerRights: 'ყველა უფლება დაცულია.',
+    },
+    en: {
+        navLogin: 'Sign In', navRegister: 'Register',
+        heroBadge: 'Free QR Menu for every restaurant',
+        heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
+        heroSub: 'QR menu, table reservations, online ordering — all in one place.',
+        heroBtn: 'Start Free', heroBtn2: 'Learn More',
+        servicesLabel: 'Services', servicesTitle: 'Everything your restaurant needs',
+        servicesSub: 'Start with QR menu, add features when ready.',
+        badgeActive: 'Active', badgeSoon: 'Soon',
+        svcQrName: 'QR Menu', svcQrDesc: 'Digital menu via QR code.',
+        svcPromoName: 'Promotions', svcPromoDesc: 'Deals and discounts right in the menu.',
+        svcResName: 'Table Booking', svcResDesc: 'Online reservations with interactive floor map.',
+        svcPayName: 'Online Payments', svcPayDesc: 'Pay for orders directly from the app.',
+        partnersLabel: 'Partners', partnersTitle: 'Our partner venues',
+        partnersSub: 'Restaurants already using Tably.',
+        noPartners: 'No partners yet. Be the first!',
+        ctaTitle: 'Ready?', ctaSub: 'Register your restaurant and get a QR menu in minutes.',
+        ctaBtn: 'Start Now', footerRights: 'All rights reserved.',
+    }
+};
+var currentLang = 'ka';
+function toggleLang() {
+    currentLang = currentLang === 'ka' ? 'en' : 'ka';
+    document.getElementById('lang-btn').textContent = currentLang === 'ka' ? 'EN' : 'ქარ';
+    document.documentElement.lang = currentLang;
+    var t = LANG[currentLang];
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        if (t[el.dataset.i18n]) el.textContent = t[el.dataset.i18n];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+        if (t[el.dataset.i18nHtml]) el.innerHTML = t[el.dataset.i18nHtml];
+    });
+}
 </script>
 </body>
 </html>

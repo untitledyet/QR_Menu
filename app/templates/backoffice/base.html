@@ -29,10 +29,16 @@
                     <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-nav__item {% if 'venue' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-store"></i> Venues
                     </a>
+                    <a href="{{ url_for('lib_bp.library_index') }}" class="bo-nav__item {% if 'lib_bp' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-database"></i> პროდუქტების ბიბლიოთეკა
+                    </a>
                 {% elif admin and admin.venue %}
                     {% set vf = admin.venue.get_all_features() %}
                     <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-nav__item {% if 'menu' in request.endpoint or 'item' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-book-open"></i> Menu
+                    </a>
+                    <a href="{{ url_for('lib_bp.browse_library') }}" class="bo-nav__item {% if 'browse' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-database"></i> ბიბლიოთეკა
                     </a>
                     <a href="{{ url_for('bo_bp.categories_list') }}" class="bo-nav__item {% if 'categor' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-layer-group"></i> Categories

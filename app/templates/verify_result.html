@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tably — ვერიფიკაცია</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px;">
+    <div style="font-size:3rem;margin-bottom:16px;">{{ '✅' if success else '❌' }}</div>
+    <h2 style="color:var(--t-text);margin-bottom:8px;">{{ 'წარმატება!' if success else 'შეცდომა' }}</h2>
+    <p style="color:var(--t-text-2);margin-bottom:24px;">{{ message }}</p>
+    <a href="/" style="color:var(--t-primary);text-decoration:none;font-weight:600;">← მთავარ გვერდზე დაბრუნება</a>
+</div>
+</body>
+</html>

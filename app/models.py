@@ -71,11 +71,21 @@ class AdminUser(db.Model):
     __tablename__ = 'AdminUsers'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=True)  # kept for super admin compat
+    email = db.Column(db.String(150), unique=True, nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='venue')
     venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Verification
+    email_verified = db.Column(db.Boolean, default=False)
+    email_token = db.Column(db.String(64), nullable=True)
+    phone_verified = db.Column(db.Boolean, default=False)
+    sms_code = db.Column(db.String(6), nullable=True)
+    sms_code_expires = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=False)  # activated after full verification
 
     venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
 
@@ -97,7 +107,9 @@ class Venue(db.Model):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
     plan = db.Column(db.String(20), nullable=False, default='free')
-    total_tables = db.Column(db.Integer, nullable=False, default=0)  # 0 = unlimited
+    total_tables = db.Column(db.Integer, nullable=False, default=0)
+    address = db.Column(db.String(300), nullable=True)
+    google_place_id = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -221,6 +233,45 @@ class Order(db.Model):
         self.TableID = TableID
         self.Items = Items
         self.venue_id = venue_id
+
+
+class GlobalCategory(db.Model):
+    """Platform-wide product categories — not tied to any venue."""
+    __tablename__ = 'GlobalCategories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(300), nullable=True)
+    icon = db.Column(db.String(100), nullable=True)
+    sort_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship('GlobalItem', backref='category', lazy=True, cascade='all, delete-orphan')
+
+
+class GlobalItem(db.Model):
+    """Platform-wide product library — not tied to any venue."""
+    __tablename__ = 'GlobalItems'
+
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+    ingredients = db.Column(db.String(500), nullable=True)
+    image_filename = db.Column(db.String(200), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'category_id': self.category_id,
+            'name': self.name,
+            'description': self.description,
+            'ingredients': self.ingredients,
+            'image_filename': self.image_filename,
+        }
 
 
 # ============================================================

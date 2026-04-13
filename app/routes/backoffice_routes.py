@@ -70,8 +70,13 @@ def verify_promo_ownership(promo_id):
 @bo_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        admin = AdminUser.query.filter_by(username=request.form.get('username', '').strip()).first()
-        if admin and admin.check_password(request.form.get('password', '')):
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        # Try by username first (super admin), then by email
+        admin = AdminUser.query.filter_by(username=username).first()
+        if not admin:
+            admin = AdminUser.query.filter_by(email=username).first()
+        if admin and admin.check_password(password) and (admin.is_active or admin.is_super):
             session['admin_id'] = admin.id
             return redirect(url_for('bo_bp.dashboard'))
         flash('Invalid credentials')
