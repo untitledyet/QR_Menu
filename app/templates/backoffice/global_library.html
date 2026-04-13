@@ -9,68 +9,116 @@
 </div>
 
 <!-- Add Category -->
-<div class="bo-settings-grid" style="margin-bottom:24px;">
-    <div class="bo-setting-card" style="padding:16px;">
-        <h3 style="margin-bottom:12px;font-size:.95rem;">კატეგორიის დამატება</h3>
-        <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}" style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input type="text" name="name" class="bo-input" placeholder="კატეგორიის სახელი" required style="flex:1;min-width:160px;">
-            <input type="text" name="description" class="bo-input" placeholder="აღწერა (სურვ.)" style="flex:2;min-width:200px;">
-            <button type="submit" class="bo-btn bo-btn--primary">დამატება</button>
-        </form>
-    </div>
+<div class="bo-setting-card" style="padding:16px;margin-bottom:24px;">
+    <h3 style="margin-bottom:12px;font-size:.95rem;">კატეგორიის დამატება</h3>
+    <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" name="name" class="bo-input" placeholder="კატეგორიის სახელი" required style="flex:1;min-width:160px;">
+        <input type="text" name="description" class="bo-input" placeholder="აღწერა (სურვ.)" style="flex:2;min-width:200px;">
+        <button type="submit" class="bo-btn bo-btn--primary">+ კატეგორია</button>
+    </form>
 </div>
 
-<!-- Categories & Items -->
 {% for cat in categories %}
-<div style="margin-bottom:32px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <h2 style="font-size:1.05rem;font-weight:700;">{{ cat.name }}
-            <span style="font-size:.78rem;color:var(--bo-muted);font-weight:400;margin-left:8px;">{{ cat.items|length }} პროდუქტი</span>
-        </h2>
+<div style="margin-bottom:40px;border:1px solid var(--bo-border);border-radius:var(--bo-radius);overflow:hidden;">
+    <!-- Category header -->
+    <div style="background:var(--bo-surface);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+            <strong style="font-size:1rem;">{{ cat.name }}</strong>
+            <span style="font-size:.78rem;color:var(--bo-muted);margin-left:8px;">{{ cat.items|length }} პროდუქტი · {{ cat.subcategories|length }} საბკატეგორია</span>
+        </div>
         <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
-              onsubmit="return confirm('წაშლა?')">
+              onsubmit="return confirm('კატეგორია წაიშალოს?')">
             <button type="submit" class="bo-btn bo-btn--ghost" style="color:var(--bo-red);font-size:.78rem;">წაშლა</button>
         </form>
     </div>
 
-    <!-- Add item to this category -->
-    <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data"
-          style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:12px;background:var(--bo-surface);border-radius:var(--bo-radius);">
-        <input type="hidden" name="category_id" value="{{ cat.id }}">
-        <input type="text" name="name" class="bo-input" placeholder="პროდუქტის სახელი" required style="flex:2;min-width:160px;">
-        <input type="text" name="description" class="bo-input" placeholder="აღწერა" style="flex:2;min-width:160px;">
-        <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები" style="flex:3;min-width:200px;">
-        <input type="file" name="image" accept="image/*" class="bo-input" style="flex:2;min-width:160px;">
-        <button type="submit" class="bo-btn bo-btn--primary">+ დამატება</button>
-    </form>
+    <div style="padding:16px;">
+        <!-- Subcategories -->
+        <div style="margin-bottom:14px;">
+            <div style="font-size:.82rem;font-weight:600;color:var(--bo-muted);margin-bottom:8px;">საბკატეგორიები</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                {% for sub in cat.subcategories %}
+                <div style="display:flex;align-items:center;gap:4px;background:var(--bo-surface);border:1px solid var(--bo-border);border-radius:20px;padding:4px 10px;font-size:.78rem;">
+                    {{ sub.name }}
+                    <form method="POST" action="{{ url_for('lib_bp.delete_global_subcategory', sub_id=sub.id) }}"
+                          onsubmit="return confirm('წაიშალოს?')" style="display:inline;">
+                        <button type="submit" style="background:none;border:none;color:var(--bo-red);cursor:pointer;font-size:.7rem;padding:0 2px;">✕</button>
+                    </form>
+                </div>
+                {% endfor %}
+                {% if not cat.subcategories %}
+                <span style="font-size:.78rem;color:var(--bo-muted);">საბკატეგორია არ არის</span>
+                {% endif %}
+            </div>
+            <!-- Add subcategory inline -->
+            <form method="POST" action="{{ url_for('lib_bp.add_global_subcategory') }}" style="display:flex;gap:6px;">
+                <input type="hidden" name="category_id" value="{{ cat.id }}">
+                <input type="text" name="name" class="bo-input" placeholder="ახალი საბკატეგორია" style="flex:1;max-width:240px;font-size:.82rem;padding:6px 10px;">
+                <button type="submit" class="bo-btn bo-btn--ghost" style="font-size:.78rem;padding:6px 12px;">+ დამატება</button>
+            </form>
+        </div>
 
-    <!-- Items list -->
-    {% if cat.items %}
-    <table class="bo-table" style="width:100%;">
-        <thead><tr><th>სახელი</th><th>ინგრედიენტები</th><th>ფოტო</th><th></th></tr></thead>
-        <tbody>
-        {% for item in cat.items %}
-        <tr>
-            <td><strong>{{ item.name }}</strong><br><small style="color:var(--bo-muted);">{{ item.description or '' }}</small></td>
-            <td style="font-size:.82rem;color:var(--bo-muted);">{{ item.ingredients or '—' }}</td>
-            <td>
-                {% if item.image_filename %}
-                <img src="{{ url_for('static', filename='images/' + item.image_filename) }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
-                {% else %}—{% endif %}
-            </td>
-            <td>
-                <form method="POST" action="{{ url_for('lib_bp.delete_global_item', item_id=item.id) }}"
-                      onsubmit="return confirm('წაშლა?')">
-                    <button type="submit" class="bo-btn bo-btn--ghost" style="color:var(--bo-red);font-size:.75rem;">წაშლა</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p style="color:var(--bo-muted);font-size:.85rem;">ამ კატეგორიაში პროდუქტი არ არის.</p>
-    {% endif %}
+        <!-- Add item -->
+        <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data"
+              style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:12px;background:var(--bo-bg);border-radius:8px;">
+            <input type="hidden" name="category_id" value="{{ cat.id }}">
+            <input type="text" name="name" class="bo-input" placeholder="პროდუქტის სახელი" required style="flex:2;min-width:140px;">
+            <input type="text" name="description" class="bo-input" placeholder="აღწერა" style="flex:2;min-width:140px;">
+            <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები" style="flex:3;min-width:180px;">
+            <select name="subcategory_id" class="bo-input" style="flex:1;min-width:140px;">
+                <option value="">— საბკატეგორია —</option>
+                {% for sub in cat.subcategories %}
+                <option value="{{ sub.id }}">{{ sub.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="file" name="image" accept="image/*" class="bo-input" style="flex:2;min-width:140px;">
+            <button type="submit" class="bo-btn bo-btn--primary" style="white-space:nowrap;">+ პროდუქტი</button>
+        </form>
+
+        <!-- Items list -->
+        {% if cat.items %}
+        <table class="bo-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>სახელი</th>
+                    <th>საბკატეგორია</th>
+                    <th>ინგრედიენტები</th>
+                    <th>ფოტო</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in cat.items %}
+            <tr>
+                <td>
+                    <strong>{{ item.name }}</strong>
+                    {% if item.description %}<br><small style="color:var(--bo-muted);">{{ item.description }}</small>{% endif %}
+                </td>
+                <td style="font-size:.8rem;color:var(--bo-muted);">
+                    {{ item.subcategory.name if item.subcategory else '—' }}
+                </td>
+                <td style="font-size:.8rem;color:var(--bo-muted);">{{ item.ingredients or '—' }}</td>
+                <td>
+                    {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='images/' + item.image_filename) }}"
+                         style="width:40px;height:40px;object-fit:cover;border-radius:6px;"
+                         onerror="this.style.display='none'">
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('lib_bp.delete_global_item', item_id=item.id) }}"
+                          onsubmit="return confirm('წაიშალოს?')">
+                        <button type="submit" class="bo-btn bo-btn--ghost" style="color:var(--bo-red);font-size:.75rem;">წაშლა</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:var(--bo-muted);font-size:.85rem;">ამ კატეგორიაში პროდუქტი არ არის.</p>
+        {% endif %}
+    </div>
 </div>
 {% else %}
 <p style="color:var(--bo-muted);">ბიბლიოთეკა ცარიელია. დაამატეთ კატეგორია.</p>

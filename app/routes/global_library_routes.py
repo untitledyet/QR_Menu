@@ -4,7 +4,7 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
-from app.models import AdminUser, GlobalCategory, GlobalItem, Category, Subcategory, FoodItem
+from app.models import AdminUser, GlobalCategory, GlobalSubcategory, GlobalItem, Category, Subcategory, FoodItem
 
 lib_bp = Blueprint('lib_bp', __name__, url_prefix='/backoffice/library')
 
@@ -70,6 +70,34 @@ def delete_global_category(cat_id):
     db.session.delete(cat)
     db.session.commit()
     flash(f'კატეგორია "{cat.name}" წაიშალა')
+    return redirect(url_for('lib_bp.library_index'))
+
+
+@lib_bp.route('/subcategories/add', methods=['POST'])
+@login_required
+@super_required
+def add_global_subcategory():
+    name = request.form.get('name', '').strip()
+    cat_id = request.form.get('category_id', type=int)
+    if not name or not cat_id:
+        flash('სახელი სავალდებულოა')
+        return redirect(url_for('lib_bp.library_index'))
+    sub = GlobalSubcategory(name=name, category_id=cat_id)
+    db.session.add(sub)
+    db.session.commit()
+    flash(f'საბკატეგორია "{name}" დაემატა')
+    return redirect(url_for('lib_bp.library_index'))
+
+
+@lib_bp.route('/subcategories/<int:sub_id>/delete', methods=['POST'])
+@login_required
+@super_required
+def delete_global_subcategory(sub_id):
+    sub = GlobalSubcategory.query.get_or_404(sub_id)
+    name = sub.name
+    db.session.delete(sub)
+    db.session.commit()
+    flash(f'საბკატეგორია "{name}" წაიშალა')
     return redirect(url_for('lib_bp.library_index'))
 
 
