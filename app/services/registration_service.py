@@ -83,13 +83,24 @@ def _send_email_smtp(to: str, subject: str, html: str, fallback_label: str, fall
         msg['To'] = to
         msg.attach(MIMEText(html, 'html'))
 
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(from_email, to, msg.as_string())
+        if smtp_port == 465:
+            import ssl
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(from_email, to, msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(from_email, to, msg.as_string())
+
+        print(f"[EMAIL OK] Sent to {to}: {subject}")
         return True
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        print(f"[EMAIL ERROR] {type(e).__name__}: {e}")
         print(f"[EMAIL FALLBACK] {fallback_label}: {fallback_url}")
         return False
 
