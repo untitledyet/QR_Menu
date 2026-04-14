@@ -361,13 +361,15 @@ def forgot_password():
         return jsonify(error='ელ. ფოსტა სავალდებულოა'), 400
 
     admin = AdminUser.query.filter_by(email=email).first()
-    # Always return success to avoid email enumeration
+    current_app.logger.info(f"[FORGOT] email={email} found={admin is not None} active={admin.is_active if admin else 'N/A'}")
+
     if admin and admin.is_active:
         token = secrets.token_urlsafe(32)
         admin.reset_token = token
         admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
         db.session.commit()
-        send_password_reset_email(email, token)
+        result = send_password_reset_email(email, token)
+        current_app.logger.info(f"[FORGOT] email send result={result}")
 
     return jsonify(success=True, message='თუ ეს ელ. ფოსტა რეგისტრირებულია, გაიგზავნება პაროლის აღდგენის ლინკი.')
 
