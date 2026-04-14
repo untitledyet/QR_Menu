@@ -124,13 +124,27 @@
                     <input type="email" class="t-input" id="login-email" placeholder="your@email.com" autocomplete="email">
                 </div>
                 <div class="t-form-group">
-                    <label>პაროლი</label>
+                    <label style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>პაროლი</span>
+                        <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;">პაროლი დამავიწყდა</button>
+                    </label>
                     <div style="position:relative;">
                         <input type="password" class="t-input" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password" style="padding-right:44px;">
                         <button type="button" onclick="togglePwd('login-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
                     </div>
                 </div>
                 <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep1()">შესვლა</button>
+            </div>
+
+            <!-- Forgot password inline -->
+            <div id="login-forgot" style="display:none;">
+                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;">შეიყვანეთ თქვენი ელ. ფოსტა და გამოგიგზავნით პაროლის აღდგენის ლინკს.</p>
+                <div class="t-form-group">
+                    <label>ელ. ფოსტა</label>
+                    <input type="email" class="t-input" id="forgot-email" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()">ლინკის გაგზავნა</button>
+                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">← უკან</button>
             </div>
             <div id="login-step-2" style="display:none;">
                 <p style="color:var(--t-text-2);font-size:.9rem;margin-bottom:16px;" id="login-sms-hint"></p>
@@ -527,6 +541,35 @@ async function doLoginStep2() {
     var d = await r.json();
     if (d.success) { window.location.href = d.redirect; }
     else { showMsg(d.error, 'error'); }
+}
+
+/* Forgot password */
+function openForgotPassword() {
+    document.getElementById('login-step-1').style.display = 'none';
+    document.getElementById('login-forgot').style.display = '';
+    document.getElementById('auth-msg').innerHTML = '';
+    var e = document.getElementById('login-email').value;
+    if (e) document.getElementById('forgot-email').value = e;
+}
+function closeForgotPassword() {
+    document.getElementById('login-forgot').style.display = 'none';
+    document.getElementById('login-step-1').style.display = '';
+    document.getElementById('auth-msg').innerHTML = '';
+}
+async function doForgotPassword() {
+    var email = document.getElementById('forgot-email').value.trim();
+    if (!email) { showMsg('ელ. ფოსტა სავალდებულოა', 'error'); return; }
+    var r = await fetch('/forgot-password', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email: email})
+    });
+    var d = await r.json();
+    if (d.success) {
+        showMsg(d.message, 'success');
+        document.getElementById('login-forgot').style.display = 'none';
+    } else {
+        showMsg(d.error || 'შეცდომა', 'error');
+    }
 }
 
 /* i18n */

@@ -176,6 +176,40 @@ def toggle_venue_active(venue_id):
     return jsonify(success=True, is_active=venue.is_active)
 
 
+@bo_bp.route('/venues/<int:venue_id>/delete', methods=['POST'])
+@login_required
+@super_required
+def delete_venue(venue_id):
+    venue = Venue.query.get_or_404(venue_id)
+    name = venue.name
+    # Delete all related data manually (cascade safety)
+    from app.models import RestaurantTable, Booking, ReservationSettings, ReservationCustomer
+    # Bookings
+    Booking.query.filter_by(venue_id=venue_id).delete()
+    # Tables
+    RestaurantTable.query.filter_by(venue_id=venue_id).delete()
+    # Reservation settings
+    ReservationSettings.query.filter_by(venue_id=venue_id).delete()
+    # Promotions
+    Promotion.query.filter_by(venue_id=venue_id).delete()
+    # Food items via categories
+    cats = Category.query.filter_by(venue_id=venue_id).all()
+    for cat in cats:
+        Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
+        FoodItem.query.filter_by(CategoryID=cat.CategoryID).delete()
+    Category.query.filter_by(venue_id=venue_id).delete()
+    # Orders
+    Order.query.filter_by(venue_id=venue_id).delete()
+    # Feature overrides
+    VenueFeatureOverride.query.filter_by(venue_id=venue_id).delete()
+    # Admin users
+    AdminUser.query.filter_by(venue_id=venue_id).delete()
+    # Venue itself
+    db.session.delete(venue)
+    db.session.commit()
+    return jsonify(success=True, message=f'"{name}" და მისი ყველა მონაცემი წაიშალა')
+
+
 @bo_bp.route('/venues/add', methods=['GET', 'POST'])
 @login_required
 @super_required

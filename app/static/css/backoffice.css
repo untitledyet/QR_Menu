@@ -178,6 +178,8 @@ body {
 }
 .bo-btn--primary { background: var(--bo-primary); color: #fff; }
 .bo-btn--primary:hover { background: var(--bo-primary-dark); }
+.bo-btn--danger { background: #ef4444; color: #fff; }
+.bo-btn--danger:hover { background: #dc2626; }
 .bo-btn--full { width: 100%; }
 
 /* Forms */

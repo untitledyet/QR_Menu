@@ -14,6 +14,9 @@
             <div>
                 <h3>{{ v.name }}</h3>
                 <small style="color:var(--bo-text-2);">/{{ v.slug }}</small>
+                {% if v.venue_code %}
+                <div style="font-size:.72rem;color:var(--bo-text-3);margin-top:2px;font-family:monospace;">{{ v.venue_code }}</div>
+                {% endif %}
             </div>
             <span class="bo-badge bo-badge--plan-{{ v.plan }}" style="margin-left:auto;">{{ v.plan_display }}</span>
         </div>
@@ -21,8 +24,57 @@
             <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost bo-btn--full" style="font-size:.8rem;">
                 <i class="fas fa-cog"></i> Features
             </a>
+            <button onclick="confirmDelete({{ v.id }}, '{{ v.name|e }}')"
+                    class="bo-btn bo-btn--danger" style="font-size:.8rem;padding:0 12px;"
+                    title="სრული წაშლა">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
     </div>
     {% endfor %}
 </div>
+
+<!-- Confirm delete modal -->
+<div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;">
+    <div style="background:var(--bo-surface);border-radius:12px;padding:32px;max-width:400px;width:90%;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+        <h3 style="margin-bottom:8px;">ობიექტის წაშლა</h3>
+        <p id="delete-msg" style="color:var(--bo-text-2);font-size:.9rem;margin-bottom:24px;"></p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button onclick="closeDeleteModal()" class="bo-btn bo-btn--ghost">გაუქმება</button>
+            <button onclick="doDelete()" class="bo-btn bo-btn--danger" id="confirm-delete-btn">წაშლა</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var _deleteVenueId = null;
+function confirmDelete(id, name) {
+    _deleteVenueId = id;
+    document.getElementById('delete-msg').textContent =
+        '"' + name + '" — წაიშლება ობიექტი და მისი ყველა მონაცემი: მენიუ, კატეგორიები, ჯავშნები, ადმინი. ეს მოქმედება შეუქცევადია.';
+    var modal = document.getElementById('delete-modal');
+    modal.style.display = 'flex';
+}
+function closeDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+    _deleteVenueId = null;
+}
+async function doDelete() {
+    if (!_deleteVenueId) return;
+    var btn = document.getElementById('confirm-delete-btn');
+    btn.disabled = true; btn.textContent = 'იშლება...';
+    var r = await fetch('/backoffice/venues/' + _deleteVenueId + '/delete', {method: 'POST'});
+    var d = await r.json();
+    if (d.success) {
+        window.location.reload();
+    } else {
+        alert(d.error || 'შეცდომა');
+        btn.disabled = false; btn.textContent = 'წაშლა';
+    }
+}
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>
 {% endblock %}
