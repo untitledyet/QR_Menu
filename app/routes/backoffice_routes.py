@@ -82,6 +82,28 @@ def login():
         flash('Invalid credentials')
     return render_template('backoffice/login.html')
 
+
+@bo_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    admin = get_current_admin()
+    if request.method == 'POST':
+        current = request.form.get('current_password', '')
+        new_pw = request.form.get('new_password', '')
+        confirm = request.form.get('confirm_password', '')
+        if not admin.check_password(current):
+            flash('მიმდინარე პაროლი არასწორია')
+        elif len(new_pw) < 8:
+            flash('ახალი პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს')
+        elif new_pw != confirm:
+            flash('პაროლები არ ემთხვევა')
+        else:
+            admin.set_password(new_pw)
+            db.session.commit()
+            flash('პაროლი წარმატებით შეიცვალა')
+            return redirect(url_for('bo_bp.dashboard'))
+    return render_template('backoffice/change_password.html', admin=admin)
+
 @bo_bp.route('/logout')
 def logout():
     session.pop('admin_id', None)
