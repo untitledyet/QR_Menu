@@ -439,33 +439,53 @@ function startOtpTimer(seconds) {
 
 /* Register */
 async function doRegister() {
+    console.log('[REG] Starting registration...');
     var name = document.getElementById('reg-venue').value.trim();
     var addr = document.getElementById('reg-address').value.trim();
     var placeId = document.getElementById('reg-place-id').value;
+    var email = document.getElementById('reg-email').value.trim();
+    var phone = document.getElementById('reg-phone').value.trim();
+    var password = document.getElementById('reg-password').value;
+
+    console.log('[REG] name=', name, 'addr=', addr, 'placeId=', placeId, 'phoneVerified=', phoneVerified);
+
     if (!name) { showMsg('ობიექტის სახელი სავალდებულოა', 'error'); return; }
     if (!addr) { showMsg('მისამართი სავალდებულოა', 'error'); return; }
     if (!placeId) { showMsg('გთხოვთ, ობიექტი სიადან აირჩიეთ', 'error'); return; }
+    if (!email) { showMsg('ელ. ფოსტა სავალდებულოა', 'error'); return; }
+    if (!password) { showMsg('პაროლი სავალდებულოა', 'error'); return; }
     if (!phoneVerified) { showMsg('ტელეფონის ნომრის ვერიფიკაცია სავალდებულოა', 'error'); return; }
+
     var data = {
-        venue_name: document.getElementById('reg-venue').value.trim(),
-        address: document.getElementById('reg-address').value.trim(),
-        place_id: document.getElementById('reg-place-id').value,
-        email: document.getElementById('reg-email').value.trim(),
-        phone: document.getElementById('reg-phone').value.trim(),
-        password: document.getElementById('reg-password').value,
+        venue_name: name,
+        address: addr,
+        place_id: placeId,
+        email: email,
+        phone: phone,
+        password: password,
     };
-    var r = await fetch('/register', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-    });
-    var d = await r.json();
-    if (d.success) {
-        document.getElementById('reg-email-hint').textContent =
-            'ვერიფიკაციის ლინკი გაიგზავნა ' + document.getElementById('reg-email').value + '-ზე.';
-        document.getElementById('reg-main').style.display = 'none';
-        document.getElementById('reg-step-4').style.display = '';
-    } else {
-        showMsg(d.error, 'error');
+
+    console.log('[REG] Sending request...', data);
+
+    try {
+        var r = await fetch('/register', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        });
+        var d = await r.json();
+        console.log('[REG] Response:', d);
+
+        if (d.success) {
+            document.getElementById('reg-email-hint').textContent =
+                'ვერიფიკაციის ლინკი გაიგზავნა ' + email + '-ზე.';
+            document.getElementById('reg-main').style.display = 'none';
+            document.getElementById('reg-step-4').style.display = '';
+        } else {
+            showMsg(d.error, 'error');
+        }
+    } catch (e) {
+        console.error('[REG] Error:', e);
+        showMsg('ქსელის შეცდომა. სცადეთ ხელახლა.', 'error');
     }
 }
 async function doVerifyPhone() {
