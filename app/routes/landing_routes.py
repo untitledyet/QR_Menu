@@ -1,11 +1,13 @@
 """Landing page and venue self-registration routes — multi-step flow."""
 import re
+import secrets
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, current_app
 from app import db
-from app.models import AdminUser, Venue
+from app.models import AdminUser, Venue, _generate_venue_code
 from app.services.registration_service import (
     send_sms_code, generate_email_token, send_verification_email,
+    send_password_reset_email,
     search_google_place, generate_strong_password
 )
 
@@ -89,8 +91,13 @@ def register_venue():
         counter += 1
 
     # Create venue
+    # Generate unique venue_code
+    while True:
+        code = _generate_venue_code()
+        if not Venue.query.filter_by(venue_code=code).first():
+            break
     venue = Venue(name=venue_name, slug=slug, plan='free',
-                  address=address, google_place_id=place_id)
+                  address=address, google_place_id=place_id, venue_code=code)
     db.session.add(venue)
     db.session.flush()
 
@@ -340,3 +347,62 @@ def verify_phone_otp_api():
     # Store verified phone in session
     session['verified_phone'] = phone
     return jsonify(success=True)
+
+
+# ============================================================
+# Password reset — request
+# ============================================================
+
+@landing_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify(error='ელ. ფოსტა სავალდებულოა'), 400
+
+    admin = AdminUser.query.filter_by(email=email).first()
+    # Always return success to avoid email enumeration
+    if admin and admin.is_active:
+        token = secrets.token_urlsafe(32)
+        admin.reset_token = token
+        admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
+        send_password_reset_email(email, token)
+
+    return jsonify(success=True, message='თუ ეს ელ. ფოსტა რეგისტრირებულია, გაიგზავნება პაროლის აღდგენის ლინკი.')
+
+
+# ============================================================
+# Password reset — form page
+# ============================================================
+
+@landing_bp.route('/reset-password/<token>', methods=['GET'])
+def reset_password_page(token):
+    admin = AdminUser.query.filter_by(reset_token=token).first()
+    if not admin or not admin.reset_token_expires or datetime.utcnow() > admin.reset_token_expires:
+        return render_template('reset_password.html', valid=False, token=token)
+    return render_template('reset_password.html', valid=True, token=token)
+
+
+# ============================================================
+# Password reset — submit new password
+# ============================================================
+
+@landing_bp.route('/reset-password/<token>', methods=['POST'])
+def reset_password_submit(token):
+    data = request.get_json() or {}
+    password = data.get('password', '')
+
+    admin = AdminUser.query.filter_by(reset_token=token).first()
+    if not admin or not admin.reset_token_expires or datetime.utcnow() > admin.reset_token_expires:
+        return jsonify(error='ლინკი არასწორია ან ვადაგასულია.'), 400
+
+    if len(password) < 8:
+        return jsonify(error='პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს'), 400
+
+    admin.set_password(password)
+    admin.reset_token = None
+    admin.reset_token_expires = None
+    db.session.commit()
+
+    return jsonify(success=True, message='პაროლი წარმატებით შეიცვალა. შეგიძლიათ შეხვიდეთ.')

@@ -1,6 +1,15 @@
+import secrets
+import string
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
+
+
+def _generate_venue_code():
+    """Generate a unique 8-char alphanumeric venue code e.g. TB-A3X9KZ."""
+    chars = string.ascii_uppercase + string.digits
+    suffix = ''.join(secrets.choice(chars) for _ in range(6))
+    return f'TB-{suffix}'
 
 
 # ============================================================
@@ -87,6 +96,10 @@ class AdminUser(db.Model):
     sms_code_expires = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=False)  # activated after full verification
 
+    # Password reset
+    reset_token = db.Column(db.String(64), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+
     venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
 
     def set_password(self, pw):
@@ -106,6 +119,7 @@ class Venue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
+    venue_code = db.Column(db.String(12), unique=True, nullable=True)  # e.g. TB-A3X9KZ
     plan = db.Column(db.String(20), nullable=False, default='free')
     total_tables = db.Column(db.Integer, nullable=False, default=0)
     address = db.Column(db.String(300), nullable=True)
