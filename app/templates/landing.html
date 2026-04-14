@@ -229,6 +229,9 @@
                 <div style="font-size:2.5rem;margin-bottom:12px;">&#x1F4E7;</div>
                 <h3 style="color:var(--t-text);margin-bottom:8px;">შეამოწმეთ ელ. ფოსტა</h3>
                 <p style="color:var(--t-text-2);font-size:.88rem;" id="reg-email-hint"></p>
+                <button onclick="resendEmailVerification()" class="t-btn t-btn--ghost" style="margin-top:16px;font-size:.85rem;">
+                    ხელახლა გაგზავნა
+                </button>
             </div>
         </div>
     </div>
@@ -587,6 +590,22 @@ async function doForgotPassword() {
     if (d.success) {
         showMsg(d.message, 'success');
         document.getElementById('login-forgot').style.display = 'none';
+    } else {
+        showMsg(d.error || 'შეცდომა', 'error');
+    }
+}
+
+/* Resend email verification */
+async function resendEmailVerification() {
+    var email = document.getElementById('reg-email').value.trim();
+    if (!email) return;
+    var r = await fetch('/resend-email-verification', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email: email})
+    });
+    var d = await r.json();
+    if (d.success) {
+        showMsg(d.message, 'success');
     } else {
         showMsg(d.error || 'შეცდომა', 'error');
     }

@@ -224,6 +224,26 @@ def verify_email(token):
                            message='ელ. ფოსტა დადასტურდა! ახლა ტელეფონი დაადასტურეთ.')
 
 
+@landing_bp.route('/resend-email-verification', methods=['POST'])
+def resend_email_verification():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify(error='ელ. ფოსტა სავალდებულოა'), 400
+
+    admin = AdminUser.query.filter_by(email=email, email_verified=False).first()
+    if admin:
+        token = generate_email_token()
+        admin.email_token = token
+        db.session.commit()
+        venue_name = admin.venue.name if admin.venue else 'Tably'
+        send_verification_email(email, token, venue_name)
+        current_app.logger.info(f"[RESEND EMAIL] {email}")
+
+    # Always return success (email enumeration protection)
+    return jsonify(success=True, message='თუ ეს ელ. ფოსტა რეგისტრირებულია, გაიგზავნება ვერიფიკაციის ლინკი.')
+
+
 # ============================================================
 # Login — email + password + SMS 2FA
 # ============================================================
