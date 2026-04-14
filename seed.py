@@ -21,6 +21,7 @@ with app.app_context():
                 ('total_tables', 'INTEGER NOT NULL DEFAULT 0'),
                 ('address', 'VARCHAR(300)'),
                 ('google_place_id', 'VARCHAR(100)'),
+                ('venue_code', 'VARCHAR(12)'),
             ]:
                 if col not in venue_cols:
                     conn.execute(text(f'ALTER TABLE "Venues" ADD COLUMN {col} {defn}'))
@@ -37,6 +38,8 @@ with app.app_context():
                 ('sms_code', 'VARCHAR(6)'),
                 ('sms_code_expires', 'TIMESTAMP'),
                 ('is_active', 'BOOLEAN DEFAULT FALSE'),
+                ('reset_token', 'VARCHAR(64)'),
+                ('reset_token_expires', 'TIMESTAMP'),
             ]:
                 if col not in admin_cols:
                     conn.execute(text(f'ALTER TABLE "AdminUsers" ADD COLUMN {col} {defn}'))
