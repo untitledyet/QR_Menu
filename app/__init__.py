@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from flask import Flask
 from .config import Config
@@ -15,17 +16,15 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    print(f"SQLALCHEMY_DATABASE_URI კონფიგიდან: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
-    print(f"DATABASE_URL გარემოს ცვლადებიდან: {os.environ.get('DATABASE_URL')}")
+    print("SQLALCHEMY_DATABASE_URI: " + str(app.config.get('SQLALCHEMY_DATABASE_URI', '')))
+    print("DATABASE_URL: " + str(os.environ.get('DATABASE_URL', '')))
 
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # ლოგირება — utils/logging.py-ს გამოყენება
     from app.utils.logging import setup_logging
     setup_logging(app)
 
-    # Blueprint-ების რეგისტრაცია
     from app.routes.menu_routes import menu_bp
     from app.routes.api_routes import api_bp
     from app.routes.backoffice_routes import bo_bp
@@ -39,7 +38,6 @@ def create_app(config_class=Config):
     app.register_blueprint(res_api_bp)
     app.register_blueprint(lib_bp)
 
-    # Feature Flags
     from app.utils.feature_flags import init_feature_flags
     init_feature_flags(app)
 

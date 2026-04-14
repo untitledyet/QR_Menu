@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Registration services: SMS OTP, email verification, Google Places validation."""
 import os
 import secrets
@@ -8,26 +9,31 @@ from datetime import datetime, timedelta
 from flask import current_app
 
 # ============================================================
-# SMS — smsoffice.ge
+# SMS - smsoffice.ge
 # ============================================================
 
-SMS_API_KEY = "2621e8700a9e4e699a9cf888088ca358"
 SMS_URL = "http://smsoffice.ge/api/v2/send"
-SMS_SENDER = "Auto Finder"
 
 
-def send_sms_code(phone: str) -> tuple[str, str | None]:
+def send_sms_code(phone):
     """Generate 6-digit OTP and send via smsoffice.ge.
     Returns (code, error_message). error_message is None on success.
     """
     code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-    message = f"Tably: {code} - ვერიფიკაციის კოდი. მოქმედებს 1 წუთი."
+    message = "Tably: " + code + " - verifikaciis kodi. moqmedebs 2 wuti."
+
+    api_key = os.environ.get('SMS_API_KEY', '')
+    sender = os.environ.get('SMS_SENDER', 'Tably')
+
+    if not api_key:
+        current_app.logger.warning("SMS_API_KEY not set, OTP: " + code)
+        return code, None
 
     try:
         resp = requests.get(SMS_URL, params={
-            "key": SMS_API_KEY,
+            "key": api_key,
             "destination": phone,
-            "sender": SMS_SENDER,
+            "sender": sender,
             "content": message,
         }, timeout=10)
         data = resp.json()
@@ -35,7 +41,7 @@ def send_sms_code(phone: str) -> tuple[str, str | None]:
             return code, None
         return code, data.get("Message", "SMS send failed")
     except Exception as e:
-        current_app.logger.error(f"SMS error: {e}")
+        current_app.logger.error("SMS error: " + str(e))
         return code, str(e)
 
 
@@ -43,43 +49,43 @@ def send_sms_code(phone: str) -> tuple[str, str | None]:
 # Email verification
 # ============================================================
 
-def generate_email_token() -> str:
+def generate_email_token():
     return secrets.token_urlsafe(32)
 
 
-def _build_email_html(title: str, body: str, btn_text: str, btn_url: str, footer: str) -> str:
-    return f"""
-    <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
-        <h2 style="color:#FF6B35;">Tably</h2>
-        <h3>{title}</h3>
-        <p>{body}</p>
-        <a href="{btn_url}" style="display:inline-block;padding:12px 24px;background:#FF6B35;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
-            {btn_text}
-        </a>
-        <p style="color:#888;font-size:12px;margin-top:24px;">{footer}</p>
-    </div>
-    """
+def _build_email_html(title, body, btn_text, btn_url, footer):
+    return (
+        '<div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;">'
+        '<h2 style="color:#FF6B35;">Tably</h2>'
+        '<h3>' + title + '</h3>'
+        '<p>' + body + '</p>'
+        '<a href="' + btn_url + '" style="display:inline-block;padding:12px 24px;'
+        'background:#FF6B35;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">'
+        + btn_text + '</a>'
+        '<p style="color:#888;font-size:12px;margin-top:24px;">' + footer + '</p>'
+        '</div>'
+    )
 
 
-def _send_email_smtp(to: str, subject: str, html: str, fallback_label: str, fallback_url: str) -> bool:
+def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
     try:
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
 
         smtp_host = os.environ.get('SMTP_HOST', '')
-        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_port = int(os.environ.get('SMTP_PORT', '465'))
         smtp_user = os.environ.get('SMTP_USER', '')
         smtp_pass = os.environ.get('SMTP_PASS', '')
         from_email = os.environ.get('SMTP_FROM', smtp_user)
 
         if not smtp_host or not smtp_user:
-            print(f"\n[EMAIL DEV] {fallback_label} for {to}:\n  {fallback_url}\n")
+            current_app.logger.info("[EMAIL DEV] " + fallback_label + " for " + to + ": " + fallback_url)
             return True
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = f"Tably <{from_email}>"
+        msg['From'] = "Tably <" + from_email + ">"
         msg['To'] = to
         msg.attach(MIMEText(html, 'html'))
 
@@ -97,69 +103,69 @@ def _send_email_smtp(to: str, subject: str, html: str, fallback_label: str, fall
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(from_email, to, msg.as_string())
 
-        print(f"[EMAIL OK] Sent to {to}: {subject}")
+        current_app.logger.info("[EMAIL OK] Sent to " + to + ": " + subject)
         return True
     except Exception as e:
-        print(f"[EMAIL ERROR] {type(e).__name__}: {e}")
-        print(f"[EMAIL FALLBACK] {fallback_label}: {fallback_url}")
+        current_app.logger.error("[EMAIL ERROR] " + str(type(e).__name__) + ": " + str(e))
+        current_app.logger.info("[EMAIL FALLBACK] " + fallback_label + ": " + fallback_url)
         return False
 
 
-def send_verification_email(email: str, token: str, venue_name: str) -> bool:
+def send_verification_email(email, token, venue_name):
     """Send email verification link. Returns True on success."""
     base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
-    url = f"{base_url}/verify-email/{token}"
+    url = base_url + "/verify-email/" + token
     return _send_email_smtp(
         to=email,
-        subject="Tably — ელ. ფოსტის დადასტურება",
+        subject="Tably - el. fostis dadastureba",
         html=_build_email_html(
-            title="ელ. ფოსტის დადასტურება",
-            body=f"გამარჯობა! <strong>{venue_name}</strong>-ის რეგისტრაცია თითქმის დასრულდა.<br>დაადასტურეთ ელ. ფოსტა:",
-            btn_text="ელ. ფოსტის დადასტურება",
+            title="el. fostis dadastureba",
+            body="gamarjoba! <strong>" + venue_name + "</strong>-is registracia titqmis dasrulda.<br>daadastureT el. fosta:",
+            btn_text="el. fostis dadastureba",
             btn_url=url,
-            footer="ლინკი მოქმედებს 24 საათი.",
+            footer="linki moqmedebs 24 saaTi.",
         ),
         fallback_label="Verification link",
         fallback_url=url,
     )
 
 
-def send_password_reset_email(email: str, token: str) -> bool:
+def send_password_reset_email(email, token):
     """Send password reset link. Returns True on success."""
     base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
-    url = f"{base_url}/reset-password/{token}"
+    url = base_url + "/reset-password/" + token
     return _send_email_smtp(
         to=email,
-        subject="Tably — პაროლის აღდგენა",
+        subject="Tably - parolis agdgena",
         html=_build_email_html(
-            title="პაროლის აღდგენა",
-            body="მოთხოვნილია პაროლის აღდგენა თქვენი Tably ანგარიშისთვის.",
-            btn_text="პაროლის შეცვლა",
+            title="parolis agdgena",
+            body="moTxovnilia parolis agdgena Tqveni Tably angarishisTvis.",
+            btn_text="parolis Secvla",
             btn_url=url,
-            footer="ლინკი მოქმედებს 1 საათი. თუ ეს მოთხოვნა არ გაგიგზავნიათ, უგულებელყავით.",
+            footer="linki moqmedebs 1 saaTi. Tu es moTxovna ar gagigzavniaT, ugulebelyaviT.",
         ),
         fallback_label="Password reset link",
         fallback_url=url,
     )
 
-GOOGLE_API_KEY = "AIzaSyA8_OFiiawkzqSWX68IdVC_790yZ1MaZcg"
 
+def search_google_place(venue_name, address):
+    """Search Google Places API for matching venues."""
+    api_key = os.environ.get('GOOGLE_PLACES_API_KEY', '')
+    if not api_key:
+        return []
 
-def search_google_place(venue_name: str, address: str) -> list[dict]:
-    """Search Google Places API for matching venues.
-    Returns list of {name, address, place_id, maps_url}.
-    """
-    # Combine name + address for best results
     if venue_name and address:
-        query = f"{venue_name} {address}"
+        query = venue_name + " " + address
     elif venue_name:
         query = venue_name
     else:
         query = address
+
     url = "https://places.googleapis.com/v1/places:searchText"
     headers = {
         "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_API_KEY,
+        "X-Goog-Api-Key": api_key,
         "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.id",
     }
     data = {
@@ -176,14 +182,17 @@ def search_google_place(venue_name: str, address: str) -> list[dict]:
         if resp.status_code != 200:
             return []
         places = resp.json().get("places", [])
-        return [{
-            "name": p["displayName"]["text"],
-            "address": p.get("formattedAddress", ""),
-            "place_id": p["id"],
-            "maps_url": f"https://www.google.com/maps/place/?q=place_id:{p['id']}",
-        } for p in places[:5]]
+        results = []
+        for p in places[:5]:
+            results.append({
+                "name": p["displayName"]["text"],
+                "address": p.get("formattedAddress", ""),
+                "place_id": p["id"],
+                "maps_url": "https://www.google.com/maps/place/?q=place_id:" + p["id"],
+            })
+        return results
     except Exception as e:
-        current_app.logger.error(f"Places API error: {e}")
+        current_app.logger.error("Places API error: " + str(e))
         return []
 
 
@@ -191,7 +200,7 @@ def search_google_place(venue_name: str, address: str) -> list[dict]:
 # Password generation
 # ============================================================
 
-def generate_strong_password(length: int = 16) -> str:
+def generate_strong_password(length=16):
     """Generate a strong random password."""
     chars = string.ascii_letters + string.digits + "!@#$%^&*"
     while True:

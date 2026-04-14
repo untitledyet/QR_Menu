@@ -92,13 +92,18 @@ class AdminUser(db.Model):
     email_verified = db.Column(db.Boolean, default=False)
     email_token = db.Column(db.String(64), nullable=True)
     phone_verified = db.Column(db.Boolean, default=False)
-    sms_code = db.Column(db.String(6), nullable=True)
+    sms_code_hash = db.Column(db.String(256), nullable=True)
     sms_code_expires = db.Column(db.DateTime, nullable=True)
-    is_active = db.Column(db.Boolean, default=False)  # activated after full verification
+    sms_attempts = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=False)
 
     # Password reset
     reset_token = db.Column(db.String(64), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
+
+    # Brute force protection
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
 
     venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
 
@@ -107,6 +112,30 @@ class AdminUser(db.Model):
 
     def check_password(self, pw):
         return check_password_hash(self.password_hash, pw)
+
+    def set_sms_code(self, code):
+        self.sms_code_hash = generate_password_hash(code)
+        self.sms_attempts = 0
+
+    def check_sms_code(self, code):
+        if not self.sms_code_hash:
+            return False
+        return check_password_hash(self.sms_code_hash, code)
+
+    @property
+    def is_locked(self):
+        if self.locked_until and datetime.utcnow() < self.locked_until:
+            return True
+        return False
+
+    def record_failed_login(self):
+        self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
+        if self.failed_login_attempts >= 5:
+            self.locked_until = datetime.utcnow() + timedelta(minutes=15)
+
+    def reset_failed_logins(self):
+        self.failed_login_attempts = 0
+        self.locked_until = None
 
     @property
     def is_super(self):
@@ -398,3 +427,18 @@ class ReservationSettings(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     venue = db.relationship('Venue', backref=db.backref('reservation_settings', uselist=False))
+
+
+# ============================================================
+# Phone OTP (pre-registration verification)
+# ============================================================
+
+class PhoneOtp(db.Model):
+    """Temporary OTP storage for pre-registration phone verification."""
+    __tablename__ = 'PhoneOtps'
+    id = db.Column(db.Integer, primary_key=True)
+    phone = db.Column(db.String(20), nullable=False, index=True)
+    code_hash = db.Column(db.String(256), nullable=False)
+    expires = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -102,7 +102,7 @@
 
 <footer class="t-footer">
     <div class="t-container">
-        <p>© 2025 <a href="/">Tably</a>. <span data-i18n="footerRights">ყველა უფლება დაცულია.</span></p>
+        <p>&copy; 2025 <a href="/">Tably</a>. <span data-i18n="footerRights">ყველა უფლება დაცულია.</span></p>
     </div>
 </footer>
 
@@ -120,8 +120,8 @@
         <div id="form-login">
             <div id="login-step-1">
                 <div class="t-form-group">
-                    <label>ელ. ფოსტა</label>
-                    <input type="email" class="t-input" id="login-email" placeholder="your@email.com" autocomplete="email">
+                    <label>ტელეფონი ან ელ. ფოსტა</label>
+                    <input type="text" class="t-input" id="login-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
                 </div>
                 <div class="t-form-group">
                     <label style="display:flex;justify-content:space-between;align-items:center;">
@@ -136,16 +136,30 @@
                 <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep1()">შესვლა</button>
             </div>
 
-            <!-- Forgot password inline -->
+            <!-- Forgot password -->
             <div id="login-forgot" style="display:none;">
-                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;">შეიყვანეთ თქვენი ელ. ფოსტა და გამოგიგზავნით პაროლის აღდგენის ლინკს.</p>
+                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;">შეიყვანეთ ტელეფონი ან ელ. ფოსტა პაროლის აღდგენისთვის.</p>
                 <div class="t-form-group">
-                    <label>ელ. ფოსტა</label>
-                    <input type="email" class="t-input" id="forgot-email" placeholder="your@email.com" autocomplete="email">
+                    <label>ტელეფონი ან ელ. ფოსტა</label>
+                    <input type="text" class="t-input" id="forgot-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()">ლინკის გაგზავნა</button>
-                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">← უკან</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()">აღდგენა</button>
+                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">&larr; უკან</button>
             </div>
+
+            <!-- SMS OTP for password reset -->
+            <div id="login-reset-sms" style="display:none;">
+                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;" id="reset-sms-hint"></p>
+                <div class="t-form-group">
+                    <label>SMS კოდი</label>
+                    <input type="text" class="t-input" id="reset-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
+                </div>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doVerifyResetSms()">დადასტურება</button>
+                <button type="button" onclick="resendResetSms()" id="resend-reset-btn" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-primary);font-size:.85rem;cursor:pointer;font-family:inherit;">ხელახლა გაგზავნა</button>
+                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:4px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">&larr; უკან</button>
+            </div>
+
+            <!-- Login 2FA SMS -->
             <div id="login-step-2" style="display:none;">
                 <p style="color:var(--t-text-2);font-size:.9rem;margin-bottom:16px;" id="login-sms-hint"></p>
                 <div class="t-form-group">
@@ -158,7 +172,6 @@
 
         <!-- REGISTER -->
         <div id="form-register" style="display:none;">
-            <!-- Main form -->
             <div id="reg-main">
                 <div class="t-form-group">
                     <label>ობიექტის სახელი</label>
@@ -176,7 +189,6 @@
                     <label>ელ. ფოსტა</label>
                     <input type="email" class="t-input" id="reg-email" placeholder="your@email.com" autocomplete="email">
                 </div>
-
                 <div class="t-form-group">
                     <label style="display:flex;justify-content:space-between;align-items:center;">
                         <span>პაროლი</span>
@@ -191,58 +203,36 @@
                     </div>
                     <div id="pwd-strength-label" style="font-size:.72rem;color:var(--t-text-3);margin-top:3px;"></div>
                 </div>
-
-                <!-- Phone — below password -->
                 <div class="t-form-group">
                     <label>ტელეფონი</label>
                     <div style="display:flex;gap:8px;">
-                        <input type="tel" class="t-input" id="reg-phone" placeholder="555123456"
-                               oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel" style="flex:1;">
-                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()"
-                                style="display:none;padding:0 16px;border-radius:10px;border:none;background:var(--t-primary);color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">
-                            კოდი
-                        </button>
+                        <input type="tel" class="t-input" id="reg-phone" placeholder="555123456" oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel" style="flex:1;">
+                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" style="display:none;padding:0 16px;border-radius:10px;border:none;background:var(--t-primary);color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">კოდი</button>
                     </div>
                     <div id="phone-otp-wrap" style="display:none;margin-top:8px;">
-                        <input type="text" class="t-input" id="phone-otp-input" placeholder="6-ნიშნა კოდი"
-                               maxlength="6" inputmode="numeric"
-                               style="text-align:center;letter-spacing:.2em;font-size:1rem;"
-                               oninput="onOtpInput(this)">
+                        <input type="text" class="t-input" id="phone-otp-input" placeholder="6-ნიშნა კოდი" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.2em;font-size:1rem;" oninput="onOtpInput(this)">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
                             <div id="otp-timer-wrap" style="font-size:.72rem;color:var(--t-text-3);"></div>
-                            <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()"
-                                    style="display:none;background:none;border:none;color:var(--t-primary);font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;">
-                                ხელახლა გაგზავნა
-                            </button>
+                            <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" style="display:none;background:none;border:none;color:var(--t-primary);font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;">ხელახლა გაგზავნა</button>
                         </div>
                     </div>
                     <div id="phone-verified-badge" style="display:none;margin-top:6px;font-size:.78rem;color:#10B981;">
                         <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
                     </div>
                 </div>
-
                 <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doRegister()">რეგისტრაცია</button>
-            </div>
-
-            <!-- Email pending -->
-            <div id="reg-step-4" style="display:none;text-align:center;padding:16px 0;">
-                <div style="font-size:2.5rem;margin-bottom:12px;">&#x1F4E7;</div>
-                <h3 style="color:var(--t-text);margin-bottom:8px;">შეამოწმეთ ელ. ფოსტა</h3>
-                <p style="color:var(--t-text-2);font-size:.88rem;" id="reg-email-hint"></p>
-                <button onclick="resendEmailVerification()" class="t-btn t-btn--ghost" style="margin-top:16px;font-size:.85rem;">
-                    ხელახლა გაგზავნა
-                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Places dropdown — fixed position, outside modal overflow -->
+<!-- Places dropdown -->
 <div id="places-dropdown" style="display:none;position:fixed;background:var(--t-surface);border:1px solid var(--t-border);border-radius:10px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:300px;max-width:480px;"></div>
 
 <script>
-let placesTimer = null;
-let resendTimerInterval = null;
+var placesTimer = null;
+var otpTimerInterval = null;
+var phoneVerified = false;
 
 function openModal(tab) {
     document.getElementById('auth-modal').classList.add('active');
@@ -258,27 +248,32 @@ function switchTab(tab) {
     document.getElementById('tab-login').classList.toggle('active', tab === 'login');
     document.getElementById('tab-register').classList.toggle('active', tab === 'register');
     document.getElementById('auth-msg').innerHTML = '';
+    // Reset login sub-steps
+    document.getElementById('login-step-1').style.display = '';
+    document.getElementById('login-step-2').style.display = 'none';
+    document.getElementById('login-forgot').style.display = 'none';
+    document.getElementById('login-reset-sms').style.display = 'none';
 }
 document.getElementById('auth-modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 function showMsg(msg, type) {
-    document.getElementById('auth-msg').innerHTML =
-        '<div class="t-form-msg t-form-msg--' + type + '">' + msg + '</div>';
+    var el = document.getElementById('auth-msg');
+    if (!msg) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="t-form-msg t-form-msg--' + type + '">' + msg + '</div>';
 }
 
-/* Password */
-function togglePwd(id, btn) {
+/* Password helpers */
+function togglePwd(id) {
     var inp = document.getElementById(id);
     inp.type = inp.type === 'password' ? 'text' : 'password';
 }
-async function suggestPassword() {
-    var r = await fetch('/api/suggest-password');
-    var d = await r.json();
-    var inp = document.getElementById('reg-password');
-    inp.type = 'text';
-    inp.value = d.password;
-    checkPasswordStrength();
+function suggestPassword() {
+    fetch('/api/suggest-password').then(function(r){return r.json();}).then(function(d){
+        var inp = document.getElementById('reg-password');
+        inp.type = 'text'; inp.value = d.password;
+        checkPasswordStrength();
+    });
 }
 function checkPasswordStrength() {
     var pwd = document.getElementById('reg-password').value;
@@ -291,7 +286,7 @@ function checkPasswordStrength() {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
     var colors = ['#EF4444','#F97316','#EAB308','#22C55E','#10B981'];
-    var labels = ['ძალიან სუსტი','სუსტი','საშუალო','ძლიერი','ძალიან ძლიერი'];
+    var labels = ['\u10eb\u10d0\u10da\u10d8\u10d0\u10dc \u10e1\u10e3\u10e1\u10e2\u10d8','\u10e1\u10e3\u10e1\u10e2\u10d8','\u10e1\u10d0\u10e8\u10e3\u10d0\u10da\u10dd','\u10eb\u10da\u10d8\u10d4\u10e0\u10d8','\u10eb\u10d0\u10da\u10d8\u10d0\u10dc \u10eb\u10da\u10d8\u10d4\u10e0\u10d8'];
     bar.style.width = (score * 20) + '%';
     bar.style.background = colors[score - 1] || '#EF4444';
     label.textContent = pwd ? (labels[score - 1] || '') : '';
@@ -310,21 +305,18 @@ function schedulePlacesSearch() {
     clearTimeout(placesTimer);
     placesTimer = setTimeout(doPlacesSearch, 400);
 }
-async function doPlacesSearch() {
+function doPlacesSearch() {
     var addr = document.getElementById('reg-address').value.trim();
     if (addr.length < 2) { hidePlacesDropdown(); return; }
     var name = document.getElementById('reg-venue').value.trim();
-    var query = name ? name + ' ' + addr : addr;
-    try {
-        var r = await fetch('/api/places/search?name=' + encodeURIComponent(name) + '&address=' + encodeURIComponent(addr));
-        var d = await r.json();
-        showPlacesDropdown(d.places || []);
-    } catch(e) { hidePlacesDropdown(); }
+    fetch('/api/places/search?name=' + encodeURIComponent(name) + '&address=' + encodeURIComponent(addr))
+        .then(function(r){return r.json();})
+        .then(function(d){ showPlacesDropdown(d.places || []); })
+        .catch(function(){ hidePlacesDropdown(); });
 }
 function showPlacesDropdown(places) {
     var dd = document.getElementById('places-dropdown');
     if (!places.length) { dd.style.display = 'none'; return; }
-    // Position below the address input
     var inp = document.getElementById('reg-address');
     var rect = inp.getBoundingClientRect();
     dd.style.top = (rect.bottom + 4) + 'px';
@@ -334,100 +326,88 @@ function showPlacesDropdown(places) {
         return '<div onclick="selectPlace(' + i + ')" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--t-border);display:flex;gap:10px;align-items:flex-start;" onmouseover="this.style.background=\'var(--t-surface-2)\'" onmouseout="this.style.background=\'\'">' +
             '<i class="fas fa-map-marker-alt" style="color:var(--t-primary);margin-top:2px;flex-shrink:0;font-size:.85rem;"></i>' +
             '<div><div style="font-size:.88rem;font-weight:600;color:var(--t-text);">' + p.name + '</div>' +
-            '<div style="font-size:.75rem;color:var(--t-text-3);margin-top:2px;">' + p.address + '</div></div>' +
-            '</div>';
+            '<div style="font-size:.75rem;color:var(--t-text-3);margin-top:2px;">' + p.address + '</div></div></div>';
     }).join('');
     dd._places = places;
     dd.style.display = 'block';
 }
-function hidePlacesDropdown() {
-    document.getElementById('places-dropdown').style.display = 'none';
-}
+function hidePlacesDropdown() { document.getElementById('places-dropdown').style.display = 'none'; }
 function selectPlace(idx) {
     var dd = document.getElementById('places-dropdown');
     var place = dd._places[idx];
     selectedPlace = place;
     document.getElementById('reg-address').value = place.address;
     document.getElementById('reg-place-id').value = place.place_id;
-    document.getElementById('place-confirmed-text').textContent = place.name + ' — ' + place.address;
+    document.getElementById('place-confirmed-text').textContent = place.name + ' \u2014 ' + place.address;
     document.getElementById('place-confirmed').style.display = 'block';
     hidePlacesDropdown();
 }
 
-/* Phone formatting + inline SMS */
-var phoneVerified = false;
-var otpTimerInterval = null;
-
+/* Phone OTP */
 function onPhoneInput(inp) {
     var raw = inp.value.replace(/\D/g, '').substring(0, 9);
     inp.value = raw;
-    var sendBtn = document.getElementById('send-sms-btn');
-    sendBtn.style.display = raw.length === 9 ? '' : 'none';
+    document.getElementById('send-sms-btn').style.display = raw.length === 9 ? '' : 'none';
 }
-
 function onOtpInput(inp) {
     var val = inp.value.replace(/\D/g, '').substring(0, 6);
     inp.value = val;
     if (val.length === 6) setTimeout(verifyPhoneOtp, 200);
 }
-
-async function sendPhoneSms() {
+function sendPhoneSms() {
     var phone = document.getElementById('reg-phone').value.replace(/\D/g, '');
     if (phone.length !== 9) { showMsg('ტელეფონის ნომერი არასწორია', 'error'); return; }
     var fullPhone = '995' + phone;
     var btn = document.getElementById('send-sms-btn');
     btn.disabled = true; btn.textContent = '...';
-    var r = await fetch('/api/send-phone-otp', {
+    fetch('/api/send-phone-otp', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({phone: fullPhone})
+    }).then(function(r){return r.json();}).then(function(d){
+        btn.disabled = false; btn.textContent = '\u10d9\u10dd\u10d3\u10d8';
+        if (d.success) {
+            document.getElementById('phone-otp-wrap').style.display = '';
+            document.getElementById('phone-otp-input').focus();
+            startOtpTimer(120);
+            showMsg('', '');
+        } else {
+            showMsg(d.error || 'SMS \u10d2\u10d0\u10d2\u10d6\u10d0\u10d5\u10dc\u10d0 \u10d5\u10d4\u10e0 \u10db\u10dd\u10ee\u10d4\u10e0\u10ee\u10d3\u10d0', 'error');
+        }
     });
-    var d = await r.json();
-    btn.disabled = false; btn.textContent = 'კოდი';
-    if (d.success) {
-        document.getElementById('phone-otp-wrap').style.display = '';
-        document.getElementById('phone-otp-input').focus();
-        startOtpTimer(60);
-        showMsg('', '');
-    } else {
-        showMsg(d.error || 'SMS გაგზავნა ვერ მოხერხდა', 'error');
-    }
 }
-
-async function verifyPhoneOtp() {
+function verifyPhoneOtp() {
     var code = document.getElementById('phone-otp-input').value.trim();
     if (code.length !== 6) return;
     var phone = '995' + document.getElementById('reg-phone').value.replace(/\D/g, '');
-    var r = await fetch('/api/verify-phone-otp', {
+    fetch('/api/verify-phone-otp', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({phone: phone, code: code})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success) {
+            phoneVerified = true;
+            clearInterval(otpTimerInterval);
+            document.getElementById('phone-otp-wrap').style.display = 'none';
+            document.getElementById('phone-verified-badge').style.display = 'block';
+            document.getElementById('send-sms-btn').style.display = 'none';
+            document.getElementById('reg-phone').readOnly = true;
+            showMsg('', '');
+        } else {
+            document.getElementById('phone-otp-input').value = '';
+            showMsg(d.error || '\u10d9\u10dd\u10d3\u10d8 \u10d0\u10e0\u10d0\u10e1\u10ec\u10dd\u10e0\u10d8\u10d0', 'error');
+        }
     });
-    var d = await r.json();
-    if (d.success) {
-        phoneVerified = true;
-        clearInterval(otpTimerInterval);
-        document.getElementById('phone-otp-wrap').style.display = 'none';
-        document.getElementById('phone-verified-badge').style.display = 'block';
-        document.getElementById('send-sms-btn').style.display = 'none';
-        document.getElementById('reg-phone').readOnly = true;
-        showMsg('', '');
-    } else {
-        document.getElementById('phone-otp-input').value = '';
-        showMsg(d.error || 'კოდი არასწორია', 'error');
-    }
 }
-
-async function resendPhoneSms() {
+function resendPhoneSms() {
     document.getElementById('resend-otp-btn').style.display = 'none';
-    await sendPhoneSms();
+    sendPhoneSms();
 }
-
 function startOtpTimer(seconds) {
     clearInterval(otpTimerInterval);
     var timerEl = document.getElementById('otp-timer-wrap');
     var resendBtn = document.getElementById('resend-otp-btn');
     resendBtn.style.display = 'none';
     var remaining = seconds;
-    timerEl.textContent = remaining + 'წმ';
+    timerEl.textContent = remaining + '\u10ec\u10db';
     otpTimerInterval = setInterval(function() {
         remaining--;
         if (remaining <= 0) {
@@ -435,14 +415,13 @@ function startOtpTimer(seconds) {
             timerEl.textContent = '';
             resendBtn.style.display = '';
         } else {
-            timerEl.textContent = remaining + 'წმ';
+            timerEl.textContent = remaining + '\u10ec\u10db';
         }
     }, 1000);
 }
 
 /* Register */
-async function doRegister() {
-    console.log('[REG] Starting registration...');
+function doRegister() {
     var name = document.getElementById('reg-venue').value.trim();
     var addr = document.getElementById('reg-address').value.trim();
     var placeId = document.getElementById('reg-place-id').value;
@@ -450,120 +429,56 @@ async function doRegister() {
     var phone = document.getElementById('reg-phone').value.trim();
     var password = document.getElementById('reg-password').value;
 
-    console.log('[REG] name=', name, 'addr=', addr, 'placeId=', placeId, 'phoneVerified=', phoneVerified);
+    if (!name) { showMsg('\u10dd\u10d1\u10d8\u10d4\u10e5\u10e2\u10d8\u10e1 \u10e1\u10d0\u10ee\u10d4\u10da\u10d8 \u10e1\u10d0\u10d5\u10d0\u10da\u10d3\u10d4\u10d1\u10e3\u10da\u10dd\u10d0', 'error'); return; }
+    if (!addr) { showMsg('\u10db\u10d8\u10e1\u10d0\u10db\u10d0\u10e0\u10d7\u10d8 \u10e1\u10d0\u10d5\u10d0\u10da\u10d3\u10d4\u10d1\u10e3\u10da\u10dd\u10d0', 'error'); return; }
+    if (!placeId) { showMsg('\u10d2\u10d7\u10ee\u10dd\u10d5\u10d7, \u10dd\u10d1\u10d8\u10d4\u10e5\u10e2\u10d8 \u10e1\u10d8\u10d0\u10d3\u10d0\u10dc \u10d0\u10d8\u10e0\u10e9\u10d8\u10d4\u10d7', 'error'); return; }
+    if (!email) { showMsg('\u10d4\u10da. \u10e4\u10dd\u10e1\u10e2\u10d0 \u10e1\u10d0\u10d5\u10d0\u10da\u10d3\u10d4\u10d1\u10e3\u10da\u10dd\u10d0', 'error'); return; }
+    if (!password || password.length < 8) { showMsg('\u10de\u10d0\u10e0\u10dd\u10da\u10d8 \u10db\u10d8\u10dc. 8 \u10e1\u10d8\u10db\u10d1\u10dd\u10da\u10dd', 'error'); return; }
+    if (!phoneVerified) { showMsg('\u10e2\u10d4\u10da\u10d4\u10e4\u10dd\u10dc\u10d8\u10e1 \u10d5\u10d4\u10e0\u10d8\u10e4\u10d8\u10d9\u10d0\u10ea\u10d8\u10d0 \u10e1\u10d0\u10d5\u10d0\u10da\u10d3\u10d4\u10d1\u10e3\u10da\u10dd\u10d0', 'error'); return; }
 
-    if (!name) { showMsg('ობიექტის სახელი სავალდებულოა', 'error'); return; }
-    if (!addr) { showMsg('მისამართი სავალდებულოა', 'error'); return; }
-    if (!placeId) { showMsg('გთხოვთ, ობიექტი სიადან აირჩიეთ', 'error'); return; }
-    if (!email) { showMsg('ელ. ფოსტა სავალდებულოა', 'error'); return; }
-    if (!password) { showMsg('პაროლი სავალდებულოა', 'error'); return; }
-    if (!phoneVerified) { showMsg('ტელეფონის ნომრის ვერიფიკაცია სავალდებულოა', 'error'); return; }
-
-    var data = {
-        venue_name: name,
-        address: addr,
-        place_id: placeId,
-        email: email,
-        phone: phone,
-        password: password,
-    };
-
-    console.log('[REG] Sending request...', data);
-
-    try {
-        var r = await fetch('/register', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify(data)
-        });
-        var d = await r.json();
-        console.log('[REG] Response:', d);
-
-        if (d.success) {
-            document.getElementById('reg-email-hint').textContent =
-                'ვერიფიკაციის ლინკი გაიგზავნა ' + email + '-ზე.';
-            document.getElementById('reg-main').style.display = 'none';
-            document.getElementById('reg-step-4').style.display = '';
+    fetch('/register', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({venue_name: name, address: addr, place_id: placeId, email: email, phone: phone, password: password})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success && d.redirect) {
+            window.location.href = d.redirect;
+        } else if (d.success) {
+            showMsg(d.message || '\u10e0\u10d4\u10d2\u10d8\u10e1\u10e2\u10e0\u10d0\u10ea\u10d8\u10d0 \u10ec\u10d0\u10e0\u10db\u10d0\u10e2\u10d4\u10d1\u10d8\u10d7', 'success');
         } else {
             showMsg(d.error, 'error');
         }
-    } catch (e) {
-        console.error('[REG] Error:', e);
-        showMsg('ქსელის შეცდომა. სცადეთ ხელახლა.', 'error');
-    }
-}
-async function doVerifyPhone() {
-    var code = document.getElementById('reg-sms-code').value.trim();
-    var r = await fetch('/verify-phone', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({code: code})
+    }).catch(function(){
+        showMsg('\u10e5\u10e1\u10d4\u10da\u10d8\u10e1 \u10e8\u10d4\u10ea\u10d3\u10dd\u10db\u10d0. \u10e1\u10ea\u10d0\u10d3\u10d4\u10d7 \u10ee\u10d4\u10da\u10d0\u10ee\u10da\u10d0.', 'error');
     });
-    var d = await r.json();
-    if (d.success) {
-        if (d.redirect) { window.location.href = d.redirect; return; }
-        document.getElementById('reg-email-hint').textContent =
-            'ვერიფიკაციის ლინკი გაიგზავნა ' + document.getElementById('reg-email').value + '-ზე.';
-        document.getElementById('reg-step-3').style.display = 'none';
-        document.getElementById('reg-step-4').style.display = '';
-    } else {
-        showMsg(d.error, 'error');
-    }
-}
-async function resendSms() {
-    var r = await fetch('/resend-sms', {method: 'POST'});
-    var d = await r.json();
-    if (d.success) { showMsg(d.message, 'success'); startResendTimer(60); }
-    else { showMsg(d.error, 'error'); }
-}
-function startResendTimer(seconds) {
-    var btn = document.getElementById('resend-btn');
-    var timer = document.getElementById('resend-timer');
-    btn.style.display = 'none';
-    timer.style.display = 'block';
-    clearInterval(resendTimerInterval);
-    var remaining = seconds;
-    timer.textContent = remaining + ' წამში ხელახლა გაგზავნა';
-    resendTimerInterval = setInterval(function() {
-        remaining--;
-        if (remaining <= 0) {
-            clearInterval(resendTimerInterval);
-            btn.style.display = '';
-            timer.style.display = 'none';
-        } else {
-            timer.textContent = remaining + ' წამში ხელახლა გაგზავნა';
-        }
-    }, 1000);
 }
 
-/* Login steps */
-async function doLoginStep1() {
-    var r = await fetch('/login-venue', {
+/* Login */
+function doLoginStep1() {
+    var identifier = document.getElementById('login-identifier').value.trim();
+    var password = document.getElementById('login-password').value;
+    if (!identifier || !password) { showMsg('შეავსეთ ყველა ველი', 'error'); return; }
+    fetch('/login-venue', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            step: 'credentials',
-            email: document.getElementById('login-email').value.trim(),
-            password: document.getElementById('login-password').value
-        })
+        body: JSON.stringify({step: 'credentials', identifier: identifier, password: password})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success) {
+            if (d.redirect) { window.location.href = d.redirect; return; }
+            document.getElementById('login-sms-hint').textContent = d.message;
+            document.getElementById('login-step-1').style.display = 'none';
+            document.getElementById('login-step-2').style.display = '';
+        } else {
+            showMsg(d.error, 'error');
+        }
     });
-    var d = await r.json();
-    if (d.success) {
-        document.getElementById('login-sms-hint').textContent = d.message;
-        document.getElementById('login-step-1').style.display = 'none';
-        document.getElementById('login-step-2').style.display = '';
-    } else {
-        showMsg(d.error, 'error');
-    }
 }
-async function doLoginStep2() {
-    var r = await fetch('/login-venue', {
+function doLoginStep2() {
+    fetch('/login-venue', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            step: 'sms_2fa',
-            code: document.getElementById('login-sms-code').value.trim()
-        })
+        body: JSON.stringify({step: 'sms_2fa', code: document.getElementById('login-sms-code').value.trim()})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success) { window.location.href = d.redirect; }
+        else { showMsg(d.error, 'error'); }
     });
-    var d = await r.json();
-    if (d.success) { window.location.href = d.redirect; }
-    else { showMsg(d.error, 'error'); }
 }
 
 /* Forgot password */
@@ -571,44 +486,62 @@ function openForgotPassword() {
     document.getElementById('login-step-1').style.display = 'none';
     document.getElementById('login-forgot').style.display = '';
     document.getElementById('auth-msg').innerHTML = '';
-    var e = document.getElementById('login-email').value;
-    if (e) document.getElementById('forgot-email').value = e;
+    var v = document.getElementById('login-identifier').value;
+    if (v) document.getElementById('forgot-identifier').value = v;
 }
 function closeForgotPassword() {
     document.getElementById('login-forgot').style.display = 'none';
+    document.getElementById('login-reset-sms').style.display = 'none';
     document.getElementById('login-step-1').style.display = '';
     document.getElementById('auth-msg').innerHTML = '';
 }
-async function doForgotPassword() {
-    var email = document.getElementById('forgot-email').value.trim();
-    if (!email) { showMsg('ელ. ფოსტა სავალდებულოა', 'error'); return; }
-    var r = await fetch('/forgot-password', {
+function doForgotPassword() {
+    var identifier = document.getElementById('forgot-identifier').value.trim();
+    if (!identifier) { showMsg('ტელეფონი ან ელ. ფოსტა სავალდებულოა', 'error'); return; }
+    fetch('/forgot-password', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email: email})
+        body: JSON.stringify({identifier: identifier})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success) {
+            if (d.method === 'sms') {
+                document.getElementById('reset-sms-hint').textContent = d.message;
+                document.getElementById('login-forgot').style.display = 'none';
+                document.getElementById('login-reset-sms').style.display = '';
+                document.getElementById('reset-sms-code').focus();
+            } else {
+                showMsg(d.message, 'success');
+                document.getElementById('login-forgot').style.display = 'none';
+                document.getElementById('login-step-1').style.display = '';
+            }
+        } else {
+            showMsg(d.error || 'შეცდომა', 'error');
+        }
     });
-    var d = await r.json();
-    if (d.success) {
-        showMsg(d.message, 'success');
-        document.getElementById('login-forgot').style.display = 'none';
-    } else {
-        showMsg(d.error || 'შეცდომა', 'error');
-    }
 }
-
-/* Resend email verification */
-async function resendEmailVerification() {
-    var email = document.getElementById('reg-email').value.trim();
-    if (!email) return;
-    var r = await fetch('/resend-email-verification', {
+function doVerifyResetSms() {
+    var code = document.getElementById('reset-sms-code').value.trim();
+    if (!code || code.length < 6) { showMsg('კოდი სავალდებულოა', 'error'); return; }
+    fetch('/verify-reset-sms', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({email: email})
+        body: JSON.stringify({code: code})
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success && d.redirect) {
+            window.location.href = d.redirect;
+        } else {
+            showMsg(d.error || 'კოდი არასწორია', 'error');
+            document.getElementById('reset-sms-code').value = '';
+            document.getElementById('reset-sms-code').focus();
+        }
     });
-    var d = await r.json();
-    if (d.success) {
-        showMsg(d.message, 'success');
-    } else {
-        showMsg(d.error || 'შეცდომა', 'error');
-    }
+}
+function resendResetSms() {
+    var btn = document.getElementById('resend-reset-btn');
+    btn.disabled = true; btn.textContent = '...';
+    fetch('/resend-reset-sms', {method: 'POST'}).then(function(r){return r.json();}).then(function(d){
+        btn.disabled = false; btn.textContent = 'ხელახლა გაგზავნა';
+        if (d.success) { showMsg(d.message, 'success'); }
+        else { showMsg(d.error || 'შეცდომა', 'error'); }
+    });
 }
 
 /* i18n */
@@ -636,7 +569,7 @@ var LANG = {
         navLogin: 'Sign In', navRegister: 'Register',
         heroBadge: 'Free QR Menu for every restaurant',
         heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
-        heroSub: 'QR menu, table reservations, online ordering — all in one place.',
+        heroSub: 'QR menu, table reservations, online ordering \u2014 all in one place.',
         heroBtn: 'Start Free', heroBtn2: 'Learn More',
         servicesLabel: 'Services', servicesTitle: 'Everything your restaurant needs',
         servicesSub: 'Start with QR menu, add features when ready.',
@@ -655,7 +588,7 @@ var LANG = {
 var currentLang = 'ka';
 function toggleLang() {
     currentLang = currentLang === 'ka' ? 'en' : 'ka';
-    document.getElementById('lang-btn').textContent = currentLang === 'ka' ? 'EN' : 'ქარ';
+    document.getElementById('lang-btn').textContent = currentLang === 'ka' ? 'EN' : '\u10e5\u10d0\u10e0';
     document.documentElement.lang = currentLang;
     var t = LANG[currentLang];
     document.querySelectorAll('[data-i18n]').forEach(function(el) {

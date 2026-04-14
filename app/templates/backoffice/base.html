@@ -33,6 +33,7 @@
                         <i class="fas fa-database"></i> პროდუქტების ბიბლიოთეკა
                     </a>
                 {% elif admin and admin.venue %}
+                    {% if admin.email_verified %}
                     {% set vf = admin.venue.get_all_features() %}
                     <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-nav__item {% if 'menu' in request.endpoint or 'item' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-book-open"></i> Menu
@@ -62,6 +63,11 @@
                     <a href="{{ url_for('bo_bp.venue_settings') }}" class="bo-nav__item {% if 'venue_settings' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-sliders-h"></i> Venue Settings
                     </a>
+                    {% else %}
+                    <div style="padding:12px 16px;color:#92400E;font-size:.8rem;">
+                        <i class="fas fa-lock" style="margin-right:6px;"></i> ელ. ფოსტის ვერიფიკაცია საჭიროა ფუნქციების გასახსნელად
+                    </div>
+                    {% endif %}
                 {% endif %}
             </nav>
             <div class="bo-sidebar__footer">
@@ -76,6 +82,20 @@
             </div>
         </aside>
         <main class="bo-main">
+            {% if admin and not admin.is_super and not admin.email_verified %}
+            <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <i class="fas fa-exclamation-triangle" style="color:#D97706;font-size:1.1rem;"></i>
+                <span style="color:#92400E;font-size:.88rem;flex:1;">ელ. ფოსტა არ არის დადასტურებული. ფუნქციები შეზღუდულია. შეამოწმეთ inbox ან
+                    <button onclick="resendVerification()" style="background:none;border:none;color:#D97706;font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;font-size:.88rem;">ხელახლა გაგზავნეთ</button>
+                </span>
+            </div>
+            <script>
+            function resendVerification(){
+                fetch('/resend-email-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'{{ admin.email }}'})})
+                .then(function(r){return r.json();}).then(function(d){alert(d.message||'გაიგზავნა');});
+            }
+            </script>
+            {% endif %}
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             <div class="bo-flash">{% for msg in messages %}<div class="bo-flash__msg">{{ msg }}</div>{% endfor %}</div>

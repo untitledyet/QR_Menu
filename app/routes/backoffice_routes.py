@@ -22,6 +22,17 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def email_verified_required(f):
+    """Block access if venue admin has not verified email."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        admin = get_current_admin()
+        if admin and not admin.is_super and not admin.email_verified:
+            flash('el. fostis verifikacia saWiroa. Seamowmet inbox.')
+            return redirect(url_for('bo_bp.dashboard'))
+        return f(*args, **kwargs)
+    return decorated
+
 def super_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -288,6 +299,7 @@ def venue_has_feature(feature_key):
 
 @bo_bp.route('/menu')
 @login_required
+@email_verified_required
 def menu_list():
     admin = get_current_admin()
     venue = admin.venue
@@ -312,6 +324,7 @@ def menu_list():
 
 @bo_bp.route('/menu/toggle-customization/<int:item_id>', methods=['POST'])
 @login_required
+@email_verified_required
 def toggle_customization(item_id):
     item = verify_item_ownership(item_id)
     if not item:
@@ -323,6 +336,7 @@ def toggle_customization(item_id):
 
 @bo_bp.route('/menu/toggle-active/<int:item_id>', methods=['POST'])
 @login_required
+@email_verified_required
 def toggle_item_active(item_id):
     item = verify_item_ownership(item_id)
     if not item:
@@ -334,6 +348,7 @@ def toggle_item_active(item_id):
 
 @bo_bp.route('/menu/add', methods=['GET', 'POST'])
 @login_required
+@email_verified_required
 def add_item():
     admin = get_current_admin()
     venue = admin.venue
@@ -382,6 +397,7 @@ def add_item():
 
 @bo_bp.route('/menu/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
+@email_verified_required
 def edit_item(item_id):
     admin = get_current_admin()
     venue = admin.venue
@@ -419,6 +435,7 @@ def edit_item(item_id):
 
 @bo_bp.route('/menu/delete/<int:item_id>', methods=['POST'])
 @login_required
+@email_verified_required
 def delete_item(item_id):
     item = verify_item_ownership(item_id)
     if not item:
@@ -486,6 +503,7 @@ def api_subcategories(category_id):
 
 @bo_bp.route('/categories')
 @login_required
+@email_verified_required
 def categories_list():
     admin = get_current_admin()
     venue = admin.venue
@@ -495,6 +513,7 @@ def categories_list():
 
 @bo_bp.route('/categories/add', methods=['GET', 'POST'])
 @login_required
+@email_verified_required
 def add_category():
     admin = get_current_admin()
     venue = admin.venue
@@ -528,6 +547,7 @@ def add_category():
 
 @bo_bp.route('/categories/edit/<int:cat_id>', methods=['GET', 'POST'])
 @login_required
+@email_verified_required
 def edit_category(cat_id):
     admin = get_current_admin()
     cat = verify_category_ownership(cat_id)
@@ -556,6 +576,7 @@ def edit_category(cat_id):
 
 @bo_bp.route('/categories/delete/<int:cat_id>', methods=['POST'])
 @login_required
+@email_verified_required
 def delete_category(cat_id):
     cat = verify_category_ownership(cat_id)
     if not cat:
@@ -578,6 +599,7 @@ def delete_category(cat_id):
 
 @bo_bp.route('/categories/<int:cat_id>/subcategories/add', methods=['POST'])
 @login_required
+@email_verified_required
 def add_subcategory(cat_id):
     cat = verify_category_ownership(cat_id)
     if not cat:
@@ -594,6 +616,7 @@ def add_subcategory(cat_id):
 
 @bo_bp.route('/subcategories/delete/<int:sub_id>', methods=['POST'])
 @login_required
+@email_verified_required
 def delete_subcategory(sub_id):
     sub = Subcategory.query.get_or_404(sub_id)
     # Verify ownership via parent category
@@ -768,6 +791,7 @@ def reservation_settings():
 
 @bo_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
+@email_verified_required
 def venue_settings():
     admin = get_current_admin()
     venue = admin.venue
