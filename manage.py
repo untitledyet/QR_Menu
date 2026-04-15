@@ -87,8 +87,8 @@ def run_migrations():
         # Activate existing phone-verified users who are stuck
         with db.engine.connect() as conn:
             conn.execute(text(
-                'UPDATE "AdminUsers" SET is_active = 1 '
-                'WHERE phone_verified = 1 AND is_active = 0 AND role = \'venue\''
+                'UPDATE "AdminUsers" SET is_active = TRUE '
+                'WHERE phone_verified = TRUE AND is_active = FALSE AND role = \'venue\''
             ))
             conn.commit()
 
