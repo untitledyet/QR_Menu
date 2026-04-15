@@ -69,6 +69,21 @@ def run_migrations():
                 conn.commit()
             print('Migration: added brute force protection fields to AdminUsers')
 
+        if 'email_token_expires' not in admin_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN email_token_expires DATETIME'))
+                conn.commit()
+            print('Migration: added email_token_expires to AdminUsers')
+
+        # --- PhoneOtps table migrations ---
+        if 'PhoneOtps' in table_names:
+            otp_cols = [c['name'] for c in insp.get_columns('PhoneOtps')]
+            if 'ip' not in otp_cols:
+                with db.engine.connect() as conn:
+                    conn.execute(text('ALTER TABLE "PhoneOtps" ADD COLUMN ip VARCHAR(45)'))
+                    conn.commit()
+                print('Migration: added ip to PhoneOtps')
+
         # Activate existing phone-verified users who are stuck
         with db.engine.connect() as conn:
             conn.execute(text(

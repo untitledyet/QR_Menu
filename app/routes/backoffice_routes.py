@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime, timedelta
 from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
@@ -7,6 +8,7 @@ from app import db
 from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcategory,
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
                          MAX_ITEMS_PER_VENUE)
+from app.services.registration_service import validate_password, send_sms_code
 
 bo_bp = Blueprint('bo_bp', __name__, url_prefix='/backoffice')
 
@@ -80,18 +82,110 @@ def verify_promo_ownership(promo_id):
 
 @bo_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
-        # Try by username first (super admin), then by email
+    """Backoffice login — AJAX JSON, 2-step: password → SMS 2FA."""
+    if request.method == 'GET':
+        return render_template('backoffice/login.html')
+
+    data = request.get_json() or {}
+    step = data.get('step', 'credentials')
+
+    if step == 'credentials':
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+
+        if not username or not password:
+            return jsonify(error='SeavseT yvela veli'), 400
+
+        # Lookup: username (super admin) → email fallback
         admin = AdminUser.query.filter_by(username=username).first()
         if not admin:
             admin = AdminUser.query.filter_by(email=username).first()
-        if admin and admin.check_password(password) and (admin.is_active or admin.is_super):
-            session['admin_id'] = admin.id
-            return redirect(url_for('bo_bp.dashboard'))
-        flash('Invalid credentials')
-    return render_template('backoffice/login.html')
+
+        # 1. Lockout check FIRST
+        if admin and admin.is_locked:
+            return jsonify(error='angarishi droebiT daibloqa. scadeT 15 wuTSi'), 403
+
+        # 2. Password check
+        if not admin or not admin.check_password(password):
+            if admin:
+                admin.record_failed_login()
+                db.session.commit()
+            return jsonify(error='Invalid credentials'), 401
+
+        # 3. Active check
+        if not admin.is_active and not admin.is_super:
+            return jsonify(error='angarishi ar aris gaaqtiurebuli'), 403
+
+        admin.reset_failed_logins()
+
+        # 4. SMS 2FA if phone configured
+        if admin.phone:
+            code, sms_error = send_sms_code(admin.phone)
+            if sms_error:
+                current_app.logger.error(
+                    'Backoffice 2FA SMS failed for admin id=' + str(admin.id) + ': ' + str(sms_error)
+                )
+                db.session.commit()
+                return jsonify(error='SMS gagzavna ver moxerxda. scadeT mogvianebiT'), 503
+
+            admin.set_sms_code(code)
+            admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
+            db.session.commit()
+
+            session['bo_pending_admin_id'] = admin.id
+            phone_display = '*' * (len(admin.phone) - 4) + admin.phone[-4:]
+            return jsonify(success=True, step='sms_2fa',
+                           message='SMS kodi gaigzavna ' + phone_display + '-ze')
+
+        # No phone configured (initial super admin setup) — log warning and allow
+        current_app.logger.warning(
+            'Admin id=' + str(admin.id) + ' logged in without 2FA — no phone set'
+        )
+        db.session.commit()
+        session['admin_id'] = admin.id
+        return jsonify(success=True, redirect='/backoffice')
+
+    elif step == 'sms_2fa':
+        code = data.get('code', '').strip()
+        admin_id = session.get('bo_pending_admin_id')
+
+        if not admin_id:
+            return jsonify(error='sesia amoiwura'), 400
+
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.sms_code_hash or not admin.sms_code_expires:
+            return jsonify(error='kodi ver moiZebna'), 400
+
+        if datetime.utcnow() > admin.sms_code_expires:
+            admin.sms_code_hash = None
+            admin.sms_code_expires = None
+            db.session.commit()
+            return jsonify(error='kodi vadagasulia. Tavidan scadeT'), 400
+
+        if admin.sms_attempts >= 5:
+            admin.sms_code_hash = None
+            admin.sms_code_expires = None
+            db.session.commit()
+            return jsonify(error='Zalian bevri mcdeloba. Tavidan scadeT'), 400
+
+        admin.sms_attempts = (admin.sms_attempts or 0) + 1
+
+        if not admin.check_sms_code(code):
+            remaining = 5 - admin.sms_attempts
+            db.session.commit()
+            return jsonify(error='kodi arasworia. darCa ' + str(remaining) + ' mcdeloba'), 400
+
+        # Success
+        admin.sms_code_hash = None
+        admin.sms_code_expires = None
+        admin.sms_attempts = 0
+        db.session.commit()
+
+        session.pop('bo_pending_admin_id', None)
+        session['admin_id'] = admin.id
+        return jsonify(success=True, redirect='/backoffice')
+
+    return jsonify(error='Invalid step'), 400
 
 
 @bo_bp.route('/change-password', methods=['GET', 'POST'])
@@ -104,15 +198,17 @@ def change_password():
         confirm = request.form.get('confirm_password', '')
         if not admin.check_password(current):
             flash('მიმდინარე პაროლი არასწორია')
-        elif len(new_pw) < 8:
-            flash('ახალი პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს')
         elif new_pw != confirm:
             flash('პაროლები არ ემთხვევა')
         else:
-            admin.set_password(new_pw)
-            db.session.commit()
-            flash('პაროლი წარმატებით შეიცვალა')
-            return redirect(url_for('bo_bp.dashboard'))
+            pw_error = validate_password(new_pw)
+            if pw_error:
+                flash(pw_error)
+            else:
+                admin.set_password(new_pw)
+                db.session.commit()
+                flash('პაროლი წარმატებით შეიცვალა')
+                return redirect(url_for('bo_bp.dashboard'))
     return render_template('backoffice/change_password.html', admin=admin)
 
 @bo_bp.route('/logout')

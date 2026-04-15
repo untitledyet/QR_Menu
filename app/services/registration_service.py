@@ -197,6 +197,25 @@ def search_google_place(venue_name, address):
 
 
 # ============================================================
+# Password validation
+# ============================================================
+
+def validate_password(password: str):
+    """Return Georgian error message string, or None if password is valid.
+    Rules: >= 8 chars, at least one uppercase, one lowercase, one digit.
+    """
+    if len(password) < 8:
+        return 'paroli minimum 8 simbolo unda iyos'
+    if not any(c.isupper() for c in password):
+        return 'paroli unda Seicavdes minimum erT didi aso'
+    if not any(c.islower() for c in password):
+        return 'paroli unda Seicavdes minimum erT pataras aso'
+    if not any(c.isdigit() for c in password):
+        return 'paroli unda Seicavdes minimum erT cifrs'
+    return None
+
+
+# ============================================================
 # Password generation
 # ============================================================
 

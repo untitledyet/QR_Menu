@@ -1,8 +1,16 @@
+import hashlib
 import secrets
 import string
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
+
+
+def _hash_token(raw_token: str) -> str:
+    """One-way SHA-256 hash for secure token storage in DB.
+    Store the hash; send the raw token to the user.
+    """
+    return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
 def _generate_venue_code():
@@ -90,7 +98,8 @@ class AdminUser(db.Model):
 
     # Verification
     email_verified = db.Column(db.Boolean, default=False)
-    email_token = db.Column(db.String(64), nullable=True)
+    email_token = db.Column(db.String(64), nullable=True)       # stores SHA-256 hash
+    email_token_expires = db.Column(db.DateTime, nullable=True)
     phone_verified = db.Column(db.Boolean, default=False)
     sms_code_hash = db.Column(db.String(256), nullable=True)
     sms_code_expires = db.Column(db.DateTime, nullable=True)
@@ -98,7 +107,7 @@ class AdminUser(db.Model):
     is_active = db.Column(db.Boolean, default=False)
 
     # Password reset
-    reset_token = db.Column(db.String(64), nullable=True)
+    reset_token = db.Column(db.String(64), nullable=True)       # stores SHA-256 hash
     reset_token_expires = db.Column(db.DateTime, nullable=True)
 
     # Brute force protection
@@ -441,4 +450,5 @@ class PhoneOtp(db.Model):
     code_hash = db.Column(db.String(256), nullable=False)
     expires = db.Column(db.DateTime, nullable=False)
     attempts = db.Column(db.Integer, default=0)
+    ip = db.Column(db.String(45), nullable=True)                # for IP-based rate limiting
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

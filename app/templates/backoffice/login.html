@@ -13,22 +13,134 @@
     <div class="bo-login-card">
         <div class="bo-login-card__icon"><i class="fas fa-utensils"></i></div>
         <h1 class="bo-login-card__title">QR Menu Backoffice</h1>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="bo-login-card__error">{{ messages[0] }}</div>
-        {% endif %}
-        {% endwith %}
-        <form method="POST">
+
+        <div id="error-msg" class="bo-login-card__error" style="display:none;"></div>
+
+        <!-- Step 1: credentials -->
+        <div id="step-credentials">
             <div class="bo-form-group">
-                <label>Username</label>
-                <input type="text" name="username" required autofocus>
+                <label>Username / Email</label>
+                <input type="text" id="username" autocomplete="username" required autofocus>
             </div>
             <div class="bo-form-group">
                 <label>Password</label>
-                <input type="password" name="password" required>
+                <input type="password" id="password" autocomplete="current-password" required>
             </div>
-            <button type="submit" class="bo-btn bo-btn--primary bo-btn--full">Sign In</button>
-        </form>
+            <button id="btn-login" class="bo-btn bo-btn--primary bo-btn--full">Sign In</button>
+        </div>
+
+        <!-- Step 2: SMS 2FA (hidden initially) -->
+        <div id="step-2fa" style="display:none;">
+            <p id="sms-hint" style="margin-bottom:16px;font-size:14px;color:#555;"></p>
+            <div class="bo-form-group">
+                <label>SMS კოდი</label>
+                <input type="text" id="sms-code" inputmode="numeric" maxlength="6"
+                       autocomplete="one-time-code" placeholder="------">
+            </div>
+            <button id="btn-verify" class="bo-btn bo-btn--primary bo-btn--full">დადასტურება</button>
+            <button id="btn-back" class="bo-btn bo-btn--ghost bo-btn--full" style="margin-top:8px;">უკან</button>
+        </div>
     </div>
+
+    <script>
+    (function () {
+        const errEl = document.getElementById('error-msg');
+        const stepCreds = document.getElementById('step-credentials');
+        const step2fa = document.getElementById('step-2fa');
+
+        function showError(msg) {
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+        }
+        function hideError() {
+            errEl.style.display = 'none';
+        }
+        function setLoading(btn, loading) {
+            btn.disabled = loading;
+            btn.textContent = loading ? '...' : btn.dataset.label;
+        }
+
+        // Save original labels
+        document.querySelectorAll('button').forEach(b => b.dataset.label = b.textContent);
+
+        // Step 1 — credentials
+        document.getElementById('btn-login').addEventListener('click', async () => {
+            hideError();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            if (!username || !password) { showError('შეავსეთ ყველა ველი'); return; }
+
+            const btn = document.getElementById('btn-login');
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/backoffice/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ step: 'credentials', username, password }),
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) { showError(data.error || 'შეცდომა'); return; }
+
+                if (data.step === 'sms_2fa') {
+                    document.getElementById('sms-hint').textContent = data.message || '';
+                    stepCreds.style.display = 'none';
+                    step2fa.style.display = 'block';
+                    document.getElementById('sms-code').focus();
+                } else if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            } catch (e) {
+                showError('კავშირის შეცდომა');
+            } finally {
+                setLoading(btn, false);
+            }
+        });
+
+        // Allow Enter key on credentials
+        ['username', 'password'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', e => {
+                if (e.key === 'Enter') document.getElementById('btn-login').click();
+            });
+        });
+
+        // Step 2 — SMS code
+        document.getElementById('btn-verify').addEventListener('click', async () => {
+            hideError();
+            const code = document.getElementById('sms-code').value.trim();
+            if (!code) { showError('შეიყვანეთ SMS კოდი'); return; }
+
+            const btn = document.getElementById('btn-verify');
+            setLoading(btn, true);
+            try {
+                const res = await fetch('/backoffice/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ step: 'sms_2fa', code }),
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) { showError(data.error || 'შეცდომა'); return; }
+                if (data.redirect) window.location.href = data.redirect;
+            } catch (e) {
+                showError('კავშირის შეცდომა');
+            } finally {
+                setLoading(btn, false);
+            }
+        });
+
+        document.getElementById('sms-code').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('btn-verify').click();
+        });
+
+        // Back button — return to step 1
+        document.getElementById('btn-back').addEventListener('click', () => {
+            hideError();
+            document.getElementById('sms-code').value = '';
+            step2fa.style.display = 'none';
+            stepCreds.style.display = 'block';
+            document.getElementById('password').value = '';
+            document.getElementById('username').focus();
+        });
+    })();
+    </script>
 </body>
 </html>
