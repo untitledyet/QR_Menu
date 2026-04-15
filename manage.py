@@ -39,7 +39,7 @@ def run_migrations():
         if 'reset_token' not in admin_cols:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN reset_token VARCHAR(64)'))
-                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN reset_token_expires DATETIME'))
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN reset_token_expires TIMESTAMP'))
                 conn.commit()
             print('Migration: added reset_token fields to AdminUsers')
 
@@ -65,13 +65,13 @@ def run_migrations():
         if 'failed_login_attempts' not in admin_cols:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN failed_login_attempts INTEGER DEFAULT 0'))
-                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN locked_until DATETIME'))
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN locked_until TIMESTAMP'))
                 conn.commit()
             print('Migration: added brute force protection fields to AdminUsers')
 
         if 'email_token_expires' not in admin_cols:
             with db.engine.connect() as conn:
-                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN email_token_expires DATETIME'))
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN email_token_expires TIMESTAMP'))
                 conn.commit()
             print('Migration: added email_token_expires to AdminUsers')
 
