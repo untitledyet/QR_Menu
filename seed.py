@@ -34,12 +34,16 @@ with app.app_context():
                 ('phone', 'VARCHAR(20)'),
                 ('email_verified', 'BOOLEAN DEFAULT FALSE'),
                 ('email_token', 'VARCHAR(64)'),
+                ('email_token_expires', 'TIMESTAMP'),
                 ('phone_verified', 'BOOLEAN DEFAULT FALSE'),
-                ('sms_code', 'VARCHAR(6)'),
+                ('sms_code_hash', 'VARCHAR(256)'),
                 ('sms_code_expires', 'TIMESTAMP'),
+                ('sms_attempts', 'INTEGER DEFAULT 0'),
                 ('is_active', 'BOOLEAN DEFAULT FALSE'),
                 ('reset_token', 'VARCHAR(64)'),
                 ('reset_token_expires', 'TIMESTAMP'),
+                ('failed_login_attempts', 'INTEGER DEFAULT 0'),
+                ('locked_until', 'TIMESTAMP'),
             ]:
                 if col not in admin_cols:
                     conn.execute(text(f'ALTER TABLE "AdminUsers" ADD COLUMN {col} {defn}'))
@@ -49,6 +53,13 @@ with app.app_context():
             conn.execute(text(
                 "UPDATE \"AdminUsers\" SET is_active=TRUE, email_verified=TRUE, phone_verified=TRUE WHERE role='super'"
             ))
+            # PhoneOtps migration
+            if 'PhoneOtps' in insp.get_table_names():
+                otp_cols = [c['name'] for c in insp.get_columns('PhoneOtps')]
+                if 'ip' not in otp_cols:
+                    conn.execute(text('ALTER TABLE "PhoneOtps" ADD COLUMN ip VARCHAR(45)'))
+                    print('Migration: added PhoneOtps.ip')
+
             # GlobalItems migration — add subcategory_id if missing
             try:
                 if 'GlobalItems' in insp.get_table_names():
