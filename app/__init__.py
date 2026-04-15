@@ -27,12 +27,14 @@ def create_app(config_class=Config):
     from app.routes.reservation_api_routes import res_api_bp
     from app.routes.landing_routes import landing_bp
     from app.routes.global_library_routes import lib_bp
+    from app.routes.group_routes import group_bp
     app.register_blueprint(landing_bp)
     app.register_blueprint(menu_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(bo_bp)
     app.register_blueprint(res_api_bp)
     app.register_blueprint(lib_bp)
+    app.register_blueprint(group_bp)
 
     from app.utils.feature_flags import init_feature_flags
     init_feature_flags(app)

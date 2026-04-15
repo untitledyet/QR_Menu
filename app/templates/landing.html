@@ -220,7 +220,7 @@
                         <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
                     </div>
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doRegister()">რეგისტრაცია</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" id="reg-submit-btn" onclick="doRegister()">რეგისტრაცია</button>
             </div>
         </div>
     </div>
@@ -436,19 +436,30 @@ function doRegister() {
     if (!password || password.length < 8) { showMsg('\u10de\u10d0\u10e0\u10dd\u10da\u10d8 \u10db\u10d8\u10dc. 8 \u10e1\u10d8\u10db\u10d1\u10dd\u10da\u10dd', 'error'); return; }
     if (!phoneVerified) { showMsg('\u10e2\u10d4\u10da\u10d4\u10e4\u10dd\u10dc\u10d8\u10e1 \u10d5\u10d4\u10e0\u10d8\u10e4\u10d8\u10d9\u10d0\u10ea\u10d8\u10d0 \u10e1\u10d0\u10d5\u10d0\u10da\u10d3\u10d4\u10d1\u10e3\u10da\u10dd\u10d0', 'error'); return; }
 
+    var btn = document.getElementById('reg-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>რეგისტრაცია...';
+
     fetch('/register', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({venue_name: name, address: addr, place_id: placeId, email: email, phone: phone, password: password})
     }).then(function(r){return r.json();}).then(function(d){
         if (d.success && d.redirect) {
+            btn.innerHTML = '<i class="fas fa-check" style="margin-right:6px;"></i>წარმატებით!';
             window.location.href = d.redirect;
         } else if (d.success) {
-            showMsg(d.message || '\u10e0\u10d4\u10d2\u10d8\u10e1\u10e2\u10e0\u10d0\u10ea\u10d8\u10d0 \u10ec\u10d0\u10e0\u10db\u10d0\u10e2\u10d4\u10d1\u10d8\u10d7', 'success');
+            btn.disabled = false;
+            btn.innerHTML = 'რეგისტრაცია';
+            showMsg(d.message || 'რეგისტრაცია წარმატებით', 'success');
         } else {
+            btn.disabled = false;
+            btn.innerHTML = 'რეგისტრაცია';
             showMsg(d.error, 'error');
         }
     }).catch(function(){
-        showMsg('\u10e5\u10e1\u10d4\u10da\u10d8\u10e1 \u10e8\u10d4\u10ea\u10d3\u10dd\u10db\u10d0. \u10e1\u10ea\u10d0\u10d3\u10d4\u10d7 \u10ee\u10d4\u10da\u10d0\u10ee\u10da\u10d0.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'რეგისტრაცია';
+        showMsg('ქსელის შეცდომა. სცადეთ ხელახლა.', 'error');
     });
 }
 

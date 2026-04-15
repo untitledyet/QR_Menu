@@ -70,6 +70,7 @@ def _build_email_html(title, body, btn_text, btn_url, footer):
 def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
     try:
         import smtplib
+        import ssl
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
 
@@ -89,16 +90,21 @@ def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
         msg['To'] = to
         msg.attach(MIMEText(html, 'html'))
 
-        if smtp_port == 465:
-            import ssl
+        # Use certifi CA bundle so it works on macOS and Railway alike
+        try:
+            import certifi
+            ctx = ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
             ctx = ssl.create_default_context()
+
+        if smtp_port == 465:
             with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx) as server:
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(from_email, to, msg.as_string())
         else:
             with smtplib.SMTP(smtp_host, smtp_port) as server:
                 server.ehlo()
-                server.starttls()
+                server.starttls(context=ctx)
                 server.ehlo()
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(from_email, to, msg.as_string())
@@ -111,9 +117,10 @@ def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
         return False
 
 
-def send_verification_email(email, token, venue_name):
+def send_verification_email(email, token, venue_name, base_url=None):
     """Send email verification link. Returns True on success."""
-    base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
+    if not base_url:
+        base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
     url = base_url + "/verify-email/" + token
     return _send_email_smtp(
         to=email,
@@ -130,9 +137,10 @@ def send_verification_email(email, token, venue_name):
     )
 
 
-def send_password_reset_email(email, token):
+def send_password_reset_email(email, token, base_url=None):
     """Send password reset link. Returns True on success."""
-    base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
+    if not base_url:
+        base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
     url = base_url + "/reset-password/" + token
     return _send_email_smtp(
         to=email,

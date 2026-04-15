@@ -1,0 +1,212 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ჯაჭვის მენიუ — {{ group.name }}{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <div>
+        <h1><i class="fas fa-book" style="color:#6366f1;margin-right:8px;"></i>ჯაჭვის მენიუ</h1>
+        <p class="bo-header__sub">{{ group.name }} · ეს მენიუ ეჩვენება ყველა ფილიალს</p>
+    </div>
+    <button onclick="showAddCategoryModal()" class="bo-btn bo-btn--primary">
+        <i class="fas fa-plus"></i> კატეგორიის დამატება
+    </button>
+</div>
+
+{% if cat_data %}
+{% for cd in cat_data %}
+<div class="bo-setting-card" id="cat-{{ cd.cat.CategoryID }}" style="margin-bottom:16px;">
+    <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f3f4f6;">
+        {% if cd.cat.CategoryIcon %}
+        <i class="{{ cd.cat.CategoryIcon }}" style="color:#6366f1;font-size:1.1rem;"></i>
+        {% endif %}
+        <strong style="flex:1;">{{ cd.cat.CategoryName }}</strong>
+        {% if cd.cat.Description %}<span style="color:#9ca3af;font-size:.82rem;">{{ cd.cat.Description }}</span>{% endif %}
+        <button onclick="showAddItemModal({{ cd.cat.CategoryID }}, '{{ cd.cat.CategoryName|e }}')"
+                class="bo-btn bo-btn--sm bo-btn--primary"><i class="fas fa-plus"></i> კერძი</button>
+        <button onclick="deleteCategory({{ cd.cat.CategoryID }}, '{{ cd.cat.CategoryName|e }}')"
+                class="bo-btn bo-btn--sm bo-btn--danger"><i class="fas fa-trash"></i></button>
+    </div>
+
+    {% if cd.items %}
+    <div style="padding:8px 16px;">
+    {% for item in cd.items %}
+    <div class="bo-setting-card" id="item-{{ item.FoodItemID }}"
+         style="padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px;">
+        {% if item.ImageFilename %}
+        <img src="/static/uploads/{{ item.ImageFilename }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+        {% else %}
+        <div style="width:40px;height:40px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="color:#d1d5db;"></i></div>
+        {% endif %}
+        <div style="flex:1;">
+            <div style="font-weight:500;">{{ item.FoodName }}</div>
+            <div style="font-size:.8rem;color:#6b7280;">{{ item.Description|truncate(60) }}</div>
+        </div>
+        <strong style="color:#6366f1;">{{ '%.2f'|format(item.Price) }} ₾</strong>
+        <button onclick="showEditItemModal({{ item.FoodItemID }}, {{ cd.cat.CategoryID }}, '{{ item.FoodName|e }}', {{ item.Price }}, '{{ item.Description|e }}', '{{ item.Ingredients|e }}')"
+                class="bo-btn bo-btn--sm bo-btn--ghost"><i class="fas fa-edit"></i></button>
+        <button onclick="deleteItem({{ item.FoodItemID }})"
+                class="bo-btn bo-btn--sm bo-btn--danger"><i class="fas fa-trash"></i></button>
+    </div>
+    {% endfor %}
+    </div>
+    {% else %}
+    <p style="padding:12px 16px;color:#9ca3af;font-size:.85rem;margin:0;">კერძები არ არის — <button onclick="showAddItemModal({{ cd.cat.CategoryID }}, '{{ cd.cat.CategoryName|e }}')" style="background:none;border:none;color:#6366f1;cursor:pointer;font-family:inherit;">დაამატეთ</button></p>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:48px;color:#9ca3af;">
+    <i class="fas fa-book-open" style="font-size:3rem;margin-bottom:12px;"></i>
+    <p>ჯაჭვის მენიუ ცარიელია. დაამატეთ პირველი კატეგორია.</p>
+    <button onclick="showAddCategoryModal()" class="bo-btn bo-btn--primary">
+        <i class="fas fa-plus"></i> კატეგორიის დამატება
+    </button>
+</div>
+{% endif %}
+
+<!-- Add Category Modal -->
+<div id="addCatModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:380px;max-width:95%;">
+        <h3 style="margin:0 0 16px;">კატეგორიის დამატება</h3>
+        <div class="bo-form-group">
+            <label class="bo-label">სახელი *</label>
+            <input type="text" id="cat-name" class="bo-input" placeholder="მაგ: სათეფშო კერძები">
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">აღწერა</label>
+            <input type="text" id="cat-desc" class="bo-input" placeholder="მოკლე აღწერა">
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">Font Awesome კლასი (სურ.)</label>
+            <input type="text" id="cat-icon" class="bo-input" placeholder="fas fa-pizza-slice">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="addCategory()" class="bo-btn bo-btn--primary">დამატება</button>
+            <button onclick="hideModal('addCatModal')" class="bo-btn bo-btn--ghost">გაუქმება</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Item Modal -->
+<div id="itemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:440px;max-width:95%;margin:auto;">
+        <h3 id="itemModalTitle" style="margin:0 0 16px;">კერძის დამატება</h3>
+        <input type="hidden" id="item-cat-id">
+        <input type="hidden" id="item-edit-id">
+        <div class="bo-form-group">
+            <label class="bo-label">სახელი *</label>
+            <input type="text" id="item-name" class="bo-input">
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">აღწერა</label>
+            <textarea id="item-desc" class="bo-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">ინგრედიენტები</label>
+            <input type="text" id="item-ingr" class="bo-input">
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">ფასი (₾) *</label>
+            <input type="number" id="item-price" class="bo-input" step="0.01" min="0">
+        </div>
+        <div class="bo-form-group">
+            <label class="bo-label">სურათი</label>
+            <input type="file" id="item-image" accept="image/*" class="bo-input" style="padding:6px;">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="submitItem()" class="bo-btn bo-btn--primary" id="itemSubmitBtn">დამატება</button>
+            <button onclick="hideModal('itemModal')" class="bo-btn bo-btn--ghost">გაუქმება</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddCategoryModal() {
+    document.getElementById('cat-name').value = '';
+    document.getElementById('cat-desc').value = '';
+    document.getElementById('cat-icon').value = '';
+    document.getElementById('addCatModal').style.display = 'flex';
+}
+
+function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function addCategory() {
+    var name = document.getElementById('cat-name').value.trim();
+    if (!name) { alert('სახელი სავალდებულოა'); return; }
+    var fd = new FormData();
+    fd.append('name', name);
+    fd.append('description', document.getElementById('cat-desc').value.trim());
+    fd.append('icon', document.getElementById('cat-icon').value.trim());
+    fetch('/backoffice/group/menu/category/add', {method:'POST', body:fd})
+        .then(r => r.json()).then(d => {
+            if (d.success) { hideModal('addCatModal'); location.reload(); }
+            else alert(d.error || 'შეცდომა');
+        });
+}
+
+function deleteCategory(id, name) {
+    if (!confirm('"' + name + '" კატეგორია და მისი ყველა კერძი წაიშლება?')) return;
+    fetch('/backoffice/group/menu/category/' + id + '/delete', {method:'POST'})
+        .then(r => r.json()).then(d => {
+            if (d.success) document.getElementById('cat-' + id).remove();
+            else alert(d.error || 'შეცდომა');
+        });
+}
+
+function showAddItemModal(catId, catName) {
+    document.getElementById('itemModalTitle').textContent = '"' + catName + '" — კერძის დამატება';
+    document.getElementById('item-cat-id').value = catId;
+    document.getElementById('item-edit-id').value = '';
+    document.getElementById('item-name').value = '';
+    document.getElementById('item-desc').value = '';
+    document.getElementById('item-ingr').value = '';
+    document.getElementById('item-price').value = '';
+    document.getElementById('item-image').value = '';
+    document.getElementById('itemSubmitBtn').textContent = 'დამატება';
+    document.getElementById('itemModal').style.display = 'flex';
+}
+
+function showEditItemModal(id, catId, name, price, desc, ingr) {
+    document.getElementById('itemModalTitle').textContent = 'კერძის რედაქტირება';
+    document.getElementById('item-cat-id').value = catId;
+    document.getElementById('item-edit-id').value = id;
+    document.getElementById('item-name').value = name;
+    document.getElementById('item-desc').value = desc;
+    document.getElementById('item-ingr').value = ingr;
+    document.getElementById('item-price').value = price;
+    document.getElementById('item-image').value = '';
+    document.getElementById('itemSubmitBtn').textContent = 'შენახვა';
+    document.getElementById('itemModal').style.display = 'flex';
+}
+
+function submitItem() {
+    var editId = document.getElementById('item-edit-id').value;
+    var fd = new FormData();
+    fd.append('category_id', document.getElementById('item-cat-id').value);
+    fd.append('name', document.getElementById('item-name').value.trim());
+    fd.append('description', document.getElementById('item-desc').value.trim());
+    fd.append('ingredients', document.getElementById('item-ingr').value.trim());
+    fd.append('price', document.getElementById('item-price').value);
+    var imgFile = document.getElementById('item-image').files[0];
+    if (imgFile) fd.append('image', imgFile);
+
+    var url = editId
+        ? '/backoffice/group/menu/item/' + editId + '/edit'
+        : '/backoffice/group/menu/item/add';
+
+    fetch(url, {method:'POST', body:fd})
+        .then(r => r.json()).then(d => {
+            if (d.success) { hideModal('itemModal'); location.reload(); }
+            else alert(d.error || 'შეცდომა');
+        });
+}
+
+function deleteItem(id) {
+    if (!confirm('კერძი წაიშლება?')) return;
+    fetch('/backoffice/group/menu/item/' + id + '/delete', {method:'POST'})
+        .then(r => r.json()).then(d => {
+            if (d.success) document.getElementById('item-' + id).remove();
+            else alert(d.error || 'შეცდომა');
+        });
+}
+</script>
+{% endblock %}

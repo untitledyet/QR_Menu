@@ -56,6 +56,21 @@ def run_migrations():
                 conn.commit()
             print('Migration: added sms_code_hash to AdminUsers')
 
+        # Fix sms_code_hash column type if it was created/renamed as VARCHAR(6) or similar short type
+        from sqlalchemy import inspect as sa_inspect
+        sms_col_info = next((c for c in sa_inspect(db.engine).get_columns('AdminUsers')
+                             if c['name'] == 'sms_code_hash'), None)
+        if sms_col_info:
+            col_type_str = str(sms_col_info['type'])
+            # Check if length is too short (anything under 200 chars)
+            if hasattr(sms_col_info['type'], 'length') and sms_col_info['type'].length < 200:
+                with db.engine.connect() as conn:
+                    conn.execute(text(
+                        'ALTER TABLE "AdminUsers" ALTER COLUMN sms_code_hash TYPE VARCHAR(256)'
+                    ))
+                    conn.commit()
+                print('Migration: widened sms_code_hash to VARCHAR(256)')
+
         if 'sms_attempts' not in admin_cols:
             with db.engine.connect() as conn:
                 conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN sms_attempts INTEGER DEFAULT 0'))
@@ -83,6 +98,70 @@ def run_migrations():
                     conn.execute(text('ALTER TABLE "PhoneOtps" ADD COLUMN ip VARCHAR(45)'))
                     conn.commit()
                 print('Migration: added ip to PhoneOtps')
+
+        # --- VenueGroups table ---
+        if 'VenueGroups' not in table_names:
+            with db.engine.connect() as conn:
+                conn.execute(text('''
+                    CREATE TABLE "VenueGroups" (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        owner_venue_id INTEGER NOT NULL REFERENCES "Venues"(id),
+                        allow_price_override BOOLEAN NOT NULL DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )
+                '''))
+                conn.commit()
+            print('Migration: created VenueGroups table')
+
+        # --- Venues.group_id ---
+        venue_cols = [c['name'] for c in insp.get_columns('Venues')]
+        if 'group_id' not in venue_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "Venues" ADD COLUMN group_id INTEGER REFERENCES "VenueGroups"(id)'))
+                conn.commit()
+            print('Migration: added group_id to Venues')
+
+        # --- VenueGroupInvites table ---
+        if 'VenueGroupInvites' not in table_names:
+            with db.engine.connect() as conn:
+                conn.execute(text('''
+                    CREATE TABLE "VenueGroupInvites" (
+                        id SERIAL PRIMARY KEY,
+                        group_id INTEGER NOT NULL REFERENCES "VenueGroups"(id),
+                        invite_code VARCHAR(20) UNIQUE NOT NULL,
+                        invited_by INTEGER NOT NULL REFERENCES "AdminUsers"(id),
+                        target_venue_id INTEGER REFERENCES "Venues"(id),
+                        status VARCHAR(20) NOT NULL DEFAULT \'pending\',
+                        expires_at TIMESTAMP NOT NULL,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )
+                '''))
+                conn.commit()
+            print('Migration: created VenueGroupInvites table')
+
+        # --- Categories.group_id ---
+        cat_cols = [c['name'] for c in insp.get_columns('Categories')]
+        if 'group_id' not in cat_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "Categories" ADD COLUMN group_id INTEGER REFERENCES "VenueGroups"(id)'))
+                conn.commit()
+            print('Migration: added group_id to Categories')
+
+        # --- VenueItemPriceOverrides table ---
+        if 'VenueItemPriceOverrides' not in table_names:
+            with db.engine.connect() as conn:
+                conn.execute(text('''
+                    CREATE TABLE "VenueItemPriceOverrides" (
+                        id SERIAL PRIMARY KEY,
+                        venue_id INTEGER NOT NULL REFERENCES "Venues"(id),
+                        food_item_id INTEGER NOT NULL REFERENCES "FoodItems"("FoodItemID"),
+                        price FLOAT NOT NULL,
+                        CONSTRAINT uq_venue_item_price UNIQUE (venue_id, food_item_id)
+                    )
+                '''))
+                conn.commit()
+            print('Migration: created VenueItemPriceOverrides table')
 
         # Activate existing phone-verified users who are stuck
         with db.engine.connect() as conn:

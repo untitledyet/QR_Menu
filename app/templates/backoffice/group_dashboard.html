@@ -1,0 +1,225 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ჯაჭვის მართვა — {{ group.name }}{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1><i class="fas fa-sitemap" style="color:#6366f1;margin-right:8px;"></i>{{ group.name }}</h1>
+    <p class="bo-header__sub">ჯაჭვის მფლობელი · {{ branches|length }} ფილიალი</p>
+</div>
+
+<!-- Stats row -->
+<div class="bo-stats" style="margin-bottom:24px;">
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-store"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ branches|length }}</div>
+            <div class="bo-stat-card__label">ფილიალი</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-layer-group"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ group_cats|length }}</div>
+            <div class="bo-stat-card__label">ჯაჭვის კატეგ.</div>
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-envelope-open-text"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ active_invites|length }}</div>
+            <div class="bo-stat-card__label">აქტიური invite</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+<!-- Left column: Branches -->
+<div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h2 style="margin:0;font-size:1rem;">ფილიალები</h2>
+        <a href="{{ url_for('group_bp.add_branch') }}" class="bo-btn bo-btn--sm bo-btn--primary">
+            <i class="fas fa-plus"></i> ახალი ფილიალი
+        </a>
+    </div>
+
+    {% for branch in branches %}
+    <div class="bo-setting-card" style="padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-store" style="color:#6366f1;font-size:1.2rem;width:20px;"></i>
+        <div style="flex:1;">
+            <div style="font-weight:600;">{{ branch.name }}</div>
+            <div style="font-size:.8rem;color:#6b7280;">{{ branch.slug }}
+                {% if branch.id == group.owner_venue_id %}
+                <span class="bo-badge bo-badge--green" style="margin-left:4px;">მფლობელი</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if branch.id != group.owner_venue_id %}
+        <button onclick="removeBranch({{ branch.id }}, '{{ branch.name|e }}')"
+                class="bo-btn bo-btn--sm bo-btn--danger">
+            <i class="fas fa-unlink"></i>
+        </button>
+        {% endif %}
+    </div>
+    {% else %}
+    <p style="color:#9ca3af;font-size:.88rem;">ჯერ ფილიალი არ არის</p>
+    {% endfor %}
+
+    <hr style="margin:20px 0;">
+    <!-- Invite codes -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h2 style="margin:0;font-size:1rem;">Invite კოდები</h2>
+        <button onclick="generateInvite()" class="bo-btn bo-btn--sm bo-btn--primary">
+            <i class="fas fa-key"></i> ახალი კოდი
+        </button>
+    </div>
+
+    <div id="invite-list">
+    {% for inv in active_invites %}
+    <div class="bo-setting-card" id="inv-{{ inv.id }}"
+         style="padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <code style="font-size:.95rem;background:#f3f4f6;padding:3px 8px;border-radius:4px;letter-spacing:1px;">{{ inv.invite_code }}</code>
+        <span style="font-size:.78rem;color:#6b7280;flex:1;">ვადა: {{ inv.expires_at.strftime('%d/%m %H:%M') }}</span>
+        <button onclick="copyCode('{{ inv.invite_code }}')" class="bo-btn bo-btn--sm bo-btn--ghost" title="კოპირება">
+            <i class="fas fa-copy"></i>
+        </button>
+        <button onclick="expireInvite({{ inv.id }})" class="bo-btn bo-btn--sm bo-btn--danger" title="გაუქმება">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    {% else %}
+    <p id="no-invites" style="color:#9ca3af;font-size:.88rem;">აქტიური invite კოდი არ არის</p>
+    {% endfor %}
+    </div>
+</div>
+
+<!-- Right column: Settings -->
+<div>
+    <h2 style="margin:0 0 12px;font-size:1rem;">პარამეტრები</h2>
+    <div class="bo-setting-card" style="padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div>
+                <div style="font-weight:600;">ფასების override</div>
+                <div style="font-size:.82rem;color:#6b7280;">ფილიალებს შეუძლიათ ჯაჭვის კერძების ფასის შეცვლა</div>
+            </div>
+            <label class="bo-toggle" title="ჩართვა/გამორთვა">
+                <input type="checkbox" id="toggle-price-override"
+                       {% if group.allow_price_override %}checked{% endif %}
+                       onchange="updateSettings()">
+                <span class="bo-toggle__slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div style="margin-top:24px;">
+        <h2 style="margin:0 0 12px;font-size:1rem;">ჯაჭვის მენიუ</h2>
+        <p style="color:#6b7280;font-size:.88rem;margin:0 0 12px;">
+            ჯაჭვის დონეზე დამატებული კატეგორიები და კერძები ყველა ფილიალს ეჩვენება.
+        </p>
+        <a href="{{ url_for('group_bp.group_menu') }}" class="bo-btn bo-btn--primary">
+            <i class="fas fa-book"></i> ჯაჭვის მენიუს მართვა
+        </a>
+    </div>
+
+    <div style="margin-top:32px;border-top:1px solid #fecaca;padding-top:20px;">
+        <h2 style="margin:0 0 8px;font-size:1rem;color:#dc2626;">საშიში ზონა</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin:0 0 12px;">
+            ჯაჭვის დაშლის შემდეგ ყველა ფილიალი დამოუკიდებელი ხდება.
+        </p>
+        <button onclick="showDissolveModal()" class="bo-btn bo-btn--danger">
+            <i class="fas fa-bomb"></i> ჯაჭვის დაშლა
+        </button>
+    </div>
+</div>
+
+</div>
+
+<!-- Dissolve modal -->
+<div id="dissolveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px;max-width:440px;width:90%;">
+        <h2 style="color:#dc2626;margin:0 0 12px;"><i class="fas fa-exclamation-triangle"></i> ჯაჭვის დაშლა</h2>
+        <p style="color:#374151;margin:0 0 16px;">
+            ყველა ფილიალი გამოვა ჯაჭვიდან. ჯაჭვის მენიუ წაიშლება.<br>
+            გსურთ თითოეულ ფილიალს ჩაუკეთოთ ჯაჭვის მენიუს ასლი?
+        </p>
+        <form method="POST" action="{{ url_for('group_bp.dissolve_group') }}" id="dissolveForm">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="radio" name="snapshot" value="1" checked>
+                    <span><strong>კი</strong> — ყველა ფილიალი იღებს ასლს</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="radio" name="snapshot" value="0">
+                    <span><strong>არა</strong> — ჯაჭვის მენიუ სრულად იშლება</span>
+                </label>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button type="submit" class="bo-btn bo-btn--danger" onclick="return confirmDissolve()">
+                    <i class="fas fa-bomb"></i> დაშლა
+                </button>
+                <button type="button" onclick="hideDissolveModal()" class="bo-btn bo-btn--ghost">გაუქმება</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function removeBranch(id, name) {
+    if (!confirm('"' + name + '" გსურთ ამოაქვთ ჯაჭვიდან?')) return;
+    fetch('/backoffice/group/branch/' + id + '/remove', {method:'POST'})
+        .then(r => r.json()).then(d => {
+            if (d.success) location.reload();
+            else alert(d.error || 'შეცდომა');
+        });
+}
+
+function generateInvite() {
+    fetch('/backoffice/group/invite/generate', {method:'POST'})
+        .then(r => r.json()).then(d => {
+            if (!d.success) { alert(d.error || 'შეცდომა'); return; }
+            var noInv = document.getElementById('no-invites');
+            if (noInv) noInv.remove();
+            var list = document.getElementById('invite-list');
+            var div = document.createElement('div');
+            div.className = 'bo-setting-card';
+            div.style.cssText = 'padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+            div.innerHTML = '<code style="font-size:.95rem;background:#f3f4f6;padding:3px 8px;border-radius:4px;letter-spacing:1px;">' + d.invite_code + '</code>'
+                + '<span style="font-size:.78rem;color:#6b7280;flex:1;">ვადა: ' + d.expires_at + '</span>'
+                + '<button onclick="copyCode(\'' + d.invite_code + '\')" class="bo-btn bo-btn--sm bo-btn--ghost"><i class="fas fa-copy"></i></button>';
+            list.prepend(div);
+        });
+}
+
+function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => alert('კოდი დაკოპირდა: ' + code));
+}
+
+function expireInvite(id) {
+    if (!confirm('Invite კოდი გაუქმდეს?')) return;
+    fetch('/backoffice/group/invite/' + id + '/expire', {method:'POST'})
+        .then(r => r.json()).then(d => {
+            if (d.success) {
+                var el = document.getElementById('inv-' + id);
+                if (el) el.remove();
+            }
+        });
+}
+
+function updateSettings() {
+    var val = document.getElementById('toggle-price-override').checked ? '1' : '0';
+    var fd = new FormData();
+    fd.append('allow_price_override', val);
+    fetch('/backoffice/group/settings', {method:'POST', body:fd})
+        .then(r => r.json());
+}
+
+function showDissolveModal() {
+    document.getElementById('dissolveModal').style.display = 'flex';
+}
+function hideDissolveModal() {
+    document.getElementById('dissolveModal').style.display = 'none';
+}
+function confirmDissolve() {
+    return confirm('დარწმუნებული ხართ? ეს ქმედება შეუქცევადია!');
+}
+</script>
+{% endblock %}

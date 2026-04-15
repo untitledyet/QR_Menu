@@ -5,6 +5,16 @@ import secrets
 from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, jsonify, current_app)
+
+
+def _request_base_url():
+    """Return scheme+host from the current request (e.g. http://localhost:5001 or https://tably.ge).
+    Falls back to BASE_URL env var when called outside a request context."""
+    import os
+    try:
+        return request.scheme + '://' + request.host
+    except RuntimeError:
+        return os.environ.get('BASE_URL', 'http://localhost:5001')
 from app import db
 from app.models import AdminUser, Venue, _generate_venue_code, PhoneOtp, _hash_token
 from app.services.registration_service import (
@@ -205,17 +215,24 @@ def register_venue():
     if not venue_name or not address or not email or not raw_phone or not password:
         return jsonify(error='yvela veli savaldebuloa'), 400
 
-    if not place_id:
+    # ── TESTUSER BACKDOOR ────────────────────────────────────────────────────
+    # If venue name ends with '-testuser' (case-insensitive) all verification
+    # is skipped and the account is created fully active.  For testing only.
+    is_test_user = venue_name.lower().endswith('-testuser')
+    # ─────────────────────────────────────────────────────────────────────────
+
+    if not is_test_user and not place_id:
         return jsonify(error='gTxovT, obieqti Google Maps-ze daadastureT'), 400
 
     full_phone = _normalize_phone(raw_phone)
     if not full_phone:
         return jsonify(error='telefonis nomeri arasworia'), 400
 
-    # Phone must match the one verified in this session
-    verified_phone = session.get('verified_phone', '')
-    if verified_phone != full_phone:
-        return jsonify(error='telefoni ar aris verificirebuli'), 400
+    if not is_test_user:
+        # Phone must match the one verified in this session
+        verified_phone = session.get('verified_phone', '')
+        if verified_phone != full_phone:
+            return jsonify(error='telefoni ar aris verificirebuli'), 400
 
     pw_error = validate_password(password)
     if pw_error:
@@ -244,13 +261,36 @@ def register_venue():
         if not Venue.query.filter_by(venue_code=vcode).first():
             break
 
+    # Use a placeholder place_id for test users
+    effective_place_id = place_id or ('testuser-place-' + slug if is_test_user else '')
+
     # Create venue
     venue = Venue(name=venue_name, slug=slug, plan='free',
-                  address=address, google_place_id=place_id, venue_code=vcode)
+                  address=address, google_place_id=effective_place_id, venue_code=vcode)
     db.session.add(venue)
     db.session.flush()
 
     # Generate email token — store HASH in DB, send RAW token via email
+    # Test users get email pre-verified; skip token entirely
+    if is_test_user:
+        admin = AdminUser(
+            username=slug,
+            email=email,
+            phone=full_phone,
+            role='venue',
+            venue_id=venue.id,
+            email_verified=True,
+            phone_verified=True,
+            is_active=True,
+        )
+        admin.set_password(password)
+        db.session.add(admin)
+        db.session.commit()
+        session.pop('verified_phone', None)
+        session['admin_id'] = admin.id
+        current_app.logger.info('TESTUSER registration bypassed verification for: ' + venue_name)
+        return jsonify(success=True, redirect='/backoffice')
+
     raw_email_token = generate_email_token()
     admin = AdminUser(
         username=slug,
@@ -270,7 +310,7 @@ def register_venue():
 
     # Send verification email (non-critical)
     try:
-        send_verification_email(email, raw_email_token, venue_name)
+        send_verification_email(email, raw_email_token, venue_name, base_url=_request_base_url())
     except Exception as e:
         current_app.logger.warning('Email send failed (non-critical): ' + str(e))
 
@@ -311,31 +351,57 @@ def verify_email(token):
 
 @landing_bp.route('/resend-email-verification', methods=['POST'])
 def resend_email_verification():
+    from flask import session as flask_session
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
     if not email:
         return jsonify(error='el. fosta savaldebuloa'), 400
 
-    admin = AdminUser.query.filter_by(email=email, email_verified=False).first()
-    if admin:
-        # Rate limit: refuse if a token was issued less than 5 minutes ago
-        if (admin.email_token_expires is not None and
-                admin.email_token_expires > datetime.utcnow() +
-                timedelta(hours=EMAIL_TOKEN_EXPIRY_HOURS - 1, minutes=55)):
-            # Token issued < 5 min ago — silently ignore (return success for enum protection)
-            pass
-        else:
-            raw_token = generate_email_token()
-            admin.email_token = _hash_token(raw_token)
-            admin.email_token_expires = datetime.utcnow() + timedelta(hours=EMAIL_TOKEN_EXPIRY_HOURS)
-            db.session.commit()
-            venue_name = admin.venue.name if admin.venue else 'Tably'
-            try:
-                send_verification_email(email, raw_token, venue_name)
-            except Exception as e:
-                current_app.logger.warning('Resend email failed: ' + str(e))
+    # If the caller is the logged-in admin themselves, give precise feedback
+    logged_in_admin_id = flask_session.get('admin_id')
+    is_self = False
+    if logged_in_admin_id:
+        self_admin = AdminUser.query.get(logged_in_admin_id)
+        if self_admin and self_admin.email.lower() == email:
+            is_self = True
 
-    # Always return success — enumeration protection
+    admin = AdminUser.query.filter_by(email=email, email_verified=False).first()
+
+    if not admin:
+        if is_self:
+            # Should not normally happen — means email is already verified
+            return jsonify(success=True,
+                           message='ელ. ფოსტა უკვე დადასტურებულია.')
+        # Enumeration protection for anonymous callers
+        return jsonify(success=True,
+                       message='Tu es el. fosta registrirebulia, gaigzavneba verifikaciis linki.')
+
+    # Rate limit: refuse if a token was issued less than 5 minutes ago
+    if (admin.email_token_expires is not None and
+            admin.email_token_expires > datetime.utcnow() +
+            timedelta(hours=EMAIL_TOKEN_EXPIRY_HOURS - 1, minutes=55)):
+        if is_self:
+            return jsonify(success=True,
+                           message='ვერიფიკაციის ლინკი უკვე გაიგზავნა. შეამოწმეთ inbox ან spam ' + email + '-ზე.')
+        return jsonify(success=True,
+                       message='Tu es el. fosta registrirebulia, gaigzavneba verifikaciis linki.')
+
+    raw_token = generate_email_token()
+    admin.email_token = _hash_token(raw_token)
+    admin.email_token_expires = datetime.utcnow() + timedelta(hours=EMAIL_TOKEN_EXPIRY_HOURS)
+    db.session.commit()
+    venue_name = admin.venue.name if admin.venue else 'Tably'
+    try:
+        send_verification_email(email, raw_token, venue_name, base_url=_request_base_url())
+    except Exception as e:
+        current_app.logger.warning('Resend email failed: ' + str(e))
+        if is_self:
+            return jsonify(error='მეილის გაგზავნა ვერ მოხერხდა. სცადეთ მოგვიანებით.'), 500
+
+    if is_self:
+        return jsonify(success=True,
+                       message='ვერიფიკაციის ლინკი გაიგზავნა ' + email + '-ზე. შეამოწმეთ inbox ან spam.')
+    # Enumeration protection for anonymous callers
     return jsonify(success=True,
                    message='Tu es el. fosta registrirebulia, gaigzavneba verifikaciis linki.')
 
@@ -470,7 +536,7 @@ def forgot_password():
                     admin.reset_token = _hash_token(raw_token)
                     admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
                     db.session.commit()
-                    send_password_reset_email(admin.email, raw_token)
+                    send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
                 except Exception as e:
                     current_app.logger.error('Email reset fallback failed: ' + str(e))
         elif admin.email:
@@ -479,7 +545,7 @@ def forgot_password():
                 admin.reset_token = _hash_token(raw_token)
                 admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
-                send_password_reset_email(admin.email, raw_token)
+                send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
             except Exception as e:
                 current_app.logger.error('Email reset failed: ' + str(e))
 

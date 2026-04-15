@@ -1,0 +1,38 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ჯაჭვი{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1><i class="fas fa-link" style="color:#6366f1;margin-right:8px;"></i>ჯაჭვის მართვა</h1>
+    <p class="bo-header__sub">{{ admin.venue.name }} — ჯერ არ ხართ ჯაჭვის წევრი</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:700px;margin-top:16px;">
+
+    <!-- Create group -->
+    <div class="bo-setting-card" style="padding:28px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:2rem;text-align:center;"><i class="fas fa-plus-circle" style="color:#6366f1;"></i></div>
+        <h2 style="text-align:center;font-size:1.1rem;margin:0;">ჯაჭვის შექმნა</h2>
+        <p style="color:#6b7280;font-size:.88rem;text-align:center;margin:0;">
+            თქვენი ვენიუ გახდება ჯაჭვის მფლობელი. შეგიძლიათ მოიწვიოთ სხვა ფილიალები.
+        </p>
+        <a href="{{ url_for('group_bp.create_group') }}"
+           class="bo-btn bo-btn--primary" style="text-align:center;">
+            ჯაჭვის შექმნა
+        </a>
+    </div>
+
+    <!-- Join group -->
+    <div class="bo-setting-card" style="padding:28px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:2rem;text-align:center;"><i class="fas fa-users" style="color:#10b981;"></i></div>
+        <h2 style="text-align:center;font-size:1.1rem;margin:0;">ჯაჭვში გაწევრება</h2>
+        <p style="color:#6b7280;font-size:.88rem;text-align:center;margin:0;">
+            გაქვთ invite კოდი? შეიყვანეთ და მიიღეთ ჯაჭვის მენიუ.
+        </p>
+        <a href="{{ url_for('group_bp.join_group') }}"
+           class="bo-btn bo-btn--success" style="text-align:center;">
+            კოდის შეყვანა
+        </a>
+    </div>
+
+</div>
+{% endblock %}

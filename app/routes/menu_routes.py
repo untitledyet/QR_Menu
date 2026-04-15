@@ -1,7 +1,15 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, abort
-from app.models import FoodItem, Category, Subcategory, Promotion, Venue
+from app.models import FoodItem, Category, Subcategory, Promotion, Venue, VenueItemPriceOverride
 
 menu_bp = Blueprint('menu_bp', __name__)
+
+
+def _apply_price_override(item, price_overrides):
+    """Return item.to_dict() with price replaced by branch override if present."""
+    d = item.to_dict()
+    if item.FoodItemID in price_overrides:
+        d['Price'] = price_overrides[item.FoodItemID]
+    return d
 
 
 def get_venue_or_404(slug):
@@ -34,19 +42,41 @@ def home(slug, table_id):
     features = venue.get_all_features()
     session['features'] = features
 
+    # Local venue categories
     categories = Category.query.filter_by(venue_id=venue.id).all()
+
+    # Group categories (if venue is in a chain)
+    group_categories = []
+    if venue.group_id:
+        group_categories = Category.query.filter_by(
+            group_id=venue.group_id, venue_id=None
+        ).all()
+
+    all_categories = group_categories + categories
+
     promotions = Promotion.query.filter_by(venue_id=venue.id, is_active=True).all() if features.get('promotions') else []
-    popular_dishes = [d.to_dict() for d in FoodItem.query.filter(
-        FoodItem.CategoryID.in_([c.CategoryID for c in categories]), FoodItem.is_active == True
+
+    # Price overrides for this venue (branch price overrides on group items)
+    price_overrides = {}
+    if venue.group_id:
+        for ov in VenueItemPriceOverride.query.filter_by(venue_id=venue.id).all():
+            price_overrides[ov.food_item_id] = ov.price
+
+    all_cat_ids = [c.CategoryID for c in all_categories]
+    popular_dishes = [_apply_price_override(d, price_overrides) for d in FoodItem.query.filter(
+        FoodItem.CategoryID.in_(all_cat_ids), FoodItem.is_active == True
     ).limit(6).all()]
-    new_dishes = [d.to_dict() for d in FoodItem.query.filter(
-        FoodItem.CategoryID.in_([c.CategoryID for c in categories]), FoodItem.is_active == True
+    new_dishes = [_apply_price_override(d, price_overrides) for d in FoodItem.query.filter(
+        FoodItem.CategoryID.in_(all_cat_ids), FoodItem.is_active == True
     ).order_by(FoodItem.FoodItemID.desc()).limit(9).all()]
 
     return render_template('index.html',
-                           venue=venue, categories=categories, promotions=promotions,
+                           venue=venue, categories=all_categories,
+                           group_categories=group_categories,
+                           promotions=promotions,
                            popular_dishes=popular_dishes, new_dishes=new_dishes,
-                           table_id=table_id, features=features)
+                           table_id=table_id, features=features,
+                           price_overrides=price_overrides)
 
 
 @menu_bp.route('/<slug>/table/<int:table_id>/cart')
@@ -73,15 +103,30 @@ def cart_page(slug, table_id):
 @menu_bp.route('/<slug>/category/<int:category_id>')
 def get_items_by_category(slug, category_id):
     venue = get_venue_or_404(slug)
-    # Ensure category belongs to this venue
-    cat = Category.query.filter_by(CategoryID=category_id, venue_id=venue.id).first_or_404()
+
+    # Category may belong to the venue directly OR to the venue's group
+    cat = Category.query.filter_by(CategoryID=category_id, venue_id=venue.id).first()
+    if not cat and venue.group_id:
+        cat = Category.query.filter_by(
+            CategoryID=category_id, group_id=venue.group_id, venue_id=None
+        ).first()
+    if not cat:
+        abort(404)
+
+    # Price overrides for group items
+    price_overrides = {}
+    if venue.group_id:
+        for ov in VenueItemPriceOverride.query.filter_by(venue_id=venue.id).all():
+            price_overrides[ov.food_item_id] = ov.price
+
     items = FoodItem.query.filter_by(CategoryID=category_id, is_active=True).all()
     subcategories = Subcategory.query.filter_by(CategoryID=category_id).all()
 
     return jsonify(
         items=[{
             'FoodName': i.FoodName, 'Ingredients': i.Ingredients, 'Description': i.Description,
-            'Price': i.Price, 'ImageFilename': i.ImageFilename, 'SubcategoryID': i.SubcategoryID,
+            'Price': price_overrides.get(i.FoodItemID, i.Price),
+            'ImageFilename': i.ImageFilename, 'SubcategoryID': i.SubcategoryID,
             'FoodItemID': i.FoodItemID, 'AllowCustomization': i.allow_customization,
         } for i in items],
         subcategories=[{'SubcategoryID': s.SubcategoryID, 'SubcategoryName': s.SubcategoryName} for s in subcategories]

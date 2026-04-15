@@ -1,0 +1,44 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ახალი ფილიალი — {{ group.name }}{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>ახალი ფილიალის დამატება</h1>
+    <p class="bo-header__sub">{{ group.name }} ჯაჭვი — ახალი ფილიალი ავტომატურად მიიღებს ჯაჭვის მენიუს</p>
+</div>
+
+<form method="POST" style="max-width:520px;" action="{{ url_for('group_bp.add_branch') }}">
+    <div class="bo-form-group">
+        <label class="bo-label">ფილიალის სახელი *</label>
+        <input type="text" name="branch_name" class="bo-input" required autofocus
+               placeholder="მაგ: პაულანერი — თბილისი">
+    </div>
+    <div class="bo-form-group">
+        <label class="bo-label">მისამართი *</label>
+        <input type="text" name="branch_address" class="bo-input" required
+               placeholder="მაგ: ბარნოვის ქ. 5, თბილისი">
+    </div>
+    <div class="bo-form-group">
+        <label class="bo-label">ადმინის ელ. ფოსტა *</label>
+        <input type="email" name="branch_email" class="bo-input" required
+               placeholder="tbilisi-manager@paulaner.ge">
+        <small style="color:#6b7280;">ამ მისამართზე გაუგზავნეთ დროებითი პაროლი</small>
+    </div>
+    <div class="bo-form-group">
+        <label class="bo-label">ადმინის ტელეფონი (სურ.)</label>
+        <input type="text" name="branch_phone" class="bo-input"
+               placeholder="595123456">
+    </div>
+
+    <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.85rem;color:#92400E;">
+        <i class="fas fa-info-circle" style="margin-right:6px;"></i>
+        სისტემა გამოიმუშავებს დროებით პაროლს. გაუგზავნეთ ფილიალის ადმინს — ის პირველი შესვლის შემდეგ შეცვლის.
+    </div>
+
+    <div style="display:flex;gap:12px;">
+        <button type="submit" class="bo-btn bo-btn--primary">
+            <i class="fas fa-plus"></i> ფილიალის შექმნა
+        </button>
+        <a href="{{ url_for('group_bp.group_dashboard') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+    </div>
+</form>
+{% endblock %}

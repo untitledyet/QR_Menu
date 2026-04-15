@@ -20,6 +20,13 @@ def _generate_venue_code():
     return f'TB-{suffix}'
 
 
+def _generate_invite_code():
+    """Generate a unique invite code e.g. TB-INV-A3X9KZ."""
+    chars = string.ascii_uppercase + string.digits
+    suffix = ''.join(secrets.choice(chars) for _ in range(6))
+    return f'TB-INV-{suffix}'
+
+
 # ============================================================
 # Plans — feature bundles
 # ============================================================
@@ -164,10 +171,14 @@ class Venue(db.Model):
     google_place_id = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Chain membership — nullable; if set, venue belongs to this group
+    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id',
+                         use_alter=True, name='fk_venue_group'), nullable=True)
 
     feature_overrides = db.relationship('VenueFeatureOverride', backref='venue',
                                          lazy=True, cascade='all, delete-orphan')
-    categories = db.relationship('Category', backref='venue', lazy=True, cascade='all, delete-orphan')
+    categories = db.relationship('Category', foreign_keys='Category.venue_id',
+                                 backref='venue', lazy=True, cascade='all, delete-orphan')
     promotions = db.relationship('Promotion', backref='venue', lazy=True, cascade='all, delete-orphan')
 
     def has_feature(self, feature_key):
@@ -197,6 +208,57 @@ class Venue(db.Model):
         return FoodItem.query.join(Category).filter(Category.venue_id == self.id).count()
 
 
+class VenueGroup(db.Model):
+    """A chain/network of venues sharing a common menu."""
+    __tablename__ = 'VenueGroups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    # The venue that created/owns the group
+    owner_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    # Whether branch admins are allowed to override item prices
+    allow_price_override = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    owner_venue = db.relationship('Venue', foreign_keys=[owner_venue_id],
+                                  backref=db.backref('owned_group', uselist=False))
+    branches = db.relationship('Venue', foreign_keys='Venue.group_id',
+                               backref='group', lazy='dynamic')
+    invites = db.relationship('VenueGroupInvite', backref='group',
+                              lazy=True, cascade='all, delete-orphan')
+    categories = db.relationship('Category', foreign_keys='Category.group_id',
+                                 backref='venue_group', lazy=True)
+
+    @property
+    def branch_list(self):
+        return Venue.query.filter_by(group_id=self.id).all()
+
+    @property
+    def branch_count(self):
+        return Venue.query.filter_by(group_id=self.id).count()
+
+
+class VenueGroupInvite(db.Model):
+    """Single-use invite code for joining a group."""
+    __tablename__ = 'VenueGroupInvites'
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=False)
+    invite_code = db.Column(db.String(20), unique=True, nullable=False)
+    invited_by = db.Column(db.Integer, db.ForeignKey('AdminUsers.id'), nullable=False)
+    # Optional: pre-targeted to a specific venue (unused unless specified)
+    target_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending/accepted/expired
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    inviter = db.relationship('AdminUser', foreign_keys=[invited_by])
+
+    @property
+    def is_expired(self):
+        return self.status != 'pending' or datetime.utcnow() > self.expires_at
+
+
 class VenueFeatureOverride(db.Model):
     """Super admin can override individual features per venue, regardless of plan."""
     __tablename__ = 'VenueFeatureOverrides'
@@ -220,6 +282,8 @@ class Category(db.Model):
     Description = db.Column(db.String(200), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    # If group_id is set and venue_id is NULL → shared group category
+    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=True)
 
 
 class Subcategory(db.Model):
@@ -446,3 +510,23 @@ class PhoneOtp(db.Model):
     attempts = db.Column(db.Integer, default=0)
     ip = db.Column(db.String(45), nullable=True)                # for IP-based rate limiting
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ============================================================
+# Chain / Group — price overrides per branch
+# ============================================================
+
+class VenueItemPriceOverride(db.Model):
+    """Branch-level price override for a group-shared menu item."""
+    __tablename__ = 'VenueItemPriceOverrides'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    food_item_id = db.Column(db.Integer, db.ForeignKey('FoodItems.FoodItemID'), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+    venue = db.relationship('Venue', backref=db.backref('price_overrides', lazy=True))
+    food_item = db.relationship('FoodItem', backref=db.backref('price_overrides', lazy=True))
+
+    __table_args__ = (db.UniqueConstraint('venue_id', 'food_item_id',
+                                          name='uq_venue_item_price'),)

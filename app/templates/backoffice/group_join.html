@@ -1,0 +1,93 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ჯაჭვში გაწევრება{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1>ჯაჭვში გაწევრება</h1>
+    <p class="bo-header__sub">შეიყვანეთ invite კოდი რომელიც მოგაწოდა ჯაჭვის ადმინმა</p>
+</div>
+
+{% if not preview %}
+<!-- Step 1: Enter code -->
+<form method="POST" style="max-width:420px;" action="{{ url_for('group_bp.join_group') }}">
+    <input type="hidden" name="action" value="preview">
+    <div class="bo-form-group">
+        <label class="bo-label">Invite კოდი *</label>
+        <input type="text" name="invite_code" class="bo-input"
+               value="{{ code }}"
+               placeholder="TB-INV-XXXXXX" required autofocus
+               style="text-transform:uppercase;letter-spacing:2px;font-size:1.1rem;">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px;">
+        <button type="submit" class="bo-btn bo-btn--primary">
+            <i class="fas fa-search"></i> კოდის შემოწმება
+        </button>
+        <a href="{{ url_for('group_bp.group_dashboard') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+    </div>
+</form>
+
+{% else %}
+<!-- Step 2: Preview + confirm -->
+<div class="bo-setting-card" style="max-width:520px;padding:24px;margin-bottom:20px;">
+    <h2 style="margin:0 0 4px;"><i class="fas fa-sitemap" style="color:#6366f1;margin-right:8px;"></i>{{ preview.group.name }}</h2>
+    <p style="color:#6b7280;margin:0 0 16px;font-size:.88rem;">კოდი: <strong>{{ preview.code }}</strong></p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="bo-stat-card" style="padding:12px;">
+            <div class="bo-stat-card__icon"><i class="fas fa-layer-group"></i></div>
+            <div class="bo-stat-card__body">
+                <div class="bo-stat-card__value">{{ preview.cat_count }}</div>
+                <div class="bo-stat-card__label">კატეგორია</div>
+            </div>
+        </div>
+        <div class="bo-stat-card" style="padding:12px;">
+            <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
+            <div class="bo-stat-card__body">
+                <div class="bo-stat-card__value">{{ preview.item_count }}</div>
+                <div class="bo-stat-card__label">კერძი</div>
+            </div>
+        </div>
+    </div>
+
+    {% set own_cats = admin.venue.categories|list %}
+    {% if own_cats %}
+    <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.88rem;color:#92400E;">
+        <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>
+        თქვენ გაქვთ <strong>{{ own_cats|length }}</strong> საკუთარი კატეგორია.
+        გსურთ შეინახოთ ლოკალური კატეგორიები?
+    </div>
+    <form method="POST" action="{{ url_for('group_bp.join_group') }}" id="confirmForm">
+        <input type="hidden" name="action" value="confirm">
+        <input type="hidden" name="invite_code" value="{{ preview.code }}">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="radio" name="keep_local" value="1" checked>
+                <span><strong>კი, ვინახავ</strong> — ჯაჭვის მენიუს ვამატებ ჩემს კატეგორიებს</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="radio" name="keep_local" value="0">
+                <span><strong>არა, ვშლი</strong> — მხოლოდ ჯაჭვის მენიუ მინდა</span>
+            </label>
+        </div>
+        <div style="display:flex;gap:12px;">
+            <button type="submit" class="bo-btn bo-btn--success">
+                <i class="fas fa-check"></i> დამეთანხმება და შევუერთდი
+            </button>
+            <a href="{{ url_for('group_bp.join_group') }}" class="bo-btn bo-btn--ghost">უკან</a>
+        </div>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('group_bp.join_group') }}">
+        <input type="hidden" name="action" value="confirm">
+        <input type="hidden" name="invite_code" value="{{ preview.code }}">
+        <input type="hidden" name="keep_local" value="1">
+        <div style="display:flex;gap:12px;">
+            <button type="submit" class="bo-btn bo-btn--success">
+                <i class="fas fa-check"></i> ჯაჭვში შეერთება
+            </button>
+            <a href="{{ url_for('group_bp.join_group') }}" class="bo-btn bo-btn--ghost">უკან</a>
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
