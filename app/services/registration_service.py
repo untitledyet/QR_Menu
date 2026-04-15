@@ -67,54 +67,79 @@ def _build_email_html(title, body, btn_text, btn_url, footer):
     )
 
 
-def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
+def _do_send_smtp(to, subject, html, fallback_label, fallback_url, app):
+    """Actual SMTP send — runs in a background thread to avoid blocking gunicorn."""
+    import smtplib
+    import ssl
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    smtp_host = os.environ.get('SMTP_HOST', '')
+    smtp_port = int(os.environ.get('SMTP_PORT', '465'))
+    smtp_user = os.environ.get('SMTP_USER', '')
+    smtp_pass = os.environ.get('SMTP_PASS', '')
+    from_email = os.environ.get('SMTP_FROM', smtp_user)
+
+    if not smtp_host or not smtp_user:
+        with app.app_context():
+            app.logger.info("[EMAIL DEV] " + fallback_label + " for " + to + ": " + fallback_url)
+        return
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = "Tably <" + from_email + ">"
+    msg['To'] = to
+    msg.attach(MIMEText(html, 'html'))
+
     try:
-        import smtplib
-        import ssl
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        ctx = ssl.create_default_context()
 
-        smtp_host = os.environ.get('SMTP_HOST', '')
-        smtp_port = int(os.environ.get('SMTP_PORT', '465'))
-        smtp_user = os.environ.get('SMTP_USER', '')
-        smtp_pass = os.environ.get('SMTP_PASS', '')
-        from_email = os.environ.get('SMTP_FROM', smtp_user)
+    # Try primary port, then fallback to the other port
+    ports_to_try = [(smtp_port, smtp_port == 465)]
+    fallback_port = 587 if smtp_port == 465 else 465
+    ports_to_try.append((fallback_port, fallback_port == 465))
 
-        if not smtp_host or not smtp_user:
-            current_app.logger.info("[EMAIL DEV] " + fallback_label + " for " + to + ": " + fallback_url)
-            return True
-
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = "Tably <" + from_email + ">"
-        msg['To'] = to
-        msg.attach(MIMEText(html, 'html'))
-
-        # Use certifi CA bundle so it works on macOS and Railway alike
+    last_err = None
+    for port, use_ssl in ports_to_try:
         try:
-            import certifi
-            ctx = ssl.create_default_context(cafile=certifi.where())
-        except ImportError:
-            ctx = ssl.create_default_context()
+            if use_ssl:
+                with smtplib.SMTP_SSL(smtp_host, port, context=ctx, timeout=25) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(from_email, to, msg.as_string())
+            else:
+                with smtplib.SMTP(smtp_host, port, timeout=25) as server:
+                    server.ehlo()
+                    server.starttls(context=ctx)
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(from_email, to, msg.as_string())
+            with app.app_context():
+                app.logger.info("[EMAIL OK] Sent to " + to + " via port " + str(port) + ": " + subject)
+            return
+        except Exception as e:
+            last_err = e
+            with app.app_context():
+                app.logger.warning("[EMAIL] Port " + str(port) + " failed: " + str(e))
 
-        if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx) as server:
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(from_email, to, msg.as_string())
-        else:
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=ctx)
-                server.ehlo()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(from_email, to, msg.as_string())
+    with app.app_context():
+        app.logger.error("[EMAIL ERROR] All ports failed. Last: " + str(last_err))
+        app.logger.info("[EMAIL FALLBACK] " + fallback_label + ": " + fallback_url)
 
-        current_app.logger.info("[EMAIL OK] Sent to " + to + ": " + subject)
-        return True
-    except Exception as e:
-        current_app.logger.error("[EMAIL ERROR] " + str(type(e).__name__) + ": " + str(e))
-        current_app.logger.info("[EMAIL FALLBACK] " + fallback_label + ": " + fallback_url)
-        return False
+
+def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
+    """Fire-and-forget email send in a background thread. Returns True immediately."""
+    import threading
+    app = current_app._get_current_object()
+    t = threading.Thread(
+        target=_do_send_smtp,
+        args=(to, subject, html, fallback_label, fallback_url, app),
+        daemon=True,
+    )
+    t.start()
+    return True
 
 
 def send_verification_email(email, token, venue_name, base_url=None):
