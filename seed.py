@@ -75,7 +75,7 @@ with app.app_context():
         print(f'Migration warning: {e}')
 
     # Only seed if database is empty (idempotent for Railway deploys)
-    if Venue.query.first():
+    if Venue.query.first() or Promotion.query.first() or Category.query.first():
         print("Database already seeded, skipping.")
         exit(0)
 
