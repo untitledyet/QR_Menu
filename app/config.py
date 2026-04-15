@@ -8,9 +8,9 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.environ.get('FLASK_DEBUG', '0') == '1'
 
-    # Railway provides DATABASE_URL; fallback to SQLite for local dev
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///menu.db')
-    # Railway Postgres URLs start with postgres:// but SQLAlchemy needs postgresql://
+    # DATABASE_URL must be set in .env (Railway PostgreSQL used for both local and production)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '')
+    # Normalize postgres:// to postgresql:// for SQLAlchemy compatibility
     if SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
 

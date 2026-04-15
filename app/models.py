@@ -213,12 +213,6 @@ class VenueFeatureOverride(db.Model):
 # Menu models
 # ============================================================
 
-class User(db.Model):
-    __tablename__ = 'Users'
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
 class Category(db.Model):
     __tablename__ = 'Categories'
     CategoryID = db.Column(db.Integer, primary_key=True)
