@@ -67,6 +67,36 @@ def _build_email_html(title, body, btn_text, btn_url, footer):
     )
 
 
+def _send_via_resend(to, subject, html, api_key, app):
+    """Send email via Resend HTTP API. Returns True on success."""
+    try:
+        resp = requests.post(
+            'https://api.resend.com/emails',
+            headers={
+                'Authorization': 'Bearer ' + api_key,
+                'Content-Type': 'application/json',
+            },
+            json={
+                'from': 'Tably <onboarding@resend.dev>',
+                'to': [to],
+                'subject': subject,
+                'html': html,
+            },
+            timeout=15,
+        )
+        if resp.status_code in (200, 201):
+            with app.app_context():
+                app.logger.info('[EMAIL OK] Resend sent to ' + to + ': ' + subject)
+            return True
+        with app.app_context():
+            app.logger.error('[EMAIL ERROR] Resend ' + str(resp.status_code) + ': ' + resp.text)
+        return False
+    except Exception as e:
+        with app.app_context():
+            app.logger.error('[EMAIL ERROR] Resend exception: ' + str(e))
+        return False
+
+
 def _do_send_smtp(to, subject, html, fallback_label, fallback_url, app):
     """Actual SMTP send — runs in a background thread to avoid blocking gunicorn."""
     import smtplib
@@ -130,14 +160,24 @@ def _do_send_smtp(to, subject, html, fallback_label, fallback_url, app):
 
 
 def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
-    """Fire-and-forget email send in a background thread. Returns True immediately."""
+    """Fire-and-forget email send in a background thread. Returns True immediately.
+    Uses Resend API if RESEND_API_KEY is set, otherwise falls back to SMTP."""
     import threading
     app = current_app._get_current_object()
-    t = threading.Thread(
-        target=_do_send_smtp,
-        args=(to, subject, html, fallback_label, fallback_url, app),
-        daemon=True,
-    )
+    resend_key = os.environ.get('RESEND_API_KEY', '')
+
+    if resend_key:
+        t = threading.Thread(
+            target=_send_via_resend,
+            args=(to, subject, html, resend_key, app),
+            daemon=True,
+        )
+    else:
+        t = threading.Thread(
+            target=_do_send_smtp,
+            args=(to, subject, html, fallback_label, fallback_url, app),
+            daemon=True,
+        )
     t.start()
     return True
 
