@@ -321,11 +321,14 @@ def delete_venue(venue_id):
     ReservationSettings.query.filter_by(venue_id=venue_id).delete()
     # Promotions
     Promotion.query.filter_by(venue_id=venue_id).delete()
-    # Food items via categories
+    # Food items via categories — delete items first, then subcategories, then categories
     cats = Category.query.filter_by(venue_id=venue_id).all()
     for cat in cats:
-        Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
+        subs = Subcategory.query.filter_by(CategoryID=cat.CategoryID).all()
+        for sub in subs:
+            FoodItem.query.filter_by(SubcategoryID=sub.SubcategoryID).delete()
         FoodItem.query.filter_by(CategoryID=cat.CategoryID).delete()
+        Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
     Category.query.filter_by(venue_id=venue_id).delete()
     # Orders
     Order.query.filter_by(venue_id=venue_id).delete()
