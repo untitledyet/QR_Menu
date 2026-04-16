@@ -265,25 +265,56 @@ body {
   -webkit-appearance: none;
 }
 .t-float-input:focus { border-color: var(--t-primary); }
+.t-float-input--error { border-color: #EF4444 !important; }
+.t-float-input--error + .t-float-label { color: #EF4444 !important; }
+
+/* Browser autofill color fix */
+.t-float-input:-webkit-autofill,
+.t-float-input:-webkit-autofill:hover,
+.t-float-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--t-bg) inset !important;
+  -webkit-text-fill-color: var(--t-text) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+.t-input:-webkit-autofill,
+.t-input:-webkit-autofill:hover,
+.t-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--t-bg) inset !important;
+  -webkit-text-fill-color: var(--t-text) !important;
+}
+
+/* Floating label — background matches modal so it visually splits the border */
+.t-float-label {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--t-text-3); font-size: .88rem; pointer-events: none;
+  transition: all .18s cubic-bezier(.4,0,.2,1);
+  background: var(--t-surface); /* splits the input border when floated */
+  padding: 0 4px; line-height: 1;
+}
 .t-float-input:focus + .t-float-label,
 .t-float-input:not(:placeholder-shown) + .t-float-label {
-  top: 8px; font-size: .68rem; color: var(--t-primary);
+  top: 0; font-size: .68rem; color: var(--t-primary); transform: translateY(-50%);
 }
-.t-float-label {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--t-text-3); font-size: .88rem; pointer-events: none;
-  transition: all .2s cubic-bezier(.4,0,.2,1); background: transparent;
-  padding: 0 2px;
-}
-/* Password wrapper: label after button doesn't work with ~, so handle it separately */
+
+/* Password group: label is sibling after the toggle button, use ~ */
 .t-float-group--pwd { position: relative; }
-.t-float-group--pwd .t-float-input:focus ~ .t-float-label,
-.t-float-group--pwd .t-float-input:not(:placeholder-shown) ~ .t-float-label {
-  top: 8px; font-size: .68rem; color: var(--t-primary);
-  transform: none;
-}
 .t-float-group--pwd .t-float-label {
   top: 50%; transform: translateY(-50%);
+}
+.t-float-group--pwd .t-float-input:focus ~ .t-float-label,
+.t-float-group--pwd .t-float-input:not(:placeholder-shown) ~ .t-float-label {
+  top: 0; font-size: .68rem; color: var(--t-primary); transform: translateY(-50%);
+}
+
+/* Inline field error */
+.reg-field-err {
+  font-size: .73rem; color: #EF4444; margin-top: 5px; padding-left: 2px;
+}
+
+/* Static label (for phone field, above input-group) */
+.reg-static-label {
+  display: block; font-size: .75rem; font-weight: 500; color: var(--t-text-2);
+  margin-bottom: 6px;
 }
 
 /* Password eye toggle */
@@ -327,23 +358,30 @@ body {
 
 /* Phone input-group */
 .reg-phone-group {
-  display: flex; align-items: stretch;
+  display: flex; align-items: center;
   border: 1.5px solid var(--t-border); border-radius: var(--t-radius-sm);
-  overflow: hidden; transition: border-color .2s;
+  overflow: hidden; transition: border-color .2s; height: 46px;
 }
 .reg-phone-group:focus-within { border-color: var(--t-primary); }
 .reg-phone-cc {
   display: flex; align-items: center; padding: 0 12px;
   background: var(--t-surface-2); color: var(--t-text-2);
-  font-size: .88rem; font-weight: 700; flex-shrink: 0;
-  border-right: 1.5px solid var(--t-border);
-  letter-spacing: .01em;
+  font-size: .88rem; font-weight: 700; flex-shrink: 0; height: 100%;
+  border-right: 1.5px solid var(--t-border); letter-spacing: .01em;
+  white-space: nowrap;
 }
-.reg-phone-group .t-float-input {
-  border: none !important; border-radius: 0 !important;
-  background: transparent;
+/* Bare input inside phone group — no border, no extra padding */
+.t-phone-bare {
+  flex: 1; height: 100%; padding: 0 12px;
+  border: none; outline: none; background: var(--t-bg);
+  color: var(--t-text); font-family: inherit; font-size: .93rem;
+  -webkit-appearance: none;
 }
-.reg-phone-group .t-float-input:focus { border: none !important; }
+.t-phone-bare:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--t-bg) inset !important;
+  -webkit-text-fill-color: var(--t-text) !important;
+}
+.t-phone-bare::placeholder { color: var(--t-text-3); }
 .reg-send-sms-btn {
   padding: 0 18px; border: none; border-left: 1.5px solid var(--t-border);
   background: var(--t-primary); color: #fff;

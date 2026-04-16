@@ -164,9 +164,10 @@
                 <p style="color:var(--t-text-2);font-size:.9rem;margin-bottom:16px;" id="login-sms-hint"></p>
                 <div class="t-form-group">
                     <label>SMS კოდი</label>
-                    <input type="text" class="t-input" id="login-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
+                    <input type="text" class="t-input" id="login-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;" oninput="showLoginSmsErr('')">
+                    <div id="login-sms-err" class="reg-field-err" style="display:none;margin-top:6px;"></div>
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep2()">დადასტურება</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep2()" title="კოდის დადასტურება">დადასტურება</button>
             </div>
         </div>
 
@@ -201,8 +202,10 @@
                     </div>
                 </div>
                 <div class="t-float-group">
-                    <input type="email" class="t-float-input" id="reg-email" placeholder=" " autocomplete="email">
+                    <input type="email" class="t-float-input" id="reg-email" placeholder=" " autocomplete="email"
+                           onblur="validateEmailField(this)">
                     <label class="t-float-label" for="reg-email">ელ. ფოსტა</label>
+                    <div id="reg-email-err" class="reg-field-err" style="display:none;"></div>
                 </div>
                 <div class="t-float-group t-float-group--pwd">
                     <input type="password" class="t-float-input" id="reg-password" placeholder=" " autocomplete="new-password" style="padding-right:44px;" oninput="checkPasswordStrength()">
@@ -223,28 +226,28 @@
             <div class="reg-panel reg-panel--hidden" id="reg-panel-2">
                 <p class="reg-step-hint">SMS კოდი გაიგზავნება თქვენს ნომერზე ანგარიშის დასადასტურებლად.</p>
                 <div class="t-float-group">
+                    <label class="reg-static-label">ტელეფონი</label>
                     <div class="reg-phone-group">
                         <span class="reg-phone-cc">+995</span>
-                        <div style="flex:1;position:relative;">
-                            <input type="tel" class="t-float-input reg-phone-input" id="reg-phone" placeholder=" " oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel">
-                            <label class="t-float-label" for="reg-phone">ნომერი (5XX XXX XXX)</label>
-                        </div>
-                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" class="reg-send-sms-btn" style="display:none;">კოდი</button>
+                        <input type="tel" class="t-phone-bare" id="reg-phone" placeholder="5XX XXX XXX" oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel">
+                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" class="reg-send-sms-btn" style="display:none;" title="SMS კოდის გაგზავნა">კოდი</button>
                     </div>
                 </div>
                 <div id="phone-otp-wrap" style="display:none;" class="reg-otp-wrap">
+                    <label class="reg-static-label">SMS კოდი</label>
                     <input type="text" class="t-input reg-otp-input" id="phone-otp-input" placeholder="• • • • • •" maxlength="6" inputmode="numeric" oninput="onOtpInput(this)">
+                    <div id="otp-err" class="reg-field-err" style="display:none;"></div>
                     <div class="reg-otp-meta">
                         <span id="otp-timer-wrap" class="reg-field-hint"></span>
-                        <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" class="reg-link-btn" style="display:none;">ხელახლა გაგზავნა</button>
+                        <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" class="reg-link-btn" style="display:none;" title="SMS კოდის ხელახლა გაგზავნა">ხელახლა გაგზავნა</button>
                     </div>
                 </div>
-                <div id="phone-verified-badge" style="display:none;" class="reg-field-hint reg-field-hint--ok" style="margin-bottom:8px;">
+                <div id="phone-verified-badge" style="display:none;" class="reg-field-hint reg-field-hint--ok">
                     <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
                 </div>
                 <div class="reg-nav" style="margin-top:20px;">
-                    <button class="t-btn t-btn--ghost" onclick="goToRegStep(1)"><i class="fas fa-arrow-left" style="font-size:.78rem;"></i></button>
-                    <button class="t-btn t-btn--primary" id="reg-submit-btn" onclick="doRegister()" style="flex:1;">რეგისტრაცია</button>
+                    <button class="t-btn t-btn--ghost" onclick="goToRegStep(1)" title="უკან"><i class="fas fa-arrow-left" style="font-size:.78rem;"></i></button>
+                    <button class="t-btn t-btn--primary" id="reg-submit-btn" onclick="doRegister()" style="flex:1;" title="ანგარიშის შექმნა">რეგისტრაცია</button>
                 </div>
             </div>
 
@@ -259,6 +262,13 @@
 var placesTimer = null;
 var otpTimerInterval = null;
 var phoneVerified = false;
+
+// Close places dropdown when clicking outside address field
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#reg-address') && !e.target.closest('#places-dropdown')) {
+        hidePlacesDropdown();
+    }
+});
 
 function openModal(tab) {
     document.getElementById('auth-modal').classList.add('active');
@@ -377,6 +387,33 @@ function showPlacesDropdown(places) {
     dd.style.display = 'block';
 }
 function hidePlacesDropdown() { document.getElementById('places-dropdown').style.display = 'none'; }
+
+/* Email field validation (issue 5) */
+function validateEmailField(inp) {
+    var errEl = document.getElementById('reg-email-err');
+    var val = inp.value.trim();
+    if (!val) { inp.classList.remove('t-float-input--error'); errEl.style.display = 'none'; return; }
+    var ok = /^[^@]+@[^@]+\.[^@]{2,}$/.test(val);
+    inp.classList.toggle('t-float-input--error', !ok);
+    if (!ok) { errEl.textContent = 'ელ. ფოსტის ფორმატი არასწორია'; errEl.style.display = ''; }
+    else { errEl.style.display = 'none'; }
+}
+
+/* Show OTP error inline below the OTP input */
+function showOtpErr(msg) {
+    var el = document.getElementById('otp-err');
+    if (el) { el.textContent = msg; el.style.display = msg ? '' : 'none'; }
+    var inp = document.getElementById('phone-otp-input');
+    if (inp) inp.classList.toggle('t-float-input--error', !!msg);
+}
+
+/* Show login-step-2 SMS error inline */
+function showLoginSmsErr(msg) {
+    var el = document.getElementById('login-sms-err');
+    if (el) { el.textContent = msg; el.style.display = msg ? '' : 'none'; }
+    var inp = document.getElementById('login-sms-code');
+    if (inp) inp.classList.toggle('t-float-input--error', !!msg);
+}
 function selectPlace(idx) {
     var dd = document.getElementById('places-dropdown');
     var place = dd._places[idx];
@@ -431,6 +468,7 @@ function verifyPhoneOtp() {
         if (d.success) {
             phoneVerified = true;
             clearInterval(otpTimerInterval);
+            showOtpErr('');
             document.getElementById('phone-otp-wrap').style.display = 'none';
             document.getElementById('phone-verified-badge').style.display = 'block';
             document.getElementById('send-sms-btn').style.display = 'none';
@@ -438,7 +476,7 @@ function verifyPhoneOtp() {
             showMsg('', '');
         } else {
             document.getElementById('phone-otp-input').value = '';
-            showMsg(d.error || '\u10d9\u10dd\u10d3\u10d8 \u10d0\u10e0\u10d0\u10e1\u10ec\u10dd\u10e0\u10d8\u10d0', 'error');
+            showOtpErr(d.error || 'კოდი არასწორია');
         }
     });
 }
@@ -611,12 +649,13 @@ function doLoginStep1() {
     });
 }
 function doLoginStep2() {
+    showLoginSmsErr('');
     fetch('/login-venue', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({step: 'sms_2fa', code: document.getElementById('login-sms-code').value.trim()})
     }).then(function(r){return r.json();}).then(function(d){
         if (d.success) { window.location.href = d.redirect; }
-        else { showMsg(d.error, 'error'); }
+        else { showLoginSmsErr(d.error); }
     });
 }
 

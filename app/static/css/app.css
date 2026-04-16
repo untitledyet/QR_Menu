@@ -377,6 +377,11 @@ body.modal-open .toast-notification { display: none; }
   border: none; border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: var(--shadow-lg); overflow: hidden;
   background: var(--surface);
+  max-height: 82vh;
+  display: flex; flex-direction: column;
+}
+#item-modal .modal-body {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 #item-modal .modal-header {
   border: none; padding: 20px 20px 8px;

@@ -251,24 +251,17 @@ def register_venue():
     if not venue_name or not address or not email or not raw_phone or not password:
         return jsonify(error='yvela veli savaldebuloa'), 400
 
-    # ── TESTUSER BACKDOOR ────────────────────────────────────────────────────
-    # If venue name ends with '-testuser' (case-insensitive) all verification
-    # is skipped and the account is created fully active.  For testing only.
-    is_test_user = venue_name.lower().endswith('-testuser')
-    # ─────────────────────────────────────────────────────────────────────────
-
-    if not is_test_user and not place_id:
+    if not place_id:
         return jsonify(error='gTxovT, obieqti Google Maps-ze daadastureT'), 400
 
     full_phone = _normalize_phone(raw_phone)
     if not full_phone:
         return jsonify(error='telefonis nomeri arasworia'), 400
 
-    if not is_test_user:
-        # Phone must match the one verified in this session
-        verified_phone = session.get('verified_phone', '')
-        if verified_phone != full_phone:
-            return jsonify(error='telefoni ar aris verificirebuli'), 400
+    # Phone must match the one verified in this session
+    verified_phone = session.get('verified_phone', '')
+    if verified_phone != full_phone:
+        return jsonify(error='telefoni ar aris verificirebuli'), 400
 
     pw_error = validate_password(password)
     if pw_error:
@@ -283,13 +276,20 @@ def register_venue():
     if AdminUser.query.filter_by(phone=full_phone).first():
         return jsonify(error='ეს ნომერი უკვე დარეგისტრირებულია. შესვლა სცადეთ.'), 400
 
-    # Generate unique slug — include city from address to avoid collisions
+    # Generate unique slug — venue name + city (no postal code)
     city = ''
     if address:
         parts = [p.strip() for p in address.split(',') if p.strip()]
-        # Formatted address: "Street, City, Country" — take second-to-last if >1 parts
-        if len(parts) >= 2:
-            city = parts[-2] if parts[-1].lower() in ('georgia', 'საქართველო') else parts[-1]
+        # Skip purely numeric parts (postal codes), country, take first real city found
+        skip = {'georgia', 'საქართველო'}
+        for part in reversed(parts[1:]):  # skip street (first part)
+            clean = part.strip()
+            if clean.lower() in skip:
+                continue
+            if clean.isdigit():  # postal code — skip
+                continue
+            city = clean
+            break
     base_slug = slugify(venue_name + (' ' + city if city else ''))
     slug = base_slug
     counter = 2
@@ -303,35 +303,11 @@ def register_venue():
         if not Venue.query.filter_by(venue_code=vcode).first():
             break
 
-    # Use a placeholder place_id for test users
-    effective_place_id = place_id or ('testuser-place-' + slug if is_test_user else '')
-
     # Create venue
     venue = Venue(name=venue_name, slug=slug, plan='free',
-                  address=address, google_place_id=effective_place_id, venue_code=vcode)
+                  address=address, google_place_id=place_id, venue_code=vcode)
     db.session.add(venue)
     db.session.flush()
-
-    # Generate email token — store HASH in DB, send RAW token via email
-    # Test users get email pre-verified; skip token entirely
-    if is_test_user:
-        admin = AdminUser(
-            username=slug,
-            email=email,
-            phone=full_phone,
-            role='venue',
-            venue_id=venue.id,
-            email_verified=True,
-            phone_verified=True,
-            is_active=True,
-        )
-        admin.set_password(password)
-        db.session.add(admin)
-        db.session.commit()
-        session.pop('verified_phone', None)
-        session['admin_id'] = admin.id
-        current_app.logger.info('TESTUSER registration bypassed verification for: ' + venue_name)
-        return jsonify(success=True, redirect='/backoffice')
 
     raw_email_token = generate_email_token()
     admin = AdminUser(

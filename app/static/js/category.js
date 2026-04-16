@@ -20,6 +20,10 @@ function fetchCategoryData(categoryId) {
 
 function restoreInitialState(itemsContainer, sectionTitle, subcategoriesContainer) {
     lockPageHeight();
+    sectionTitle.dataset.ka = '';
+    sectionTitle.dataset.en = '';
+    sectionTitle.removeAttribute('data-ka');
+    sectionTitle.removeAttribute('data-en');
     sectionTitle.textContent = t('popular');
     populateItemsContainer(initialPopularDishes, itemsContainer);
     subcategoriesContainer.replaceChildren();
@@ -48,6 +52,9 @@ function handleCategoryClick(card, categoryCards, itemsContainer, sectionTitle, 
 
         fetchCategoryData(categoryId).then(data => {
             lockPageHeight();
+            // Store both lang versions so applyTranslations() can update on lang switch
+            sectionTitle.dataset.ka = card.dataset.categoryName;
+            sectionTitle.dataset.en = card.dataset.categoryNameEn || card.dataset.categoryName;
             sectionTitle.textContent = categoryName;
             populateItemsContainer(data.items, itemsContainer);
             populateSubcategoriesContainer(data.subcategories, categoryId, subcategoriesContainer);
