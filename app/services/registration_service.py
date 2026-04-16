@@ -77,7 +77,7 @@ def _send_via_resend(to, subject, html, api_key, app):
                 'Content-Type': 'application/json',
             },
             json={
-                'from': 'Tably <onboarding@resend.dev>',
+                'from': 'Tably <info@tably.ge>',
                 'to': [to],
                 'subject': subject,
                 'html': html,
