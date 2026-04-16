@@ -45,13 +45,17 @@ function createItemCard(item) {
     const showCart = features.cart !== false;
     const card = document.createElement('div');
     card.classList.add('food-card');
+    const nameKa = item.FoodName || '';
+    const nameEn = item.FoodName_en || nameKa;
+    const ingKa = item.Ingredients || '';
+    const ingEn = item.Ingredients_en || ingKa;
     const displayName = itemDisplayName(item);
     const displayIngredients = itemDisplayIngredients(item);
     card.innerHTML = `
         <img class="food-card__img" src="/static/images/${item.ImageFilename || 'default-image.png'}" alt="${displayName}">
         <div class="food-card__body">
-            <div class="food-card__name">${displayName}</div>
-            <div class="food-card__desc">${displayIngredients}</div>
+            <div class="food-card__name" data-ka="${nameKa}" data-en="${nameEn}">${displayName}</div>
+            <div class="food-card__desc" data-ka="${ingKa}" data-en="${ingEn}">${displayIngredients}</div>
             <div class="food-card__footer">
                 <span class="food-card__price">₾${item.Price.toFixed(2)}</span>
                 ${showCart ? `<button class="food-card__add" data-item-id="${item.FoodItemID}" aria-label="Add to cart">+</button>` : ''}

@@ -107,31 +107,14 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
     });
-    // Dynamic content with data-ka / data-en attributes (category names, etc.)
+    // Dynamic content: category chip names, item card names/ingredients, subcategory pills
     document.querySelectorAll('[data-ka][data-en]').forEach(el => {
         el.textContent = lang === 'en' ? (el.dataset.en || el.dataset.ka) : el.dataset.ka;
     });
-    // Sub-pills rendered by JS — update textContent using stored data attributes
+    // Sub-pills rendered by JS
     document.querySelectorAll('.sub-pill[data-name-ka]').forEach(btn => {
         btn.textContent = lang === 'en' ? (btn.dataset.nameEn || btn.dataset.nameKa) : btn.dataset.nameKa;
     });
-    // Re-render item cards so names/ingredients switch language
-    if (typeof populateItemsContainer === 'function') {
-        const itemsContainer = document.getElementById('items-container');
-        const newContainer = document.getElementById('new-dishes-container');
-        try {
-            const el = document.querySelector('#popular-dishes');
-            if (el && itemsContainer && itemsContainer.children.length > 0 && !itemsContainer.querySelector('.skeleton-card')) {
-                populateItemsContainer(JSON.parse(el.textContent), itemsContainer);
-            }
-        } catch (e) {}
-        try {
-            const el = document.querySelector('#new-dishes-data');
-            if (el && newContainer && newContainer.children.length > 0 && !newContainer.querySelector('.skeleton-card')) {
-                populateItemsContainer(JSON.parse(el.textContent), newContainer);
-            }
-        } catch (e) {}
-    }
 }
 
 /* Dark mode */
