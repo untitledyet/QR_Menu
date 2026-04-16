@@ -150,15 +150,33 @@
         <h3 id="import-item-name">პროდუქტის დამატება</h3>
         <p class="sub">აირჩიეთ კატეგორია და მიუთითეთ ფასი</p>
 
-        <div class="bo-form-group" style="margin-bottom:12px;">
+        <div class="bo-form-group" style="margin-bottom:4px;">
             <label class="bo-label">კატეგორია *</label>
-            <select id="import-cat" class="bo-input">
+            <select id="import-cat" class="bo-input" onchange="handleCatSelect(this)">
                 <option value="">— აირჩიეთ კატეგორია —</option>
                 {% for cat in admin.venue.categories if not cat.group_id %}
                 <option value="{{ cat.CategoryID }}">{{ cat.CategoryName }}</option>
                 {% endfor %}
+                <option value="__copy__">📋 ბიბლიოთეკის კატეგორიის კოპირება</option>
+                <option value="__new__">+ ახალი კატეგორიის შექმნა</option>
             </select>
         </div>
+
+        {# Inline new category input #}
+        <div id="new-cat-row" style="display:none;margin-bottom:4px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" id="new-cat-name" class="bo-input"
+                       placeholder="კატეგორიის სახელი" style="flex:1;">
+                <button onclick="createCategory()" class="bo-btn bo-btn--primary"
+                        style="white-space:nowrap;font-size:.8rem;padding:8px 12px;" id="create-cat-btn">
+                    შექმნა
+                </button>
+            </div>
+            <div id="new-cat-msg" style="font-size:.75rem;color:#ef4444;margin-top:4px;display:none;"></div>
+        </div>
+
+        <div style="margin-bottom:16px;"></div>
+
         <div class="bo-form-group" style="margin-bottom:20px;">
             <label class="bo-label">ფასი (₾) *</label>
             <input type="number" id="import-price" class="bo-input" step="0.01" min="0" placeholder="0.00">
@@ -173,12 +191,61 @@
 
 <script>
 var _importItemId = null;
+var _currentGlobalCatName = '';
 
 function browseSection(catId, el) {
     document.querySelectorAll('.browse-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.browse-cat-item').forEach(i => i.classList.remove('active'));
     document.getElementById('browse-' + catId).classList.add('active');
     el.classList.add('active');
+    // track current global category name for copy option
+    _currentGlobalCatName = el.querySelector('span:first-child').textContent.trim();
+}
+
+function handleCatSelect(sel) {
+    const row = document.getElementById('new-cat-row');
+    const nameInput = document.getElementById('new-cat-name');
+    if (sel.value === '__new__') {
+        row.style.display = 'block';
+        nameInput.value = '';
+        nameInput.focus();
+    } else if (sel.value === '__copy__') {
+        row.style.display = 'block';
+        nameInput.value = _currentGlobalCatName;
+        nameInput.focus();
+    } else {
+        row.style.display = 'none';
+    }
+}
+
+function createCategory() {
+    const name = document.getElementById('new-cat-name').value.trim();
+    const msgEl = document.getElementById('new-cat-msg');
+    if (!name) { msgEl.textContent = 'სახელი სავალდებულოა'; msgEl.style.display='block'; return; }
+
+    const btn = document.getElementById('create-cat-btn');
+    btn.disabled = true; btn.textContent = '...';
+
+    fetch('/backoffice/library/create-category', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+    }).then(r => r.json()).then(d => {
+        if (!d.success) { msgEl.textContent = d.error || 'შეცდომა'; msgEl.style.display='block'; return; }
+        // Add new option to select and select it
+        const sel = document.getElementById('import-cat');
+        const opt = document.createElement('option');
+        opt.value = d.category_id;
+        opt.textContent = d.category_name;
+        // Insert before the __copy__ option
+        const copyOpt = sel.querySelector('option[value="__copy__"]');
+        sel.insertBefore(opt, copyOpt);
+        sel.value = d.category_id;
+        document.getElementById('new-cat-row').style.display = 'none';
+        msgEl.style.display = 'none';
+        document.getElementById('import-price').focus();
+    }).catch(() => { msgEl.textContent = 'ქსელის შეცდომა'; msgEl.style.display='block'; })
+    .finally(() => { btn.disabled=false; btn.textContent='შექმნა'; });
 }
 
 function openImport(itemId, name) {
@@ -187,8 +254,10 @@ function openImport(itemId, name) {
     document.getElementById('import-cat').value = '';
     document.getElementById('import-price').value = '';
     document.getElementById('import-msg').style.display = 'none';
+    document.getElementById('new-cat-row').style.display = 'none';
+    document.getElementById('new-cat-msg').style.display = 'none';
     document.getElementById('import-overlay').classList.add('open');
-    setTimeout(() => document.getElementById('import-price').focus(), 100);
+    setTimeout(() => document.getElementById('import-cat').focus(), 100);
 }
 
 function closeImport() {

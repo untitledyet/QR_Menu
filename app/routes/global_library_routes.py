@@ -196,6 +196,24 @@ def import_item():
     return jsonify(success=True, item_id=item.FoodItemID, name=item.FoodName)
 
 
+@lib_bp.route('/create-category', methods=['POST'])
+@login_required
+def create_venue_category():
+    """Create a new venue category inline from the library browse page."""
+    from app.models import Category
+    admin = AdminUser.query.get(session['admin_id'])
+    if not admin or not admin.venue:
+        return jsonify(error='No venue'), 400
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify(error='სახელი სავალდებულოა'), 400
+    cat = Category(CategoryName=name, venue_id=admin.venue.id)
+    db.session.add(cat)
+    db.session.commit()
+    return jsonify(success=True, category_id=cat.CategoryID, category_name=cat.CategoryName)
+
+
 @lib_bp.route('/api/items')
 @login_required
 def api_library_items():
