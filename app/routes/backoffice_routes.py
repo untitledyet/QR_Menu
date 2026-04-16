@@ -118,8 +118,8 @@ def login():
 
         admin.reset_failed_logins()
 
-        # 4. SMS 2FA if phone configured
-        if admin.phone:
+        # 4. SMS 2FA if phone configured and 2FA enabled
+        if admin.phone and admin.two_fa_enabled:
             code, sms_error = send_sms_code(admin.phone)
             if sms_error:
                 current_app.logger.error(
