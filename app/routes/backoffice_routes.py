@@ -80,11 +80,9 @@ def verify_promo_ownership(promo_id):
 # Auth
 # ============================================================
 
-@bo_bp.route('/login', methods=['GET', 'POST'])
+@bo_bp.route('/login', methods=['POST'])
 def login():
-    """Backoffice login — GET redirects to /login, POST handles AJAX auth."""
-    if request.method == 'GET':
-        return redirect('/login')
+    """Backoffice login — POST only, handles AJAX auth."""
 
     data = request.get_json() or {}
     step = data.get('step', 'credentials')
