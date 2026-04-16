@@ -9,26 +9,21 @@ import json
 import threading
 
 
-GEMINI_MODEL = 'gemini-2.5-flash'
+OPENAI_MODEL = 'gpt-4o-mini'
 
 # Professional culinary translation prompt
-_PROMPT_TEMPLATE = """\
-You are a professional culinary translator specialising in restaurant menus and gastronomy.
-Translate the JSON content below from {source} to {target}.
+_SYSTEM_PROMPT = (
+    'You are a professional culinary translator specialising in restaurant menus and gastronomy. '
+    'Translate accurately using precise culinary and gastronomic terminology. '
+    'Preserve empty strings as empty strings. '
+    'Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.'
+)
 
-Rules:
-- Use accurate, professional culinary and gastronomic terminology.
-- Ingredient names must be precise (e.g. "beef tenderloin", "extra-virgin olive oil").
-- Category names must be concise and standard for restaurant menus.
-- Preserve any empty string as an empty string.
-- Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.
-
-Input JSON:
-{content}"""
+_USER_PROMPT = 'Translate the following restaurant menu JSON from {source} to {target}:\n\n{content}'
 
 
-def _call_gemini(fields: dict, source_lang: str, target_lang: str, api_key: str) -> dict:
-    """Call Gemini REST API and return translated dict. Raises on failure."""
+def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str) -> dict:
+    """Call OpenAI Chat Completions API and return translated dict. Raises on failure."""
     import requests
     try:
         import certifi
@@ -39,25 +34,32 @@ def _call_gemini(fields: dict, source_lang: str, target_lang: str, api_key: str)
     src = 'Georgian' if source_lang == 'ka' else 'English'
     tgt = 'Georgian' if target_lang == 'ka' else 'English'
     content = json.dumps(fields, ensure_ascii=False)
-    prompt = _PROMPT_TEMPLATE.format(source=src, target=tgt, content=content)
 
-    url = (
-        'https://generativelanguage.googleapis.com/v1beta/models/'
-        f'{GEMINI_MODEL}:generateContent?key={api_key}'
-    )
     payload = {
-        'contents': [{'parts': [{'text': prompt}]}],
-        'generationConfig': {'temperature': 0.1, 'maxOutputTokens': 1024},
+        'model': OPENAI_MODEL,
+        'messages': [
+            {'role': 'system', 'content': _SYSTEM_PROMPT},
+            {'role': 'user', 'content': _USER_PROMPT.format(source=src, target=tgt, content=content)},
+        ],
+        'temperature': 0.1,
+        'max_tokens': 1024,
+        'response_format': {'type': 'json_object'},
     }
-    resp = requests.post(url, json=payload, verify=verify, timeout=20)
+    resp = requests.post(
+        'https://api.openai.com/v1/chat/completions',
+        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+        json=payload,
+        verify=verify,
+        timeout=20,
+    )
     resp.raise_for_status()
 
-    text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+    text = resp.json()['choices'][0]['message']['content'].strip()
 
-    # Extract JSON object from response (handles markdown code blocks)
+    # Extract JSON object (response_format: json_object guarantees valid JSON)
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if not match:
-        raise ValueError('No JSON object found in Gemini response')
+        raise ValueError('No JSON object found in OpenAI response')
 
     return json.loads(match.group(0))
 
@@ -69,13 +71,13 @@ def translate_item_async(item_id: int, fields: dict, source_lang: str, target_la
     fields: dict with keys 'name', 'description', 'ingredients'
     source_lang / target_lang: 'ka' or 'en'
     """
-    api_key = os.environ.get('GEMINI_API_KEY', '')
+    api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
         return
 
     def _run():
         try:
-            result = _call_gemini(fields, source_lang, target_lang, api_key)
+            result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
                 app.logger.error('[TRANSLATE] Gemini error for item %s: %s', item_id, exc)
@@ -115,13 +117,13 @@ def translate_category_async(cat_id: int, fields: dict, source_lang: str, target
 
     fields: dict with keys 'name', 'description'
     """
-    api_key = os.environ.get('GEMINI_API_KEY', '')
+    api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
         return
 
     def _run():
         try:
-            result = _call_gemini(fields, source_lang, target_lang, api_key)
+            result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
                 app.logger.error('[TRANSLATE] Gemini error for category %s: %s', cat_id, exc)
@@ -155,13 +157,13 @@ def translate_category_async(cat_id: int, fields: dict, source_lang: str, target
 
 def translate_global_item_async(item_id: int, fields: dict, source_lang: str, target_lang: str, app):
     """Translate GlobalItem fields in background and update DB."""
-    api_key = os.environ.get('GEMINI_API_KEY', '')
+    api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
         return
 
     def _run():
         try:
-            result = _call_gemini(fields, source_lang, target_lang, api_key)
+            result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
                 app.logger.error('[TRANSLATE] Gemini error for GlobalItem %s: %s', item_id, exc)
