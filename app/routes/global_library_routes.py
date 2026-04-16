@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
 from app.models import AdminUser, GlobalCategory, GlobalSubcategory, GlobalItem, Category, Subcategory, FoodItem
+from app.services.translation_service import translate_global_item_async, needs_translation
 
 lib_bp = Blueprint('lib_bp', __name__, url_prefix='/backoffice/library')
 
@@ -132,6 +133,21 @@ def add_global_item():
     )
     db.session.add(item)
     db.session.commit()
+
+    name_en = request.form.get('name_en', '').strip()
+    desc_en = request.form.get('description_en', '').strip()
+    ing_en = request.form.get('ingredients_en', '').strip()
+    if needs_translation(name, name_en):
+        translate_global_item_async(item.id,
+                                    {'name': name, 'description': item.description or '',
+                                     'ingredients': item.ingredients or ''},
+                                    'ka', 'en', current_app._get_current_object())
+    elif needs_translation(name_en, name):
+        translate_global_item_async(item.id,
+                                    {'name': name_en, 'description': desc_en,
+                                     'ingredients': ing_en},
+                                    'en', 'ka', current_app._get_current_object())
+
     flash(f'"{name}" დაემატა ბიბლიოთეკაში')
     return redirect(url_for('lib_bp.library_index'))
 

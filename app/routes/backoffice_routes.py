@@ -9,10 +9,30 @@ from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcat
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
                          MAX_ITEMS_PER_VENUE)
 from app.services.registration_service import validate_password, send_sms_code
+from app.services.translation_service import (
+    translate_item_async, translate_category_async, needs_translation
+)
 
 bo_bp = Blueprint('bo_bp', __name__, url_prefix='/backoffice')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+def _trigger_item_translation(item, name_ka, name_en, desc_ka, desc_en, ing_ka, ing_en):
+    """Fire Gemini translation for whichever language is missing."""
+    app = current_app._get_current_object()
+    if needs_translation(name_ka, name_en):
+        # KA filled, EN missing → translate KA→EN
+        translate_item_async(item.FoodItemID,
+                             {'name': name_ka or '', 'description': desc_ka or '',
+                              'ingredients': ing_ka or ''},
+                             'ka', 'en', app)
+    elif needs_translation(name_en, name_ka):
+        # EN filled, KA missing → translate EN→KA
+        translate_item_async(item.FoodItemID,
+                             {'name': name_en or '', 'description': desc_en or '',
+                              'ingredients': ing_en or ''},
+                             'en', 'ka', app)
 def allowed_file(fn):
     return '.' in fn and fn.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -501,6 +521,11 @@ def add_item():
                         SubcategoryID=sub_id, allow_customization=allow_custom, is_active=True)
         db.session.add(item)
         db.session.commit()
+
+        # Auto-translate missing language field via Gemini
+        _trigger_item_translation(item, name, name_en, description, description_en,
+                                   ingredients, ingredients_en)
+
         flash(f'"{name}" added')
         return redirect(url_for('bo_bp.menu_list'))
 
@@ -542,6 +567,12 @@ def edit_item(item_id):
             item.ImageFilename = filename
 
         db.session.commit()
+
+        # Auto-translate missing language field via Gemini
+        _trigger_item_translation(item, item.FoodName, item.FoodName_en,
+                                   item.Description, item.Description_en,
+                                   item.Ingredients, item.Ingredients_en)
+
         flash(f'"{item.FoodName}" updated')
         return redirect(url_for('bo_bp.menu_list'))
 
@@ -658,6 +689,16 @@ def add_category():
                        CategoryIcon=icon_filename, venue_id=venue.id if venue else None)
         db.session.add(cat)
         db.session.commit()
+
+        if needs_translation(name, name_en):
+            translate_category_async(cat.CategoryID,
+                                     {'name': name, 'description': description},
+                                     'ka', 'en', current_app._get_current_object())
+        elif needs_translation(name_en, name):
+            translate_category_async(cat.CategoryID,
+                                     {'name': name_en, 'description': description_en},
+                                     'en', 'ka', current_app._get_current_object())
+
         flash(f'Category "{name}" created')
         return redirect(url_for('bo_bp.categories_list'))
 
@@ -689,6 +730,16 @@ def edit_category(cat_id):
             cat.CategoryIcon = filename
 
         db.session.commit()
+
+        if needs_translation(cat.CategoryName, cat.CategoryName_en):
+            translate_category_async(cat.CategoryID,
+                                     {'name': cat.CategoryName, 'description': cat.Description or ''},
+                                     'ka', 'en', current_app._get_current_object())
+        elif needs_translation(cat.CategoryName_en, cat.CategoryName):
+            translate_category_async(cat.CategoryID,
+                                     {'name': cat.CategoryName_en, 'description': cat.Description_en or ''},
+                                     'en', 'ka', current_app._get_current_object())
+
         flash(f'Category "{cat.CategoryName}" updated')
         return redirect(url_for('bo_bp.categories_list'))
 
