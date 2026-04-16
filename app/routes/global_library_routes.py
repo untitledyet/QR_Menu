@@ -199,16 +199,28 @@ def import_item():
 @lib_bp.route('/create-category', methods=['POST'])
 @login_required
 def create_venue_category():
-    """Create a new venue category inline from the library browse page."""
+    """Create a new venue category inline from the library browse page.
+    If global_cat_id is provided, copies name and icon from that global category."""
     from app.models import Category
     admin = AdminUser.query.get(session['admin_id'])
     if not admin or not admin.venue:
         return jsonify(error='No venue'), 400
     data = request.get_json() or {}
     name = data.get('name', '').strip()
+    global_cat_id = data.get('global_cat_id')
+    icon_filename = None
+
+    if global_cat_id:
+        global_cat = GlobalCategory.query.get(global_cat_id)
+        if global_cat:
+            if not name:
+                name = global_cat.name
+            icon_filename = global_cat.icon
+
     if not name:
         return jsonify(error='სახელი სავალდებულოა'), 400
-    cat = Category(CategoryName=name, venue_id=admin.venue.id)
+
+    cat = Category(CategoryName=name, CategoryIcon=icon_filename, venue_id=admin.venue.id)
     db.session.add(cat)
     db.session.commit()
     return jsonify(success=True, category_id=cat.CategoryID, category_name=cat.CategoryName)

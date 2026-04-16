@@ -162,16 +162,10 @@
             </select>
         </div>
 
-        {# Inline new category input #}
+        {# Inline new category input (shown only for __new__) #}
         <div id="new-cat-row" style="display:none;margin-bottom:4px;">
-            <div style="display:flex;gap:6px;align-items:center;">
-                <input type="text" id="new-cat-name" class="bo-input"
-                       placeholder="კატეგორიის სახელი" style="flex:1;">
-                <button onclick="createCategory()" class="bo-btn bo-btn--primary"
-                        style="white-space:nowrap;font-size:.8rem;padding:8px 12px;" id="create-cat-btn">
-                    შექმნა
-                </button>
-            </div>
+            <input type="text" id="new-cat-name" class="bo-input"
+                   placeholder="კატეგორიის სახელი — Enter-ით შექმნა">
             <div id="new-cat-msg" style="font-size:.75rem;color:#ef4444;margin-top:4px;display:none;"></div>
         </div>
 
@@ -191,62 +185,73 @@
 
 <script>
 var _importItemId = null;
-var _currentGlobalCatName = '';
+var _currentGlobalCatName = '{{ categories[0].name|e if categories else "" }}';
+var _currentGlobalCatId = {{ categories[0].id if categories else 'null' }};
 
 function browseSection(catId, el) {
     document.querySelectorAll('.browse-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.browse-cat-item').forEach(i => i.classList.remove('active'));
     document.getElementById('browse-' + catId).classList.add('active');
     el.classList.add('active');
-    // track current global category name for copy option
     _currentGlobalCatName = el.querySelector('span:first-child').textContent.trim();
+    _currentGlobalCatId = catId;
 }
 
 function handleCatSelect(sel) {
     const row = document.getElementById('new-cat-row');
     const nameInput = document.getElementById('new-cat-name');
-    if (sel.value === '__new__') {
+    document.getElementById('new-cat-msg').style.display = 'none';
+
+    if (sel.value === '__copy__') {
+        // Auto-create immediately with global category name + icon
+        sel.disabled = true;
+        doCreateCategory(_currentGlobalCatName, _currentGlobalCatId);
+    } else if (sel.value === '__new__') {
         row.style.display = 'block';
         nameInput.value = '';
-        nameInput.focus();
-    } else if (sel.value === '__copy__') {
-        row.style.display = 'block';
-        nameInput.value = _currentGlobalCatName;
         nameInput.focus();
     } else {
         row.style.display = 'none';
     }
 }
 
-function createCategory() {
-    const name = document.getElementById('new-cat-name').value.trim();
+function doCreateCategory(name, globalCatId) {
     const msgEl = document.getElementById('new-cat-msg');
-    if (!name) { msgEl.textContent = 'სახელი სავალდებულოა'; msgEl.style.display='block'; return; }
-
-    const btn = document.getElementById('create-cat-btn');
-    btn.disabled = true; btn.textContent = '...';
+    const sel = document.getElementById('import-cat');
 
     fetch('/backoffice/library/create-category', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name})
+        body: JSON.stringify({name: name, global_cat_id: globalCatId || null})
     }).then(r => r.json()).then(d => {
-        if (!d.success) { msgEl.textContent = d.error || 'შეცდომა'; msgEl.style.display='block'; return; }
-        // Add new option to select and select it
-        const sel = document.getElementById('import-cat');
+        sel.disabled = false;
+        if (!d.success) { msgEl.textContent = d.error || 'შეცდომა'; msgEl.style.display='block'; sel.value=''; return; }
         const opt = document.createElement('option');
         opt.value = d.category_id;
         opt.textContent = d.category_name;
-        // Insert before the __copy__ option
         const copyOpt = sel.querySelector('option[value="__copy__"]');
         sel.insertBefore(opt, copyOpt);
         sel.value = d.category_id;
         document.getElementById('new-cat-row').style.display = 'none';
-        msgEl.style.display = 'none';
         document.getElementById('import-price').focus();
-    }).catch(() => { msgEl.textContent = 'ქსელის შეცდომა'; msgEl.style.display='block'; })
-    .finally(() => { btn.disabled=false; btn.textContent='შექმნა'; });
+    }).catch(() => {
+        sel.disabled = false;
+        msgEl.textContent = 'ქსელის შეცდომა'; msgEl.style.display='block'; sel.value='';
+    });
 }
+
+// Enter key in new category input
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('new-cat-name').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const name = this.value.trim();
+            if (!name) return;
+            document.getElementById('import-cat').disabled = true;
+            doCreateCategory(name, null);
+        }
+    });
+});
 
 function openImport(itemId, name) {
     _importItemId = itemId;
