@@ -6,14 +6,26 @@
     <a href="{{ url_for('bo_bp.categories_list') }}" class="bo-btn bo-btn--ghost"><i class="fas fa-arrow-left"></i> Back</a>
 </div>
 
-<form method="POST" enctype="multipart/form-data" style="max-width:500px;">
-    <div class="bo-form-group">
-        <label>Category Name *</label>
-        <input type="text" name="name" value="{{ category.CategoryName if category else '' }}" required placeholder="e.g. Burgers">
+<form method="POST" enctype="multipart/form-data" style="max-width:600px;">
+    <div class="bo-form-row">
+        <div class="bo-form-group">
+            <label>სახელი (ქარ) *</label>
+            <input type="text" name="name" value="{{ category.CategoryName if category else '' }}" required placeholder="მაგ. ბურგერები">
+        </div>
+        <div class="bo-form-group">
+            <label>Name (EN)</label>
+            <input type="text" name="name_en" value="{{ category.CategoryName_en if category else '' }}" placeholder="e.g. Burgers">
+        </div>
     </div>
-    <div class="bo-form-group">
-        <label>Description</label>
-        <input type="text" name="description" value="{{ category.Description if category else '' }}" placeholder="Short description">
+    <div class="bo-form-row">
+        <div class="bo-form-group">
+            <label>აღწერა (ქარ)</label>
+            <input type="text" name="description" value="{{ category.Description if category else '' }}" placeholder="მოკლე აღწერა">
+        </div>
+        <div class="bo-form-group">
+            <label>Description (EN)</label>
+            <input type="text" name="description_en" value="{{ category.Description_en if category else '' }}" placeholder="Short description">
+        </div>
     </div>
     <div class="bo-form-group">
         <label>Icon Image</label>

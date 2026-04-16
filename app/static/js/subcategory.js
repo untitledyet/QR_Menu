@@ -7,7 +7,10 @@ function createSubcategoryCard(subcategory, categoryId) {
     const btn = document.createElement('button');
     btn.classList.add('sub-pill');
     btn.dataset.subcategoryId = subcategory.SubcategoryID;
-    btn.textContent = subcategory.SubcategoryName;
+    btn.dataset.nameKa = subcategory.SubcategoryName;
+    btn.dataset.nameEn = subcategory.SubcategoryName_en || subcategory.SubcategoryName;
+    const lang = typeof getLang === 'function' ? getLang() : 'ka';
+    btn.textContent = (lang === 'en' && subcategory.SubcategoryName_en) ? subcategory.SubcategoryName_en : subcategory.SubcategoryName;
     btn.addEventListener('click', () => handleSubcategoryClick(btn, categoryId));
     return btn;
 }

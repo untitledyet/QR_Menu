@@ -466,8 +466,11 @@ def add_item():
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
+        name_en = request.form.get('name_en', '').strip()
         description = request.form.get('description', '').strip()
+        description_en = request.form.get('description_en', '').strip()
         ingredients = request.form.get('ingredients', '').strip()
+        ingredients_en = request.form.get('ingredients_en', '').strip()
         price = request.form.get('price', type=float)
         cat_id = request.form.get('category_id', type=int)
         sub_id = request.form.get('subcategory_id', type=int) or None
@@ -491,7 +494,9 @@ def add_item():
             file.save(os.path.join(upload_dir, filename))
             image_filename = filename
 
-        item = FoodItem(FoodName=name, Description=description or name, Ingredients=ingredients,
+        item = FoodItem(FoodName=name, FoodName_en=name_en or None,
+                        Description=description or name, Description_en=description_en or None,
+                        Ingredients=ingredients, Ingredients_en=ingredients_en or None,
                         Price=price, ImageFilename=image_filename, CategoryID=cat_id,
                         SubcategoryID=sub_id, allow_customization=allow_custom, is_active=True)
         db.session.add(item)
@@ -519,8 +524,11 @@ def edit_item(item_id):
 
     if request.method == 'POST':
         item.FoodName = request.form.get('name', '').strip() or item.FoodName
+        item.FoodName_en = request.form.get('name_en', '').strip() or None
         item.Description = request.form.get('description', '').strip() or item.Description
+        item.Description_en = request.form.get('description_en', '').strip() or None
         item.Ingredients = request.form.get('ingredients', '').strip()
+        item.Ingredients_en = request.form.get('ingredients_en', '').strip() or None
         item.Price = request.form.get('price', type=float) or item.Price
         item.CategoryID = request.form.get('category_id', type=int) or item.CategoryID
         item.SubcategoryID = request.form.get('subcategory_id', type=int) or None
@@ -628,7 +636,9 @@ def add_category():
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
+        name_en = request.form.get('name_en', '').strip()
         description = request.form.get('description', '').strip()
+        description_en = request.form.get('description_en', '').strip()
 
         if not name:
             flash('Category name is required')
@@ -643,7 +653,8 @@ def add_category():
             file.save(os.path.join(upload_dir, filename))
             icon_filename = filename
 
-        cat = Category(CategoryName=name, Description=description,
+        cat = Category(CategoryName=name, CategoryName_en=name_en or None,
+                       Description=description, Description_en=description_en or None,
                        CategoryIcon=icon_filename, venue_id=venue.id if venue else None)
         db.session.add(cat)
         db.session.commit()
@@ -665,7 +676,9 @@ def edit_category(cat_id):
 
     if request.method == 'POST':
         cat.CategoryName = request.form.get('name', '').strip() or cat.CategoryName
+        cat.CategoryName_en = request.form.get('name_en', '').strip() or None
         cat.Description = request.form.get('description', '').strip()
+        cat.Description_en = request.form.get('description_en', '').strip() or None
 
         file = request.files.get('icon')
         if file and file.filename and allowed_file(file.filename):

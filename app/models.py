@@ -282,7 +282,9 @@ class Category(db.Model):
     __tablename__ = 'Categories'
     CategoryID = db.Column(db.Integer, primary_key=True)
     CategoryName = db.Column(db.String(50), nullable=False)
+    CategoryName_en = db.Column(db.String(50), nullable=True)
     Description = db.Column(db.String(200), nullable=True)
+    Description_en = db.Column(db.String(200), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
     # If group_id is set and venue_id is NULL → shared group category
@@ -293,6 +295,7 @@ class Subcategory(db.Model):
     __tablename__ = 'Subcategories'
     SubcategoryID = db.Column(db.Integer, primary_key=True)
     SubcategoryName = db.Column(db.String(50), nullable=False)
+    SubcategoryName_en = db.Column(db.String(50), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
     category = db.relationship('Category', backref=db.backref('subcategories', lazy=True))
 
@@ -301,8 +304,11 @@ class FoodItem(db.Model):
     __tablename__ = 'FoodItems'
     FoodItemID = db.Column(db.Integer, primary_key=True)
     FoodName = db.Column(db.String(50), nullable=False)
+    FoodName_en = db.Column(db.String(50), nullable=True)
     Description = db.Column(db.String(200), nullable=False)
+    Description_en = db.Column(db.String(200), nullable=True)
     Ingredients = db.Column(db.String(200), nullable=False)
+    Ingredients_en = db.Column(db.String(200), nullable=True)
     Price = db.Column(db.Float, nullable=False)
     ImageFilename = db.Column(db.String(100), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
@@ -312,8 +318,10 @@ class FoodItem(db.Model):
 
     def to_dict(self):
         return {
-            'FoodItemID': self.FoodItemID, 'FoodName': self.FoodName,
-            'Description': self.Description, 'Ingredients': self.Ingredients,
+            'FoodItemID': self.FoodItemID,
+            'FoodName': self.FoodName, 'FoodName_en': self.FoodName_en or '',
+            'Description': self.Description, 'Description_en': self.Description_en or '',
+            'Ingredients': self.Ingredients, 'Ingredients_en': self.Ingredients_en or '',
             'Price': self.Price, 'ImageFilename': self.ImageFilename,
             'CategoryID': self.CategoryID, 'SubcategoryID': self.SubcategoryID,
             'AllowCustomization': self.allow_customization,
@@ -354,7 +362,9 @@ class GlobalCategory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100), nullable=True)
     description = db.Column(db.String(300), nullable=True)
+    description_en = db.Column(db.String(300), nullable=True)
     icon = db.Column(db.String(100), nullable=True)
     sort_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
@@ -370,6 +380,7 @@ class GlobalSubcategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
     category = db.relationship('GlobalCategory', backref=db.backref('subcategories', lazy=True))
@@ -383,8 +394,11 @@ class GlobalItem(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True)
     name = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100), nullable=True)
     description = db.Column(db.String(500), nullable=True)
+    description_en = db.Column(db.String(500), nullable=True)
     ingredients = db.Column(db.String(500), nullable=True)
+    ingredients_en = db.Column(db.String(500), nullable=True)
     image_filename = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -396,9 +410,9 @@ class GlobalItem(db.Model):
             'id': self.id,
             'category_id': self.category_id,
             'subcategory_id': self.subcategory_id,
-            'name': self.name,
-            'description': self.description,
-            'ingredients': self.ingredients,
+            'name': self.name, 'name_en': self.name_en or '',
+            'description': self.description, 'description_en': self.description_en or '',
+            'ingredients': self.ingredients, 'ingredients_en': self.ingredients_en or '',
             'image_filename': self.image_filename,
         }
 

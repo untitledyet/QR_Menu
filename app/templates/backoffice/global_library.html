@@ -190,7 +190,10 @@
                 <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data">
                     <input type="hidden" name="category_id" value="{{ cat.id }}">
                     <div class="lib-form-row">
-                        <input type="text" name="name" class="bo-input" placeholder="პროდუქტის სახელი *" required>
+                        <input type="text" name="name" class="bo-input" placeholder="სახელი (ქარ) *" required>
+                        <input type="text" name="name_en" class="bo-input" placeholder="Name (EN)">
+                    </div>
+                    <div class="lib-form-row">
                         <select name="subcategory_id" class="bo-input">
                             <option value="">— საბკატეგორია —</option>
                             {% for sub in cat.subcategories %}
@@ -199,8 +202,12 @@
                         </select>
                     </div>
                     <div class="lib-form-row">
-                        <input type="text" name="description" class="bo-input" placeholder="მოკლე აღწერა">
-                        <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები">
+                        <input type="text" name="description" class="bo-input" placeholder="აღწერა (ქარ)">
+                        <input type="text" name="description_en" class="bo-input" placeholder="Description (EN)">
+                    </div>
+                    <div class="lib-form-row">
+                        <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები (ქარ)">
+                        <input type="text" name="ingredients_en" class="bo-input" placeholder="Ingredients (EN)">
                     </div>
                     <div class="lib-form-row">
                         <input type="file" name="image" accept="image/*" class="bo-input">

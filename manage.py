@@ -169,6 +169,56 @@ def run_migrations():
                 conn.commit()
             print('Migration: created VenueItemPriceOverrides table')
 
+        # --- Multilingual _en columns ---
+        cat_cols = [c['name'] for c in insp.get_columns('Categories')]
+        for col, typ in [('CategoryName_en', 'VARCHAR(50)'), ('Description_en', 'VARCHAR(200)')]:
+            if col not in cat_cols:
+                with db.engine.connect() as conn:
+                    conn.execute(text(f'ALTER TABLE "Categories" ADD COLUMN "{col}" {typ}'))
+                    conn.commit()
+                print(f'Migration: added {col} to Categories')
+
+        sub_cols = [c['name'] for c in insp.get_columns('Subcategories')]
+        if 'SubcategoryName_en' not in sub_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "Subcategories" ADD COLUMN "SubcategoryName_en" VARCHAR(50)'))
+                conn.commit()
+            print('Migration: added SubcategoryName_en to Subcategories')
+
+        food_cols = [c['name'] for c in insp.get_columns('FoodItems')]
+        for col, typ in [('FoodName_en', 'VARCHAR(50)'), ('Description_en', 'VARCHAR(200)'), ('Ingredients_en', 'VARCHAR(200)')]:
+            if col not in food_cols:
+                with db.engine.connect() as conn:
+                    conn.execute(text(f'ALTER TABLE "FoodItems" ADD COLUMN "{col}" {typ}'))
+                    conn.commit()
+                print(f'Migration: added {col} to FoodItems')
+
+        if 'GlobalCategories' in table_names:
+            gcat_cols = [c['name'] for c in insp.get_columns('GlobalCategories')]
+            for col, typ in [('name_en', 'VARCHAR(100)'), ('description_en', 'VARCHAR(300)')]:
+                if col not in gcat_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text(f'ALTER TABLE "GlobalCategories" ADD COLUMN "{col}" {typ}'))
+                        conn.commit()
+                    print(f'Migration: added {col} to GlobalCategories')
+
+        if 'GlobalSubcategories' in table_names:
+            gsub_cols = [c['name'] for c in insp.get_columns('GlobalSubcategories')]
+            if 'name_en' not in gsub_cols:
+                with db.engine.connect() as conn:
+                    conn.execute(text('ALTER TABLE "GlobalSubcategories" ADD COLUMN "name_en" VARCHAR(100)'))
+                    conn.commit()
+                print('Migration: added name_en to GlobalSubcategories')
+
+        if 'GlobalItems' in table_names:
+            gitem_cols = [c['name'] for c in insp.get_columns('GlobalItems')]
+            for col, typ in [('name_en', 'VARCHAR(100)'), ('description_en', 'VARCHAR(500)'), ('ingredients_en', 'VARCHAR(500)')]:
+                if col not in gitem_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text(f'ALTER TABLE "GlobalItems" ADD COLUMN "{col}" {typ}'))
+                        conn.commit()
+                    print(f'Migration: added {col} to GlobalItems')
+
         # Activate existing phone-verified users who are stuck
         with db.engine.connect() as conn:
             conn.execute(text(

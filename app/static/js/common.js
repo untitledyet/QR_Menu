@@ -25,16 +25,33 @@ function getVenueFeatures() {
     catch(e) { return {}; }
 }
 
+function itemDisplayName(item) {
+    const lang = typeof getLang === 'function' ? getLang() : 'ka';
+    return (lang === 'en' && item.FoodName_en) ? item.FoodName_en : (item.FoodName || 'Unnamed');
+}
+
+function itemDisplayIngredients(item) {
+    const lang = typeof getLang === 'function' ? getLang() : 'ka';
+    return (lang === 'en' && item.Ingredients_en) ? item.Ingredients_en : (item.Ingredients || '');
+}
+
+function itemDisplayDescription(item) {
+    const lang = typeof getLang === 'function' ? getLang() : 'ka';
+    return (lang === 'en' && item.Description_en) ? item.Description_en : (item.Description || '');
+}
+
 function createItemCard(item) {
     const features = getVenueFeatures();
     const showCart = features.cart !== false;
     const card = document.createElement('div');
     card.classList.add('food-card');
+    const displayName = itemDisplayName(item);
+    const displayIngredients = itemDisplayIngredients(item);
     card.innerHTML = `
-        <img class="food-card__img" src="/static/images/${item.ImageFilename || 'default-image.png'}" alt="${item.FoodName || ''}">
+        <img class="food-card__img" src="/static/images/${item.ImageFilename || 'default-image.png'}" alt="${displayName}">
         <div class="food-card__body">
-            <div class="food-card__name">${item.FoodName || 'Unnamed'}</div>
-            <div class="food-card__desc">${item.Ingredients || ''}</div>
+            <div class="food-card__name">${displayName}</div>
+            <div class="food-card__desc">${displayIngredients}</div>
             <div class="food-card__footer">
                 <span class="food-card__price">₾${item.Price.toFixed(2)}</span>
                 ${showCart ? `<button class="food-card__add" data-item-id="${item.FoodItemID}" aria-label="Add to cart">+</button>` : ''}
@@ -75,14 +92,17 @@ function showItemPopup(item) {
     const modalList = modal.querySelector('.modal-body ul');
     const features = getVenueFeatures();
 
+    const displayName = itemDisplayName(item);
+    const rawIngredients = itemDisplayIngredients(item);
+
     modalImage.src = `/static/images/${item.ImageFilename || 'default-image.png'}`;
-    modalImage.alt = item.FoodName || '';
-    modalTitle.textContent = item.FoodName || '';
+    modalImage.alt = displayName;
+    modalTitle.textContent = displayName;
     modalList.innerHTML = '';
     modalList.classList.add('ingredients-list');
 
     const modifiedIngredients = [];
-    const ingredients = item.Ingredients ? item.Ingredients.split(',') : [];
+    const ingredients = rawIngredients ? rawIngredients.split(',') : [];
 
     // Check both venue-level AND item-level customization
     const venueAllowsCustomization = features.ingredient_customization !== false;
@@ -153,33 +173,35 @@ function showItemPopup(item) {
         commentField.placeholder = typeof t === 'function' ? t('commentPlaceholder') : 'Add a comment...';
     }
 
-    newBtn.addEventListener('click', () => addToCart(item, modifiedIngredients));
+    newBtn.addEventListener('click', () => addToCart(item, modifiedIngredients, rawIngredients));
     $('#item-modal').modal('show');
 }
 
-function addToCart(item, modifiedIngredients) {
+function addToCart(item, modifiedIngredients, rawIngredients) {
     let cart = JSON.parse(localStorage.getItem(getCartKey())) || [];
     const comment = (document.getElementById('item-comment')?.value || '').trim();
+    const ingSource = rawIngredients || item.Ingredients || '';
     const ingredientKey = item.FoodItemID + '-' +
         (modifiedIngredients.length > 0
             ? modifiedIngredients.sort((a, b) => a.name.localeCompare(b.name)).map(ing => `${ing.name}-${ing.action}`).join('|')
-            : item.Ingredients ? item.Ingredients.split(',').sort().map(name => `${name.trim()}-default`).join('|') : 'default')
+            : ingSource ? ingSource.split(',').sort().map(name => `${name.trim()}-default`).join('|') : 'default')
         + (comment ? '-c:' + comment : '');
 
+    const displayName = itemDisplayName(item);
     const existingIdx = cart.findIndex(c => c.id === item.FoodItemID && c.ingredientKey === ingredientKey);
     if (existingIdx !== -1) { cart[existingIdx].quantity += 1; }
     else {
         cart.push({
-            id: item.FoodItemID, name: item.FoodName || 'Unnamed', price: item.Price,
+            id: item.FoodItemID, name: displayName, price: item.Price,
             imageFilename: item.ImageFilename || 'default-image.png',
             ingredients: modifiedIngredients.length > 0 ? modifiedIngredients :
-                (item.Ingredients ? item.Ingredients.split(',').map(n => ({ name: n.trim(), action: 'default' })) : []),
+                (ingSource ? ingSource.split(',').map(n => ({ name: n.trim(), action: 'default' })) : []),
             quantity: 1, ingredientKey, comment
         });
     }
     localStorage.setItem(getCartKey(), JSON.stringify(cart));
     updateCartItemCount();
-    showCartToast(item.FoodName || 'Item');
+    showCartToast(displayName);
     $('#item-modal').modal('hide');
 }
 

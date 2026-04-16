@@ -39,7 +39,9 @@ function handleCategoryClick(card, categoryCards, itemsContainer, sectionTitle, 
     if (!isActive) {
         card.classList.add('active');
         const categoryId = card.dataset.categoryId;
-        const categoryName = card.dataset.categoryName;
+        const lang = typeof getLang === 'function' ? getLang() : 'ka';
+        const categoryName = (lang === 'en' && card.dataset.categoryNameEn)
+            ? card.dataset.categoryNameEn : card.dataset.categoryName;
 
         lockPageHeight();
         showLoadingSkeleton(itemsContainer, 4);

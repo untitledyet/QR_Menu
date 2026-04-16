@@ -2,9 +2,13 @@
     <h2 class="section-title" data-i18n="categories" style="margin-top:0;">კატეგორიები</h2>
     <div class="categories-scroll">
         {% for category in categories %}
-        <div class="cat-chip" data-category-id="{{ category.CategoryID }}" data-category-name="{{ category.CategoryName }}">
+        <div class="cat-chip" data-category-id="{{ category.CategoryID }}"
+             data-category-name="{{ category.CategoryName }}"
+             data-category-name-en="{{ category.CategoryName_en or category.CategoryName }}">
             <img class="cat-chip__img" src="{{ url_for('static', filename='images/categories/' ~ category.CategoryIcon) }}" alt="{{ category.CategoryName }}">
-            <span class="cat-chip__name">{{ category.CategoryName }}</span>
+            <span class="cat-chip__name"
+                  data-ka="{{ category.CategoryName }}"
+                  data-en="{{ category.CategoryName_en or category.CategoryName }}">{{ category.CategoryName }}</span>
         </div>
         {% endfor %}
     </div>

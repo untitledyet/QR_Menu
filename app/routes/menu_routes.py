@@ -124,12 +124,18 @@ def get_items_by_category(slug, category_id):
 
     return jsonify(
         items=[{
-            'FoodName': i.FoodName, 'Ingredients': i.Ingredients, 'Description': i.Description,
+            'FoodName': i.FoodName, 'FoodName_en': i.FoodName_en or '',
+            'Ingredients': i.Ingredients, 'Ingredients_en': i.Ingredients_en or '',
+            'Description': i.Description, 'Description_en': i.Description_en or '',
             'Price': price_overrides.get(i.FoodItemID, i.Price),
             'ImageFilename': i.ImageFilename, 'SubcategoryID': i.SubcategoryID,
             'FoodItemID': i.FoodItemID, 'AllowCustomization': i.allow_customization,
         } for i in items],
-        subcategories=[{'SubcategoryID': s.SubcategoryID, 'SubcategoryName': s.SubcategoryName} for s in subcategories]
+        subcategories=[{
+            'SubcategoryID': s.SubcategoryID,
+            'SubcategoryName': s.SubcategoryName,
+            'SubcategoryName_en': s.SubcategoryName_en or '',
+        } for s in subcategories]
     )
 
 
@@ -139,7 +145,9 @@ def get_items_by_subcategory(slug, subcategory_id):
     items = FoodItem.query.filter_by(SubcategoryID=subcategory_id, is_active=True).all()
 
     return jsonify(items=[{
-        'FoodName': i.FoodName, 'Ingredients': i.Ingredients, 'Description': i.Description,
+        'FoodName': i.FoodName, 'FoodName_en': i.FoodName_en or '',
+        'Ingredients': i.Ingredients, 'Ingredients_en': i.Ingredients_en or '',
+        'Description': i.Description, 'Description_en': i.Description_en or '',
         'Price': i.Price, 'ImageFilename': i.ImageFilename,
         'FoodItemID': i.FoodItemID, 'AllowCustomization': i.allow_customization,
     } for i in items])

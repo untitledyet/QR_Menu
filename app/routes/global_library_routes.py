@@ -123,8 +123,11 @@ def add_global_item():
     item = GlobalItem(
         category_id=cat_id,
         name=name,
+        name_en=request.form.get('name_en', '').strip() or None,
         description=request.form.get('description', ''),
+        description_en=request.form.get('description_en', '').strip() or None,
         ingredients=request.form.get('ingredients', ''),
+        ingredients_en=request.form.get('ingredients_en', '').strip() or None,
         image_filename=image_filename,
     )
     db.session.add(item)
@@ -183,8 +186,11 @@ def import_item():
 
     item = FoodItem(
         FoodName=global_item.name,
+        FoodName_en=global_item.name_en or None,
         Description=global_item.description or global_item.name,
+        Description_en=global_item.description_en or None,
         Ingredients=global_item.ingredients or '',
+        Ingredients_en=global_item.ingredients_en or None,
         Price=float(price),
         ImageFilename=global_item.image_filename or 'default-image.png',
         CategoryID=target_cat_id,

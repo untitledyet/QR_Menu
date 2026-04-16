@@ -25,21 +25,39 @@
 
         <!-- Right: fields -->
         <div class="bo-form-fields">
-            <div class="bo-form-group">
-                <label>Name *</label>
-                <input type="text" name="name" value="{{ item.FoodName if item else '' }}" required placeholder="e.g. Cheeseburger">
+            <div class="bo-form-row">
+                <div class="bo-form-group">
+                    <label>სახელი (ქარ) *</label>
+                    <input type="text" name="name" value="{{ item.FoodName if item else '' }}" required placeholder="მაგ. ჩიზბურგერი">
+                </div>
+                <div class="bo-form-group">
+                    <label>Name (EN)</label>
+                    <input type="text" name="name_en" value="{{ item.FoodName_en if item else '' }}" placeholder="e.g. Cheeseburger">
+                </div>
             </div>
 
-            <div class="bo-form-group">
-                <label>Description</label>
-                <textarea name="description" rows="2" placeholder="Short description">{{ item.Description if item else '' }}</textarea>
+            <div class="bo-form-row">
+                <div class="bo-form-group">
+                    <label>აღწერა (ქარ)</label>
+                    <textarea name="description" rows="2" placeholder="მოკლე აღწერა">{{ item.Description if item else '' }}</textarea>
+                </div>
+                <div class="bo-form-group">
+                    <label>Description (EN)</label>
+                    <textarea name="description_en" rows="2" placeholder="Short description">{{ item.Description_en if item else '' }}</textarea>
+                </div>
             </div>
 
-            <div class="bo-form-group">
-                <label>Ingredients</label>
-                <input type="text" name="ingredients" value="{{ item.Ingredients if item else '' }}" placeholder="Comma separated: Beef, Cheese, Lettuce">
-                <small class="bo-form-hint">Separate with commas. These appear in the item detail popup.</small>
+            <div class="bo-form-row">
+                <div class="bo-form-group">
+                    <label>შემადგენლობა (ქარ)</label>
+                    <input type="text" name="ingredients" value="{{ item.Ingredients if item else '' }}" placeholder="მძიმით გამოყოფილი: ძროხის, ყველი, სალათი">
+                </div>
+                <div class="bo-form-group">
+                    <label>Ingredients (EN)</label>
+                    <input type="text" name="ingredients_en" value="{{ item.Ingredients_en if item else '' }}" placeholder="Comma separated: Beef, Cheese, Lettuce">
+                </div>
             </div>
+            <small class="bo-form-hint">Separate ingredients with commas. They appear in the item detail popup.</small>
 
             <div class="bo-form-row">
                 <div class="bo-form-group">
