@@ -4,11 +4,12 @@ Translates restaurant menu content (items, categories) between Georgian and Engl
 Runs asynchronously — saves to DB after item is already committed.
 """
 import os
+import re
 import json
 import threading
 
 
-GEMINI_MODEL = 'gemini-2.0-flash'
+GEMINI_MODEL = 'gemini-2.5-flash'
 
 # Professional culinary translation prompt
 _PROMPT_TEMPLATE = """\
@@ -46,21 +47,19 @@ def _call_gemini(fields: dict, source_lang: str, target_lang: str, api_key: str)
     )
     payload = {
         'contents': [{'parts': [{'text': prompt}]}],
-        'generationConfig': {'temperature': 0.1, 'maxOutputTokens': 512},
+        'generationConfig': {'temperature': 0.1, 'maxOutputTokens': 1024},
     }
     resp = requests.post(url, json=payload, verify=verify, timeout=20)
     resp.raise_for_status()
 
     text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
 
-    # Strip markdown code block if model wraps response
-    if '```' in text:
-        parts = text.split('```')
-        text = parts[1] if len(parts) > 1 else parts[0]
-        if text.lower().startswith('json'):
-            text = text[4:]
+    # Extract JSON object from response (handles markdown code blocks)
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if not match:
+        raise ValueError('No JSON object found in Gemini response')
 
-    return json.loads(text.strip())
+    return json.loads(match.group(0))
 
 
 def translate_item_async(item_id: int, fields: dict, source_lang: str, target_lang: str, app):
