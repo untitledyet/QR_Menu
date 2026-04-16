@@ -342,30 +342,58 @@ def toggle_venue_active(venue_id):
 def delete_venue(venue_id):
     venue = Venue.query.get_or_404(venue_id)
     name = venue.name
-    # Delete all related data manually (cascade safety)
-    from app.models import RestaurantTable, Booking, ReservationSettings, ReservationCustomer
-    # Bookings
+    from app.models import (RestaurantTable, Booking, ReservationSettings,
+                             VenueGroup, VenueGroupInvite, VenueItemPriceOverride)
+
+    # ── 1. Group cleanup ───────────────────────────────────────────────────
+    # If this venue OWNS a group: delete invites, detach branches, delete group
+    owned_group = VenueGroup.query.filter_by(owner_venue_id=venue_id).first()
+    if owned_group:
+        VenueGroupInvite.query.filter_by(group_id=owned_group.id).delete()
+        # Detach all branches (set group_id = NULL)
+        db.session.execute(
+            db.text('UPDATE "Venues" SET group_id = NULL WHERE group_id = :gid'),
+            {'gid': owned_group.id}
+        )
+        db.session.flush()
+        db.session.delete(owned_group)
+        db.session.flush()
+
+    # If this venue is a MEMBER of another group: just detach it
+    if venue.group_id:
+        venue.group_id = None
+        db.session.flush()
+
+    # ── 2. Delete invites created BY this venue's admin users ──────────────
+    admin_ids = [a.id for a in AdminUser.query.filter_by(venue_id=venue_id).all()]
+    if admin_ids:
+        VenueGroupInvite.query.filter(
+            VenueGroupInvite.invited_by.in_(admin_ids)
+        ).delete(synchronize_session='fetch')
+
+    # ── 3. Price overrides for this venue ──────────────────────────────────
+    VenueItemPriceOverride.query.filter_by(venue_id=venue_id).delete()
+
+    # ── 4. Reservations & tables ───────────────────────────────────────────
     Booking.query.filter_by(venue_id=venue_id).delete()
-    # Tables
     RestaurantTable.query.filter_by(venue_id=venue_id).delete()
-    # Reservation settings
     ReservationSettings.query.filter_by(venue_id=venue_id).delete()
-    # Promotions
+
+    # ── 5. Menu content ────────────────────────────────────────────────────
     Promotion.query.filter_by(venue_id=venue_id).delete()
-    # Food items via categories — null out SubcategoryID first, then delete items/subs/cats
     cats = Category.query.filter_by(venue_id=venue_id).all()
     for cat in cats:
         FoodItem.query.filter_by(CategoryID=cat.CategoryID).update({'SubcategoryID': None})
         FoodItem.query.filter_by(CategoryID=cat.CategoryID).delete()
         Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
     Category.query.filter_by(venue_id=venue_id).delete()
-    # Orders
+
+    # ── 6. Orders / overrides / admin users ───────────────────────────────
     Order.query.filter_by(venue_id=venue_id).delete()
-    # Feature overrides
     VenueFeatureOverride.query.filter_by(venue_id=venue_id).delete()
-    # Admin users
     AdminUser.query.filter_by(venue_id=venue_id).delete()
-    # Venue itself
+
+    # ── 7. Venue itself ────────────────────────────────────────────────────
     db.session.delete(venue)
     db.session.commit()
     return jsonify(success=True, message=f'"{name}" და მისი ყველა მონაცემი წაიშალა')
