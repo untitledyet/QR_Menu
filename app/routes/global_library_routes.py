@@ -19,7 +19,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'admin_id' not in session:
-            return redirect(url_for('bo_bp.login'))
+            return redirect('/login')
         return f(*args, **kwargs)
     return decorated
 

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #0f172a;
+        min-height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+    }
+    .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 32px 28px;
+        width: 100%; max-width: 340px;
+    }
+    .dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; margin-bottom: 24px; }
+    h2 { font-size: .95rem; font-weight: 600; color: #f1f5f9; margin-bottom: 24px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: .75rem; color: #94a3b8; margin-bottom: 6px; }
+    input {
+        width: 100%; padding: 10px 13px;
+        background: #0f172a; border: 1px solid #334155;
+        border-radius: 7px; font-size: .88rem; font-family: inherit;
+        color: #f1f5f9; outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: #64748b; }
+    .btn {
+        width: 100%; padding: 11px;
+        background: #334155; color: #f1f5f9;
+        border: none; border-radius: 7px; font-size: .88rem; font-weight: 500;
+        cursor: pointer; font-family: inherit; margin-top: 6px;
+        transition: background .15s;
+    }
+    .btn:hover { background: #475569; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .error {
+        background: #450a0a; border: 1px solid #7f1d1d;
+        color: #fca5a5; border-radius: 6px; padding: 8px 12px;
+        font-size: .78rem; margin-bottom: 14px; display: none;
+    }
+    .sms-hint { font-size: .8rem; color: #94a3b8; margin-bottom: 14px; }
+    .code-input { letter-spacing: .3em; font-size: 1.1rem; text-align: center; }
+    .back-btn {
+        width: 100%; padding: 9px; background: none;
+        border: 1px solid #334155; border-radius: 7px;
+        color: #64748b; font-size: .82rem; cursor: pointer;
+        font-family: inherit; margin-top: 6px;
+    }
+    .back-btn:hover { color: #94a3b8; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="dot"></div>
+    <h2>System Access</h2>
+
+    <div id="error-msg" class="error"></div>
+
+    <div id="step-credentials">
+        <div class="form-group">
+            <label>USERNAME</label>
+            <input type="text" id="username" autocomplete="off" autofocus>
+        </div>
+        <div class="form-group">
+            <label>PASSWORD</label>
+            <input type="password" id="password" autocomplete="current-password">
+        </div>
+        <button class="btn" id="btn-login">Continue</button>
+    </div>
+
+    <div id="step-2fa" style="display:none;">
+        <p id="sms-hint" class="sms-hint"></p>
+        <div class="form-group">
+            <label>VERIFICATION CODE</label>
+            <input type="text" id="sms-code" class="code-input"
+                   inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+        </div>
+        <button class="btn" id="btn-verify">Verify</button>
+        <button class="back-btn" id="btn-back">Back</button>
+    </div>
+</div>
+
+<script>
+(function(){
+    const errEl = document.getElementById('error-msg');
+    function showError(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+    function hideError(){ errEl.style.display='none'; }
+
+    document.getElementById('btn-login').addEventListener('click', async()=>{
+        hideError();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        if(!username||!password){ showError('Required'); return; }
+
+        const btn = document.getElementById('btn-login');
+        btn.disabled=true; btn.textContent='...';
+        try{
+            const res = await fetch('/backoffice/login',{
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({step:'credentials', username, password})
+            });
+            const d = await res.json();
+            if(d.error){ showError(d.error); return; }
+            if(d.step==='sms_2fa'){
+                document.getElementById('sms-hint').textContent = d.message||'';
+                document.getElementById('step-credentials').style.display='none';
+                document.getElementById('step-2fa').style.display='block';
+                document.getElementById('sms-code').focus();
+            } else if(d.redirect){
+                window.location.href=d.redirect;
+            }
+        }catch(e){ showError('Connection error'); }
+        finally{ btn.disabled=false; btn.textContent='Continue'; }
+    });
+
+    ['username','password'].forEach(id=>{
+        document.getElementById(id).addEventListener('keydown',e=>{
+            if(e.key==='Enter') document.getElementById('btn-login').click();
+        });
+    });
+
+    document.getElementById('btn-verify').addEventListener('click', async()=>{
+        hideError();
+        const code = document.getElementById('sms-code').value.trim();
+        if(!code){ showError('Required'); return; }
+
+        const btn = document.getElementById('btn-verify');
+        btn.disabled=true; btn.textContent='...';
+        try{
+            const res = await fetch('/backoffice/login',{
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({step:'sms_2fa', code})
+            });
+            const d = await res.json();
+            if(d.error){ showError(d.error); return; }
+            if(d.redirect) window.location.href=d.redirect;
+        }catch(e){ showError('Connection error'); }
+        finally{ btn.disabled=false; btn.textContent='Verify'; }
+    });
+
+    document.getElementById('sms-code').addEventListener('keydown',e=>{
+        if(e.key==='Enter') document.getElementById('btn-verify').click();
+    });
+
+    document.getElementById('btn-back').addEventListener('click',()=>{
+        hideError();
+        document.getElementById('sms-code').value='';
+        document.getElementById('step-2fa').style.display='none';
+        document.getElementById('step-credentials').style.display='block';
+        document.getElementById('password').value='';
+        document.getElementById('username').focus();
+    });
+})();
+</script>
+</body>
+</html>

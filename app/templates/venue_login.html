@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tably — შესვლა</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #fff5f2 0%, #fff 60%, #f0f4ff 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+    .card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 8px 40px rgba(0,0,0,.1);
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 400px;
+    }
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 32px;
+    }
+    .logo-icon {
+        width: 40px; height: 40px;
+        background: #FF6B35;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.1rem;
+    }
+    .logo-name { font-size: 1.4rem; font-weight: 700; color: #111827; }
+    h2 { font-size: 1.1rem; font-weight: 600; color: #111827; margin-bottom: 6px; }
+    .sub { font-size: .84rem; color: #6b7280; margin-bottom: 28px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: .8rem; font-weight: 500; color: #374151; margin-bottom: 6px; }
+    input {
+        width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb;
+        border-radius: 9px; font-size: .9rem; font-family: inherit;
+        outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: #FF6B35; box-shadow: 0 0 0 3px rgba(255,107,53,.12); }
+    .btn {
+        width: 100%; padding: 12px; background: #FF6B35; color: #fff;
+        border: none; border-radius: 9px; font-size: .92rem; font-weight: 600;
+        cursor: pointer; font-family: inherit; transition: background .15s;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover { background: #e55a25; }
+    .btn:disabled { background: #fca882; cursor: not-allowed; }
+    .btn-ghost {
+        width: 100%; padding: 10px; background: none; border: 1.5px solid #e5e7eb;
+        border-radius: 9px; font-size: .85rem; color: #6b7280;
+        cursor: pointer; font-family: inherit; margin-top: 8px;
+        transition: border-color .15s;
+    }
+    .btn-ghost:hover { border-color: #9ca3af; color: #374151; }
+    .error {
+        background: #fef2f2; border: 1px solid #fecaca;
+        color: #dc2626; border-radius: 8px; padding: 10px 14px;
+        font-size: .82rem; margin-bottom: 16px; display: none;
+    }
+    .sms-hint { font-size: .84rem; color: #374151; margin-bottom: 16px; }
+    .divider { border: none; border-top: 1px solid #f3f4f6; margin: 24px 0; }
+    .register-link {
+        text-align: center; font-size: .82rem; color: #6b7280;
+    }
+    .register-link a { color: #FF6B35; font-weight: 600; text-decoration: none; }
+    .register-link a:hover { text-decoration: underline; }
+    .code-input {
+        letter-spacing: .25em; font-size: 1.2rem; font-weight: 600;
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+        <span class="logo-name">Tably</span>
+    </div>
+
+    <div id="error-msg" class="error"></div>
+
+    <!-- Step 1: credentials -->
+    <div id="step-credentials">
+        <h2>კეთილი იყოს თქვენი დაბრუნება</h2>
+        <p class="sub">შედით თქვენს ობიექტის პანელში</p>
+
+        <div class="form-group">
+            <label>ელ. ფოსტა ან ტელეფონი</label>
+            <input type="text" id="username" autocomplete="username" placeholder="info@example.com" autofocus>
+        </div>
+        <div class="form-group">
+            <label>პაროლი</label>
+            <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <button class="btn" id="btn-login">
+            <i class="fas fa-sign-in-alt"></i> შესვლა
+        </button>
+
+        <hr class="divider">
+        <div class="register-link">
+            ობიექტი ჯერ არ გაქვს? <a href="/#register">რეგისტრაცია</a>
+        </div>
+    </div>
+
+    <!-- Step 2: SMS 2FA -->
+    <div id="step-2fa" style="display:none;">
+        <h2>SMS დადასტურება</h2>
+        <p id="sms-hint" class="sms-hint"></p>
+        <div class="form-group">
+            <label>6-ნიშნა კოდი</label>
+            <input type="text" id="sms-code" class="code-input"
+                   inputmode="numeric" maxlength="6"
+                   autocomplete="one-time-code" placeholder="000000">
+        </div>
+        <button class="btn" id="btn-verify">
+            <i class="fas fa-check"></i> დადასტურება
+        </button>
+        <button class="btn-ghost" id="btn-back">უკან</button>
+    </div>
+</div>
+
+<script>
+(function(){
+    const errEl = document.getElementById('error-msg');
+
+    function showError(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+    function hideError(){ errEl.style.display='none'; }
+
+    document.getElementById('btn-login').addEventListener('click', async()=>{
+        hideError();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        if(!username||!password){ showError('შეავსეთ ყველა ველი'); return; }
+
+        const btn = document.getElementById('btn-login');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> შედის...';
+        try{
+            const res = await fetch('/backoffice/login',{
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({step:'credentials', username, password})
+            });
+            const d = await res.json();
+            if(d.error){ showError(d.error); return; }
+            if(d.step==='sms_2fa'){
+                document.getElementById('sms-hint').textContent = d.message||'';
+                document.getElementById('step-credentials').style.display='none';
+                document.getElementById('step-2fa').style.display='block';
+                document.getElementById('sms-code').focus();
+            } else if(d.redirect){
+                btn.innerHTML='<i class="fas fa-check"></i> მზადაა!';
+                window.location.href=d.redirect;
+            }
+        }catch(e){ showError('კავშირის შეცდომა'); }
+        finally{ if(!document.getElementById('step-2fa').offsetParent){ btn.disabled=false; btn.innerHTML='<i class="fas fa-sign-in-alt"></i> შესვლა'; } }
+    });
+
+    ['username','password'].forEach(id=>{
+        document.getElementById(id).addEventListener('keydown',e=>{
+            if(e.key==='Enter') document.getElementById('btn-login').click();
+        });
+    });
+
+    document.getElementById('btn-verify').addEventListener('click', async()=>{
+        hideError();
+        const code = document.getElementById('sms-code').value.trim();
+        if(!code){ showError('შეიყვანეთ კოდი'); return; }
+
+        const btn = document.getElementById('btn-verify');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>...';
+        try{
+            const res = await fetch('/backoffice/login',{
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({step:'sms_2fa', code})
+            });
+            const d = await res.json();
+            if(d.error){ showError(d.error); return; }
+            if(d.redirect) window.location.href=d.redirect;
+        }catch(e){ showError('კავშირის შეცდომა'); }
+        finally{ btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> დადასტურება'; }
+    });
+
+    document.getElementById('sms-code').addEventListener('keydown',e=>{
+        if(e.key==='Enter') document.getElementById('btn-verify').click();
+    });
+
+    document.getElementById('btn-back').addEventListener('click',()=>{
+        hideError();
+        document.getElementById('sms-code').value='';
+        document.getElementById('step-2fa').style.display='none';
+        document.getElementById('step-credentials').style.display='block';
+        document.getElementById('password').value='';
+        document.getElementById('username').focus();
+    });
+})();
+</script>
+</body>
+</html>

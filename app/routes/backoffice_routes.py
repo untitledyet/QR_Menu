@@ -20,7 +20,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'admin_id' not in session:
-            return redirect(url_for('bo_bp.login'))
+            return redirect('/login')
         return f(*args, **kwargs)
     return decorated
 
@@ -82,9 +82,9 @@ def verify_promo_ownership(promo_id):
 
 @bo_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Backoffice login — AJAX JSON, 2-step: password → SMS 2FA."""
+    """Backoffice login — GET redirects to /login, POST handles AJAX auth."""
     if request.method == 'GET':
-        return render_template('backoffice/login.html')
+        return redirect('/login')
 
     data = request.get_json() or {}
     step = data.get('step', 'credentials')

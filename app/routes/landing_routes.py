@@ -79,6 +79,24 @@ def landing():
     return render_template('landing.html', venues=venues)
 
 
+@landing_bp.route('/login')
+def venue_login_page():
+    """Venue admin login page."""
+    from flask import session as flask_session
+    if 'admin_id' in flask_session:
+        return redirect('/backoffice')
+    return render_template('venue_login.html')
+
+
+@landing_bp.route('/admin')
+def admin_login_page():
+    """Super admin login page — obscure, not linked publicly."""
+    from flask import session as flask_session
+    if 'admin_id' in flask_session:
+        return redirect('/backoffice')
+    return render_template('admin_login.html')
+
+
 # ============================================================
 # Google Places search
 # ============================================================
