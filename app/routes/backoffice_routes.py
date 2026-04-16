@@ -232,7 +232,7 @@ def change_password():
 @bo_bp.route('/logout')
 def logout():
     session.pop('admin_id', None)
-    return redirect(url_for('bo_bp.login'))
+    return redirect('/login')
 
 
 @bo_bp.route('/profile', methods=['GET', 'POST'])
