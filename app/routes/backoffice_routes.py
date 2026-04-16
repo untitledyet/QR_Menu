@@ -217,6 +217,19 @@ def logout():
     return redirect(url_for('bo_bp.login'))
 
 
+@bo_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    admin = get_current_admin()
+    if request.method == 'POST':
+        two_fa = request.form.get('two_fa_enabled') == '1'
+        admin.two_fa_enabled = two_fa
+        db.session.commit()
+        flash('პარამეტრები შენახულია')
+        return redirect(url_for('bo_bp.profile'))
+    return render_template('backoffice/profile.html', admin=admin)
+
+
 # ============================================================
 # Dashboard
 # ============================================================

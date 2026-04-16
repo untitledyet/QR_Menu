@@ -6,18 +6,53 @@
     <p class="bo-header__sub">{{ venue.name }}</p>
 </div>
 
-<form method="POST" style="max-width:480px;">
-    <div class="bo-form-group">
-        <label class="bo-label">Total Tables (QR Menu)</label>
-        <input type="number" name="total_tables" class="bo-input" min="0" value="{{ venue.total_tables or 0 }}"
-               placeholder="0 = unlimited">
-        <p style="font-size:.78rem; color:var(--bo-muted); margin-top:4px;">
-            How many physical tables does your venue have? Menu links <code>/table/1</code> through <code>/table/N</code> will work.
-            Set to 0 for unlimited access.
+<div style="max-width:560px;display:flex;flex-direction:column;gap:20px;">
+
+    {# ── Table count ── #}
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+        <h3 style="margin:0 0 4px;font-size:1rem;color:#374151;">მაგიდების რაოდენობა</h3>
+        <p style="margin:0 0 16px;font-size:.82rem;color:#6b7280;">
+            რამდენი ფიზიკური მაგიდა აქვს ობიექტს? 0 = შეუზღუდავი.
         </p>
+        <form method="POST">
+            <div class="bo-form-group">
+                <input type="number" name="total_tables" class="bo-input" min="0"
+                       value="{{ venue.total_tables or 0 }}" style="max-width:140px;">
+            </div>
+            <button type="submit" class="bo-btn bo-btn--primary" style="margin-top:12px;">
+                <i class="fas fa-save"></i> შენახვა
+            </button>
+        </form>
     </div>
-    <button type="submit" class="bo-btn bo-btn--primary" style="margin-top:16px;">
-        <i class="fas fa-save"></i> Save
-    </button>
-</form>
+
+    {# ── Table URLs ── #}
+    {% set total = venue.total_tables or 0 %}
+    {% if total > 0 %}
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+        <h3 style="margin:0 0 4px;font-size:1rem;color:#374151;">მაგიდების ლინკები</h3>
+        <p style="margin:0 0 16px;font-size:.82rem;color:#6b7280;">
+            QR კოდზე ჩასასვლელი მისამართი თითოეული მაგიდისთვის.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+            {% set base = request.scheme + '://' + request.host %}
+            {% for i in range(1, total + 1) %}
+            {% set url = base + '/' + venue.slug + '/table/' + i|string %}
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb;">
+                <span style="font-size:.75rem;font-weight:600;color:#6b7280;min-width:24px;">{{ i }}</span>
+                <code style="font-size:.78rem;color:#374151;flex:1;word-break:break-all;">{{ url }}</code>
+                <button onclick="navigator.clipboard.writeText('{{ url }}');this.textContent='✓'"
+                        style="font-size:.75rem;padding:4px 8px;background:#FF6B35;color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">
+                    კოპირება
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif total == 0 %}
+    <div style="background:#f9fafb;border:1px dashed #d1d5db;border-radius:12px;padding:20px;color:#6b7280;font-size:.85rem;">
+        <i class="fas fa-info-circle"></i> მაგიდების რაოდენობა 0-ზეა — ლინკები შეუზღუდავია (<code>/{{ venue.slug }}/table/1</code>, <code>/2</code>, ...)
+    </div>
+    {% endif %}
+
+</div>
 {% endblock %}

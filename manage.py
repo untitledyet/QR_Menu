@@ -90,6 +90,12 @@ def run_migrations():
                 conn.commit()
             print('Migration: added email_token_expires to AdminUsers')
 
+        if 'two_fa_enabled' not in admin_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN two_fa_enabled BOOLEAN NOT NULL DEFAULT TRUE'))
+                conn.commit()
+            print('Migration: added two_fa_enabled to AdminUsers')
+
         # --- PhoneOtps table migrations ---
         if 'PhoneOtps' in table_names:
             otp_cols = [c['name'] for c in insp.get_columns('PhoneOtps')]

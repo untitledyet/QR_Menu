@@ -114,7 +114,7 @@
                 </div>
                 {% endif %}
                 <span class="bo-sidebar__user"><i class="fas fa-user-circle"></i> {{ admin.username if admin }}</span>
-                <a href="{{ url_for('bo_bp.change_password') }}" class="bo-nav__item"><i class="fas fa-key"></i> პაროლის შეცვლა</a>
+                <a href="{{ url_for('bo_bp.profile') }}" class="bo-nav__item {% if 'profile' in request.endpoint %}active{% endif %}"><i class="fas fa-user"></i> პროფილი</a>
                 <a href="{{ url_for('bo_bp.logout') }}" class="bo-nav__item"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </aside>

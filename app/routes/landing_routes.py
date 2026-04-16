@@ -247,8 +247,14 @@ def register_venue():
     if AdminUser.query.filter_by(phone=full_phone).first():
         return jsonify(error='es monacemebi ukve registrirebulia'), 400
 
-    # Generate unique slug
-    base_slug = slugify(venue_name)
+    # Generate unique slug — include city from address to avoid collisions
+    city = ''
+    if address:
+        parts = [p.strip() for p in address.split(',') if p.strip()]
+        # Formatted address: "Street, City, Country" — take second-to-last if >1 parts
+        if len(parts) >= 2:
+            city = parts[-2] if parts[-1].lower() in ('georgia', 'საქართველო') else parts[-1]
+    base_slug = slugify(venue_name + (' ' + city if city else ''))
     slug = base_slug
     counter = 2
     while Venue.query.filter_by(slug=slug).first():
@@ -442,7 +448,13 @@ def login_venue():
         # 4. Successful credentials — reset brute-force counter
         admin.reset_failed_logins()
 
-        # 5. SMS 2FA — hard fail if SMS is down (no bypass)
+        # 5. Skip 2FA if disabled by user
+        if not admin.two_fa_enabled:
+            db.session.commit()
+            session['admin_id'] = admin.id
+            return jsonify(success=True, redirect='/backoffice')
+
+        # 6. SMS 2FA — hard fail if SMS is down (no bypass)
         code, sms_error = send_sms_code(admin.phone)
         if sms_error:
             current_app.logger.error('2FA SMS failed for id=' + str(admin.id) +

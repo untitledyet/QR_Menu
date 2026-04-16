@@ -121,6 +121,9 @@ class AdminUser(db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
 
+    # 2FA preference
+    two_fa_enabled = db.Column(db.Boolean, default=True, nullable=False)
+
     venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
 
     def set_password(self, pw):
