@@ -321,12 +321,10 @@ def delete_venue(venue_id):
     ReservationSettings.query.filter_by(venue_id=venue_id).delete()
     # Promotions
     Promotion.query.filter_by(venue_id=venue_id).delete()
-    # Food items via categories — delete items first, then subcategories, then categories
+    # Food items via categories — null out SubcategoryID first, then delete items/subs/cats
     cats = Category.query.filter_by(venue_id=venue_id).all()
     for cat in cats:
-        subs = Subcategory.query.filter_by(CategoryID=cat.CategoryID).all()
-        for sub in subs:
-            FoodItem.query.filter_by(SubcategoryID=sub.SubcategoryID).delete()
+        FoodItem.query.filter_by(CategoryID=cat.CategoryID).update({'SubcategoryID': None})
         FoodItem.query.filter_by(CategoryID=cat.CategoryID).delete()
         Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
     Category.query.filter_by(venue_id=venue_id).delete()
@@ -688,7 +686,8 @@ def delete_category(cat_id):
         return redirect(url_for('bo_bp.categories_list'))
 
     name = cat.CategoryName
-    # Delete subcategories too
+    # Unlink items from subcategories, then delete subcategories
+    FoodItem.query.filter_by(CategoryID=cat.CategoryID).update({'SubcategoryID': None})
     Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
     db.session.delete(cat)
     db.session.commit()
