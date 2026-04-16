@@ -170,58 +170,84 @@
             </div>
         </div>
 
-        <!-- REGISTER -->
+        <!-- REGISTER — 2-step wizard -->
         <div id="form-register" style="display:none;">
-            <div id="reg-main">
-                <div class="t-form-group">
-                    <label>ობიექტის სახელი</label>
-                    <input type="text" class="t-input" id="reg-venue" placeholder="მაგ. ჩემი რესტორანი" autocomplete="organization">
+
+            <!-- Step indicator -->
+            <div class="reg-steps">
+                <div class="reg-step active" id="rstep-1">
+                    <div class="reg-step__dot">1</div>
+                    <span class="reg-step__label">ანგარიში</span>
                 </div>
-                <div class="t-form-group">
-                    <label>მისამართი <span style="font-size:.72rem;color:var(--t-text-3);">(Google Maps)</span></label>
-                    <input type="text" class="t-input" id="reg-address" placeholder="ქ. თბილისი, რუსთაველის 1" oninput="onAddressInput()" onfocus="schedulePlacesSearch()" autocomplete="off">
+                <div class="reg-step__line" id="rline-1"></div>
+                <div class="reg-step" id="rstep-2">
+                    <div class="reg-step__dot">2</div>
+                    <span class="reg-step__label">ტელეფონი</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Venue + Account -->
+            <div class="reg-panel" id="reg-panel-1">
+                <div class="t-float-group">
+                    <input type="text" class="t-float-input" id="reg-venue" placeholder=" " autocomplete="organization">
+                    <label class="t-float-label" for="reg-venue">ობიექტის სახელი</label>
+                </div>
+                <div class="t-float-group">
+                    <input type="text" class="t-float-input" id="reg-address" placeholder=" " oninput="onAddressInput()" onfocus="schedulePlacesSearch()" autocomplete="off">
+                    <label class="t-float-label" for="reg-address">მისამართი (Google Maps)</label>
                     <input type="hidden" id="reg-place-id">
-                    <div id="place-confirmed" style="display:none;margin-top:6px;font-size:.78rem;color:#10B981;">
+                    <div id="place-confirmed" style="display:none;" class="reg-field-hint reg-field-hint--ok">
                         <i class="fas fa-check-circle"></i> <span id="place-confirmed-text"></span>
                     </div>
                 </div>
-                <div class="t-form-group">
-                    <label>ელ. ფოსტა</label>
-                    <input type="email" class="t-input" id="reg-email" placeholder="your@email.com" autocomplete="email">
+                <div class="t-float-group">
+                    <input type="email" class="t-float-input" id="reg-email" placeholder=" " autocomplete="email">
+                    <label class="t-float-label" for="reg-email">ელ. ფოსტა</label>
                 </div>
-                <div class="t-form-group">
-                    <label style="display:flex;justify-content:space-between;align-items:center;">
-                        <span>პაროლი</span>
-                        <button type="button" onclick="suggestPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;">&#x1F511; ავტო-გენერაცია</button>
-                    </label>
-                    <div style="position:relative;">
-                        <input type="password" class="t-input" id="reg-password" placeholder="მინ. 8 სიმბოლო" autocomplete="new-password" style="padding-right:44px;" oninput="checkPasswordStrength()">
-                        <button type="button" onclick="togglePwd('reg-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
-                    </div>
-                    <div id="pwd-strength" style="margin-top:6px;height:4px;border-radius:2px;background:var(--t-border);overflow:hidden;">
-                        <div id="pwd-strength-bar" style="height:100%;width:0;transition:width .3s,background .3s;"></div>
-                    </div>
-                    <div id="pwd-strength-label" style="font-size:.72rem;color:var(--t-text-3);margin-top:3px;"></div>
+                <div class="t-float-group t-float-group--pwd">
+                    <input type="password" class="t-float-input" id="reg-password" placeholder=" " autocomplete="new-password" style="padding-right:44px;" oninput="checkPasswordStrength()">
+                    <label class="t-float-label" for="reg-password">პაროლი (მინ. 8 სიმბოლო)</label>
+                    <button type="button" class="reg-pwd-toggle" onclick="togglePwd('reg-password')" title="ჩვენება"><i class="fas fa-eye" id="pwd-eye-icon"></i></button>
                 </div>
-                <div class="t-form-group">
-                    <label>ტელეფონი</label>
-                    <div style="display:flex;gap:8px;">
-                        <input type="tel" class="t-input" id="reg-phone" placeholder="555123456" oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel" style="flex:1;">
-                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" style="display:none;padding:0 16px;border-radius:10px;border:none;background:var(--t-primary);color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">კოდი</button>
-                    </div>
-                    <div id="phone-otp-wrap" style="display:none;margin-top:8px;">
-                        <input type="text" class="t-input" id="phone-otp-input" placeholder="6-ნიშნა კოდი" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:.2em;font-size:1rem;" oninput="onOtpInput(this)">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
-                            <div id="otp-timer-wrap" style="font-size:.72rem;color:var(--t-text-3);"></div>
-                            <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" style="display:none;background:none;border:none;color:var(--t-primary);font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;">ხელახლა გაგზავნა</button>
-                        </div>
-                    </div>
-                    <div id="phone-verified-badge" style="display:none;margin-top:6px;font-size:.78rem;color:#10B981;">
-                        <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
-                    </div>
+                <div class="reg-pwd-extras">
+                    <div class="reg-pwd-strength-bar"><div id="pwd-strength-bar"></div></div>
+                    <span id="pwd-strength-label" class="reg-pwd-label"></span>
+                    <button type="button" onclick="suggestPassword()" class="reg-autogen-btn"><i class="fas fa-key"></i> ავტო</button>
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" id="reg-submit-btn" onclick="doRegister()">რეგისტრაცია</button>
+                <button class="t-btn t-btn--primary reg-next-btn" id="reg-step1-next" onclick="goToRegStep(2)" style="margin-top:20px;">
+                    შემდეგი &nbsp;<i class="fas fa-arrow-right" style="font-size:.78rem;"></i>
+                </button>
             </div>
+
+            <!-- Step 2: Phone verification -->
+            <div class="reg-panel reg-panel--hidden" id="reg-panel-2">
+                <p class="reg-step-hint">SMS კოდი გაიგზავნება თქვენს ნომერზე ანგარიშის დასადასტურებლად.</p>
+                <div class="t-float-group">
+                    <div class="reg-phone-group">
+                        <span class="reg-phone-cc">+995</span>
+                        <div style="flex:1;position:relative;">
+                            <input type="tel" class="t-float-input reg-phone-input" id="reg-phone" placeholder=" " oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel">
+                            <label class="t-float-label" for="reg-phone">ნომერი (5XX XXX XXX)</label>
+                        </div>
+                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" class="reg-send-sms-btn" style="display:none;">კოდი</button>
+                    </div>
+                </div>
+                <div id="phone-otp-wrap" style="display:none;" class="reg-otp-wrap">
+                    <input type="text" class="t-input reg-otp-input" id="phone-otp-input" placeholder="• • • • • •" maxlength="6" inputmode="numeric" oninput="onOtpInput(this)">
+                    <div class="reg-otp-meta">
+                        <span id="otp-timer-wrap" class="reg-field-hint"></span>
+                        <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" class="reg-link-btn" style="display:none;">ხელახლა გაგზავნა</button>
+                    </div>
+                </div>
+                <div id="phone-verified-badge" style="display:none;" class="reg-field-hint reg-field-hint--ok" style="margin-bottom:8px;">
+                    <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
+                </div>
+                <div class="reg-nav" style="margin-top:20px;">
+                    <button class="t-btn t-btn--ghost" onclick="goToRegStep(1)"><i class="fas fa-arrow-left" style="font-size:.78rem;"></i></button>
+                    <button class="t-btn t-btn--primary" id="reg-submit-btn" onclick="doRegister()" style="flex:1;">რეგისტრაცია</button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -253,6 +279,21 @@ function switchTab(tab) {
     document.getElementById('login-step-2').style.display = 'none';
     document.getElementById('login-forgot').style.display = 'none';
     document.getElementById('login-reset-sms').style.display = 'none';
+    // Reset register wizard to step 1
+    if (tab === 'register') {
+        for (var i = 1; i <= 2; i++) {
+            var p = document.getElementById('reg-panel-' + i);
+            if (p) p.classList.toggle('reg-panel--hidden', i !== 1);
+        }
+        _regCurrentStep = 1;
+        _updateRegStepIndicator(1);
+        // Reset phone step state
+        phoneVerified = false;
+        document.getElementById('phone-otp-wrap').style.display = 'none';
+        document.getElementById('phone-verified-badge').style.display = 'none';
+        var sendBtn = document.getElementById('send-sms-btn');
+        if (sendBtn) { sendBtn.style.display = 'none'; sendBtn.disabled = false; }
+    }
 }
 document.getElementById('auth-modal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
@@ -267,6 +308,10 @@ function showMsg(msg, type) {
 function togglePwd(id) {
     var inp = document.getElementById(id);
     inp.type = inp.type === 'password' ? 'text' : 'password';
+    var icon = document.getElementById('pwd-eye-icon');
+    if (icon) {
+        icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
 }
 function suggestPassword() {
     fetch('/api/suggest-password').then(function(r){return r.json();}).then(function(d){
@@ -418,6 +463,89 @@ function startOtpTimer(seconds) {
             timerEl.textContent = remaining + '\u10ec\u10db';
         }
     }, 1000);
+}
+
+/* Registration wizard step navigation (2 steps) */
+var _regCurrentStep = 1;
+var _regTotalSteps = 2;
+
+function goToRegStep(n) {
+    var dir = n > _regCurrentStep ? 1 : -1;
+    if (dir > 0) {
+        if (!validateRegStep(_regCurrentStep)) return;
+        if (_regCurrentStep === 1) {
+            // Async email availability check before advancing to phone step
+            _checkEmailThenAdvance(n, dir);
+            return;
+        }
+    }
+    _doRegTransition(n, dir);
+}
+
+function _checkEmailThenAdvance(n, dir) {
+    var btn = document.getElementById('reg-step1-next');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    var email = document.getElementById('reg-email').value.trim();
+    fetch('/api/check-availability', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email})
+    }).then(function(r){ return r.json(); }).then(function(d){
+        if (btn) { btn.disabled = false; btn.innerHTML = 'შემდეგი &nbsp;<i class="fas fa-arrow-right" style="font-size:.78rem;"></i>'; }
+        if (d.available === false) {
+            showMsg(d.error, 'error');
+        } else {
+            _doRegTransition(n, dir);
+        }
+    }).catch(function(){
+        if (btn) { btn.disabled = false; btn.innerHTML = 'შემდეგი &nbsp;<i class="fas fa-arrow-right" style="font-size:.78rem;"></i>'; }
+        _doRegTransition(n, dir); // network error: proceed anyway, backend will catch it
+    });
+}
+
+function _doRegTransition(n, dir) {
+    var curPanel = document.getElementById('reg-panel-' + _regCurrentStep);
+    var nextPanel = document.getElementById('reg-panel-' + n);
+    curPanel.classList.add('reg-panel--hidden');
+    nextPanel.classList.remove('reg-panel--hidden');
+    var animClass = dir > 0 ? 'reg-panel--anim-fwd' : 'reg-panel--anim-back';
+    nextPanel.classList.remove('reg-panel--anim-fwd', 'reg-panel--anim-back');
+    void nextPanel.offsetWidth; // reflow
+    nextPanel.classList.add(animClass);
+    _regCurrentStep = n;
+    _updateRegStepIndicator(n);
+    var firstInput = nextPanel.querySelector('input:not([type=hidden])');
+    if (firstInput) setTimeout(function(){ firstInput.focus(); }, 50);
+    showMsg('', '');
+}
+
+function _updateRegStepIndicator(n) {
+    for (var i = 1; i <= _regTotalSteps; i++) {
+        var stepEl = document.getElementById('rstep-' + i);
+        if (!stepEl) continue;
+        stepEl.classList.toggle('active', i === n);
+        stepEl.classList.toggle('done', i < n);
+    }
+    for (var j = 1; j < _regTotalSteps; j++) {
+        var line = document.getElementById('rline-' + j);
+        if (line) line.classList.toggle('done', j < n);
+    }
+}
+
+function validateRegStep(step) {
+    showMsg('', '');
+    if (step === 1) {
+        var name = document.getElementById('reg-venue').value.trim();
+        var addr = document.getElementById('reg-address').value.trim();
+        var placeId = document.getElementById('reg-place-id').value;
+        var email = document.getElementById('reg-email').value.trim();
+        var pwd = document.getElementById('reg-password').value;
+        if (!name) { showMsg('ობიექტის სახელი სავალდებულოა', 'error'); return false; }
+        if (!addr) { showMsg('მისამართი სავალდებულოა', 'error'); return false; }
+        if (!placeId) { showMsg('გთხოვთ, ობიექტი სიადან აირჩიეთ', 'error'); return false; }
+        if (!email || !email.includes('@')) { showMsg('ელ. ფოსტა სავალდებულოა', 'error'); return false; }
+        if (!pwd || pwd.length < 8) { showMsg('პაროლი მინ. 8 სიმბოლო', 'error'); return false; }
+    }
+    return true;
 }
 
 /* Register */

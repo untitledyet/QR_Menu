@@ -121,6 +121,20 @@ def suggest_password():
 
 
 # ============================================================
+# Pre-registration availability check (email uniqueness)
+# ============================================================
+
+@landing_bp.route('/api/check-availability', methods=['POST'])
+def check_availability():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if email and AdminUser.query.filter_by(email=email).first():
+        return jsonify(available=False, field='email',
+                       error='ეს ელ. ფოსტა უკვე გამოყენებულია. შესვლა სცადეთ.')
+    return jsonify(available=True)
+
+
+# ============================================================
 # Phone OTP — pre-registration phone verification
 # ============================================================
 
@@ -135,6 +149,10 @@ def send_phone_otp():
     phone = _normalize_phone(raw_phone)
     if not phone:
         return jsonify(error='telefonis nomeri arasworia'), 400
+
+    # Reject already-registered phones before wasting an OTP
+    if AdminUser.query.filter_by(phone=phone).first():
+        return jsonify(error='ეს ნომერი უკვე დარეგისტრირებულია. შესვლა სცადეთ.'), 400
 
     client_ip = _get_client_ip()
 
@@ -259,11 +277,11 @@ def register_venue():
     if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
         return jsonify(error='el. fosta arasworia'), 400
 
-    # Duplicate check — same generic message to prevent enumeration
+    # Duplicate checks with specific messages
     if AdminUser.query.filter_by(email=email).first():
-        return jsonify(error='es monacemebi ukve registrirebulia'), 400
+        return jsonify(error='ეს ელ. ფოსტა უკვე გამოყენებულია. შესვლა სცადეთ.'), 400
     if AdminUser.query.filter_by(phone=full_phone).first():
-        return jsonify(error='es monacemebi ukve registrirebulia'), 400
+        return jsonify(error='ეს ნომერი უკვე დარეგისტრირებულია. შესვლა სცადეთ.'), 400
 
     # Generate unique slug — include city from address to avoid collisions
     city = ''
