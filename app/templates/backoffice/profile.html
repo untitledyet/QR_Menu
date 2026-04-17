@@ -26,6 +26,15 @@
                     <div style="color:#374151;">{{ admin.venue.slug }}</div>
                 </div>
             </div>
+            {% if admin.venue.address %}
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+                <i class="fas fa-map-marker-alt" style="color:#6b7280;width:18px;text-align:center;margin-top:2px;"></i>
+                <div>
+                    <div style="font-size:.75rem;color:#6b7280;">მისამართი</div>
+                    <div style="color:#374151;">{{ admin.venue.address }}</div>
+                </div>
+            </div>
+            {% endif %}
             {% endif %}
             <div style="display:flex;gap:12px;align-items:center;">
                 <i class="fas fa-envelope" style="color:#6b7280;width:18px;text-align:center;"></i>

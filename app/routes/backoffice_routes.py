@@ -468,14 +468,22 @@ def menu_list():
         else:
             items = FoodItem.query.filter(FoodItem.CategoryID.in_(cat_ids)).all() if cat_ids else []
             cat_id = None
+        item_counts = {cid: FoodItem.query.filter_by(CategoryID=cid).count() for cid in cat_ids}
+        subs_raw = Subcategory.query.filter(Subcategory.CategoryID.in_(cat_ids)).all() if cat_ids else []
+        subs_by_cat = {}
+        for s in subs_raw:
+            subs_by_cat.setdefault(s.CategoryID, []).append(s)
     else:
         categories = Category.query.all()
         cat_id = request.args.get('category', type=int)
         items = FoodItem.query.filter_by(CategoryID=cat_id).all() if cat_id else FoodItem.query.all()
+        item_counts = {}
+        subs_by_cat = {}
 
     features = venue.get_all_features() if venue else {}
     return render_template('backoffice/menu.html', admin=admin, categories=categories,
-                           items=items, selected_cat=cat_id, features=features)
+                           items=items, selected_cat=cat_id, features=features,
+                           item_counts=item_counts, subs_by_cat=subs_by_cat)
 
 
 @bo_bp.route('/menu/toggle-customization/<int:item_id>', methods=['POST'])
@@ -511,6 +519,7 @@ def add_item():
     categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
     subcategories = Subcategory.query.all()
     features = venue.get_all_features() if venue else {}
+    preselect_cat = request.args.get('cat', type=int)
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -558,7 +567,8 @@ def add_item():
         return redirect(url_for('bo_bp.menu_list'))
 
     return render_template('backoffice/item_form.html', admin=admin, categories=categories,
-                           subcategories=subcategories, item=None, title='Add Item', features=features)
+                           subcategories=subcategories, item=None, title='Add Item',
+                           features=features, preselect_cat=preselect_cat)
 
 
 @bo_bp.route('/menu/edit/<int:item_id>', methods=['GET', 'POST'])
@@ -605,7 +615,8 @@ def edit_item(item_id):
         return redirect(url_for('bo_bp.menu_list'))
 
     return render_template('backoffice/item_form.html', admin=admin, categories=categories,
-                           subcategories=subcategories, item=item, title='Edit Item', features=features)
+                           subcategories=subcategories, item=item, title='Edit Item',
+                           features=features, preselect_cat=None)
 
 
 @bo_bp.route('/menu/delete/<int:item_id>', methods=['POST'])
@@ -832,6 +843,131 @@ def delete_subcategory(sub_id):
     db.session.commit()
     flash(f'Subcategory "{name}" deleted')
     return redirect(url_for('bo_bp.categories_list'))
+
+
+# ── JSON endpoints for unified menu management ──────────────
+
+@bo_bp.route('/categories/add-json', methods=['POST'])
+@login_required
+@email_verified_required
+def add_category_json():
+    admin = get_current_admin()
+    venue = admin.venue
+    data = request.get_json() or request.form
+    name = (data.get('name') or '').strip()
+    name_en = (data.get('name_en') or '').strip()
+    if not name:
+        return jsonify(success=False, error='სახელი სავალდებულოა'), 400
+    cat = Category(CategoryName=name, CategoryName_en=name_en or None,
+                   venue_id=venue.id if venue else None)
+    db.session.add(cat)
+    db.session.commit()
+    if needs_translation(name, name_en):
+        translate_category_async(cat.CategoryID, {'name': name, 'description': ''},
+                                 'ka', 'en', current_app._get_current_object())
+    elif needs_translation(name_en, name):
+        translate_category_async(cat.CategoryID, {'name': name_en, 'description': ''},
+                                 'en', 'ka', current_app._get_current_object())
+    return jsonify(success=True, id=cat.CategoryID, name=cat.CategoryName,
+                   name_en=cat.CategoryName_en or '')
+
+
+@bo_bp.route('/categories/edit-json/<int:cat_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def edit_category_json(cat_id):
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    data = request.get_json() or request.form
+    name = (data.get('name') or '').strip()
+    name_en = (data.get('name_en') or '').strip()
+    if not name:
+        return jsonify(success=False, error='სახელი სავალდებულოა'), 400
+    cat.CategoryName = name
+    cat.CategoryName_en = name_en or None
+    db.session.commit()
+    return jsonify(success=True, id=cat.CategoryID, name=cat.CategoryName,
+                   name_en=cat.CategoryName_en or '')
+
+
+@bo_bp.route('/categories/delete-json/<int:cat_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def delete_category_json(cat_id):
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    count = FoodItem.query.filter_by(CategoryID=cat.CategoryID).count()
+    if count > 0:
+        return jsonify(success=False,
+                       error=f'კატეგორიაში {count} ნივთია. წაშლამდე ამოიღეთ ნივთები.'), 400
+    Subcategory.query.filter_by(CategoryID=cat.CategoryID).delete()
+    db.session.delete(cat)
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/categories/<int:cat_id>/subcategories/add-json', methods=['POST'])
+@login_required
+@email_verified_required
+def add_subcategory_json(cat_id):
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    data = request.get_json() or request.form
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify(success=False, error='სახელი სავალდებულოა'), 400
+    sub = Subcategory(SubcategoryName=name, CategoryID=cat.CategoryID)
+    db.session.add(sub)
+    db.session.commit()
+    return jsonify(success=True, id=sub.SubcategoryID, name=sub.SubcategoryName)
+
+
+@bo_bp.route('/subcategories/delete-json/<int:sub_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def delete_subcategory_json(sub_id):
+    sub = Subcategory.query.get_or_404(sub_id)
+    cat = verify_category_ownership(sub.CategoryID)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    FoodItem.query.filter_by(SubcategoryID=sub.SubcategoryID).update({'SubcategoryID': None})
+    db.session.delete(sub)
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/menu/copy/<int:item_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def copy_item(item_id):
+    item = verify_item_ownership(item_id)
+    if not item:
+        return jsonify(success=False, error='Access denied'), 403
+    admin = get_current_admin()
+    venue = admin.venue
+    if venue and venue.item_count() >= MAX_ITEMS_PER_VENUE:
+        return jsonify(success=False, error=f'ლიმიტი ({MAX_ITEMS_PER_VENUE}) ამოიწურა'), 400
+    new_item = FoodItem(
+        FoodName=item.FoodName + ' (ასლი)',
+        FoodName_en=(item.FoodName_en + ' (copy)') if item.FoodName_en else None,
+        Description=item.Description,
+        Description_en=item.Description_en,
+        Ingredients=item.Ingredients,
+        Ingredients_en=item.Ingredients_en,
+        Price=item.Price,
+        CategoryID=item.CategoryID,
+        SubcategoryID=item.SubcategoryID,
+        ImageFilename=item.ImageFilename,
+        is_active=False,
+        allow_customization=item.allow_customization,
+    )
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify(success=True,
+                   redirect=url_for('bo_bp.menu_list', category=item.CategoryID))
 
 
 # ============================================================

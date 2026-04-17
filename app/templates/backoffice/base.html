@@ -47,14 +47,11 @@
 
                     {% if admin.email_verified %}
                     {% set vf = admin.venue.get_all_features() %}
-                    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-nav__item {% if 'menu' in request.endpoint or 'item' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-book-open"></i> Menu
+                    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-nav__item {% if 'menu' in request.endpoint or 'item' in request.endpoint or 'categor' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-book-open"></i> მენიუ
                     </a>
                     <a href="{{ url_for('lib_bp.browse_library') }}" class="bo-nav__item {% if 'browse' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-database"></i> ბიბლიოთეკა
-                    </a>
-                    <a href="{{ url_for('bo_bp.categories_list') }}" class="bo-nav__item {% if 'categor' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-layer-group"></i> Categories
                     </a>
                     {% if vf.get('promotions') %}
                     <a href="{{ url_for('bo_bp.promotions_list') }}" class="bo-nav__item {% if 'promotion' in request.endpoint %}active{% endif %}">

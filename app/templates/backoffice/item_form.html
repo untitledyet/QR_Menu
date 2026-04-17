@@ -69,7 +69,7 @@
                     <select name="category_id" id="category-select" required>
                         <option value="">Select...</option>
                         {% for cat in categories %}
-                        <option value="{{ cat.CategoryID }}" {{ 'selected' if item and item.CategoryID == cat.CategoryID }}>{{ cat.CategoryName }}</option>
+                        <option value="{{ cat.CategoryID }}" {{ 'selected' if (item and item.CategoryID == cat.CategoryID) or (not item and preselect_cat == cat.CategoryID) }}>{{ cat.CategoryName }}</option>
                         {% endfor %}
                     </select>
                 </div>
