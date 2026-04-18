@@ -2,38 +2,30 @@
 {% block title %}ჯაჭვი — {{ group.name }}{% endblock %}
 {% block content %}
 <div class="bo-header">
-    <h1><i class="fas fa-sitemap" style="color:#6366f1;margin-right:8px;"></i>{{ group.name }}</h1>
+    <h1><i class="fas fa-sitemap" style="color:var(--bo-primary);margin-right:8px;"></i>{{ group.name }}</h1>
     <p class="bo-header__sub">{{ admin.venue.name }} — ჯაჭვის წევრი</p>
 </div>
 
-<!-- Group menu preview (read-only) -->
-<h2 style="font-size:1rem;margin:0 0 12px;">ჯაჭვის მენიუ <span style="color:#9ca3af;font-size:.85rem;">(read-only)</span></h2>
+<h2 style="font-size:1rem;margin:0 0 12px;">ჯაჭვის მენიუ <span style="color:var(--bo-text-2);font-size:.82rem;font-weight:400;">(read-only)</span></h2>
 
 {% if group_cats %}
 {% for cat in group_cats %}
 <div class="bo-setting-card" style="padding:14px 16px;margin-bottom:10px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
         {% if cat.CategoryIcon %}
-        <i class="{{ cat.CategoryIcon }}" style="color:#6366f1;"></i>
+        <i class="{{ cat.CategoryIcon }}" style="color:var(--bo-primary);"></i>
         {% endif %}
         <strong>{{ cat.CategoryName }}</strong>
         {% if cat.Description %}
-        <span style="color:#9ca3af;font-size:.8rem;">— {{ cat.Description }}</span>
+        <span style="color:var(--bo-text-2);font-size:.8rem;">— {{ cat.Description }}</span>
         {% endif %}
-    </div>
-    {% set items = cat.subcategories %}
-    {% for sub in cat.subcategories %}
-    {% endfor %}
-    {% set all_items = cat|attr('subcategories') %}
-    {# list items directly #}
-    <div style="padding-left:12px;">
-        {% for item in cat.subcategories|map(attribute='items')|sum(start=[]) %}
-        {% endfor %}
     </div>
 </div>
 {% endfor %}
 {% else %}
-<p style="color:#9ca3af;font-size:.88rem;">ჯაჭვის მენიუ ჯერ ცარიელია</p>
+<div class="bo-info-panel" style="text-align:center;padding:32px;">
+    <p style="color:var(--bo-text-2);font-size:.88rem;margin:0;">ჯაჭვის მენიუ ჯერ ცარიელია</p>
+</div>
 {% endif %}
 
 {% if group.allow_price_override %}
@@ -44,11 +36,11 @@
 </div>
 {% endif %}
 
-<hr style="margin:28px 0;">
+<hr style="margin:28px 0;border-color:var(--bo-border);">
 
-<div style="border:1px solid #fecaca;border-radius:8px;padding:16px;max-width:480px;">
-    <h3 style="margin:0 0 8px;color:#dc2626;font-size:.95rem;"><i class="fas fa-door-open"></i> ჯაჭვის დატოვება</h3>
-    <p style="font-size:.83rem;color:#6b7280;margin:0 0 12px;">
+<div class="bo-info-panel" style="border-color:rgba(239,68,68,.3);max-width:520px;">
+    <h3 style="margin:0 0 8px;color:var(--bo-red);font-size:.95rem;"><i class="fas fa-door-open"></i> ჯაჭვის დატოვება</h3>
+    <p style="font-size:.82rem;color:var(--bo-text-2);margin:0 0 12px;">
         ჯაჭვიდან გასვლის შემდეგ ჯაჭვის მენიუ გაქრება. ლოკალური კატეგორიები დარჩება.
     </p>
     <button onclick="leaveGroup()" class="bo-btn bo-btn--danger">

@@ -851,3 +851,30 @@ body {
   font-size: .88rem;
 }
 .um-no-results i { font-size: 2rem; opacity: .3; display: block; margin-bottom: 10px; }
+
+/* ══════ Mobile: better touch targets, modal centering, header wrap ══════ */
+@media (max-width: 768px) {
+  /* All bo-header flex variants wrap properly */
+  .bo-header { flex-wrap: wrap; gap: 10px; }
+  .bo-header > a, .bo-header > button { font-size: .82rem; }
+
+  /* Touch targets — ensure icon-only buttons are tappable */
+  .bo-icon-btn, .bo-btn--sm { min-height: 36px; min-width: 36px; }
+
+  /* Modals: vertical scrolling on tall content */
+  .bo-modal-backdrop { padding: 12px; overflow-y: auto; align-items: flex-start; }
+  .bo-modal-box { width: 100% !important; max-width: 100% !important; margin: 12px auto; }
+
+  /* Inputs reach-friendly */
+  .bo-input, .bo-form-group input, .bo-form-group select, .bo-form-group textarea {
+    font-size: 16px;  /* prevents iOS zoom on focus */
+  }
+
+  /* Code/URL chips overflow gracefully */
+  code { word-break: break-all; }
+}
+
+/* ══════ Tablet: tighter sidebar nav font ══════ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .bo-sidebar__footer { padding: 10px; font-size: .78rem; }
+}

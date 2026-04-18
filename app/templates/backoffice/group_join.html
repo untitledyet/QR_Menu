@@ -27,11 +27,11 @@
 
 {% else %}
 <!-- Step 2: Preview + confirm -->
-<div class="bo-setting-card" style="max-width:520px;padding:24px;margin-bottom:20px;">
-    <h2 style="margin:0 0 4px;"><i class="fas fa-sitemap" style="color:#6366f1;margin-right:8px;"></i>{{ preview.group.name }}</h2>
-    <p style="color:#6b7280;margin:0 0 16px;font-size:.88rem;">კოდი: <strong>{{ preview.code }}</strong></p>
+<div class="bo-setting-card" style="max-width:520px;padding:24px;margin-bottom:20px;flex-direction:column;align-items:stretch;">
+    <h2 style="margin:0 0 4px;"><i class="fas fa-sitemap" style="color:var(--bo-primary);margin-right:8px;"></i>{{ preview.group.name }}</h2>
+    <p style="color:var(--bo-text-2);margin:0 0 16px;font-size:.85rem;">კოდი: <strong>{{ preview.code }}</strong></p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
         <div class="bo-stat-card" style="padding:12px;">
             <div class="bo-stat-card__icon"><i class="fas fa-layer-group"></i></div>
             <div class="bo-stat-card__body">
