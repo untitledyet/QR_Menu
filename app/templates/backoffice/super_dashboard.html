@@ -2,70 +2,181 @@
 {% block title %}Super Admin{% endblock %}
 {% block content %}
 <div class="bo-header">
-    <h1>Super Admin Dashboard</h1>
+    <h1>Super Admin</h1>
+    <p class="bo-header__sub">პლატფორმის ზოგადი ხედი</p>
 </div>
 
+{# ── Top stats ── #}
 <div class="bo-stats">
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-store"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ venues|length }}</div>
-            <div class="bo-stat-card__label">Venues</div>
+            <div class="bo-stat-card__label">ობიექტი სულ</div>
+            {% if recent_venues %}
+            <small style="font-size:.7rem;color:var(--bo-green);">+{{ recent_venues }} ბოლო 7 დღეში</small>
+            {% endif %}
+        </div>
+    </div>
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon" style="background:rgba(16,185,129,.12);color:var(--bo-green);"><i class="fas fa-check-circle"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ active_count }}</div>
+            <div class="bo-stat-card__label">აქტიური</div>
+            {% if inactive_count %}
+            <small style="font-size:.7rem;color:var(--bo-text-2);">{{ inactive_count }} გამორთული</small>
+            {% endif %}
         </div>
     </div>
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ total_items }}</div>
-            <div class="bo-stat-card__label">Total Items</div>
+            <div class="bo-stat-card__label">ნივთი სულ</div>
         </div>
     </div>
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-receipt"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ total_orders }}</div>
-            <div class="bo-stat-card__label">Total Orders</div>
+            <div class="bo-stat-card__label">შეკვეთა სულ</div>
         </div>
     </div>
 </div>
 
-<div style="display:flex; align-items:center; justify-content:space-between; margin:24px 0 16px;">
-    <h2>Venues</h2>
-    <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Venue</a>
+{# ── Plan distribution ── #}
+<h2 style="font-size:1rem;font-weight:600;margin:24px 0 12px;">გეგმის განაწილება</h2>
+<div class="bo-quick-actions">
+    {% for plan, count in plan_counts.items() %}
+    {% set pct = (count * 100 / (venues|length if venues|length else 1))|int %}
+    <div class="bo-quick-action" style="cursor:default;">
+        <span class="bo-badge bo-badge--plan-{{ plan }}" style="padding:6px 12px;font-size:.75rem;">{{ plan|capitalize }}</span>
+        <div style="flex:1;">
+            <div class="bo-quick-action__title">{{ count }}</div>
+            <div class="bo-progress" style="margin-top:4px;">
+                <div class="bo-progress__bar" style="width:{{ pct }}%;"></div>
+            </div>
+            <div class="bo-quick-action__sub">{{ pct }}% ობიექტების</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{# ── Venues section ── #}
+<div style="display:flex; align-items:center; justify-content:space-between; margin:28px 0 12px; flex-wrap:wrap; gap:10px;">
+    <h2 style="font-size:1rem;font-weight:600;">ობიექტები</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost bo-btn--sm">
+            <i class="fas fa-th-large"></i> ყველა ბარათად
+        </a>
+        <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary bo-btn--sm">
+            <i class="fas fa-plus"></i> ახალი
+        </a>
+    </div>
+</div>
+
+<div class="bo-super-toolbar">
+    <div class="um-search" style="max-width:320px;flex:1;">
+        <i class="fas fa-search"></i>
+        <input type="search" id="venue-search" placeholder="ძებნა სახელით / slug-ით…" autocomplete="off">
+    </div>
+    <select id="plan-filter">
+        <option value="">ყველა გეგმა</option>
+        {% for p in plan_counts.keys() %}<option value="{{ p }}">{{ p|capitalize }}</option>{% endfor %}
+    </select>
+    <select id="status-filter">
+        <option value="">ყველა სტატუსი</option>
+        <option value="active">აქტიური</option>
+        <option value="inactive">გამორთული</option>
+    </select>
 </div>
 
 <div class="bo-table-wrap">
     <table class="bo-table">
         <thead>
-            <tr><th>Name</th><th>Slug</th><th>Plan</th><th>Status</th><th>Items</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for v in venues %}
             <tr>
-                <td><strong>{{ v.name }}</strong></td>
-                <td><code>/{{ v.slug }}/table/1</code></td>
-                <td><span class="bo-badge bo-badge--plan-{{ v.plan }}">{{ v.plan_display }}</span></td>
+                <th>სახელი</th>
+                <th>Slug</th>
+                <th>გეგმა</th>
+                <th>ნივთი</th>
+                <th>კატ.</th>
+                <th>ადმინი</th>
+                <th>სტატუსი</th>
+                <th style="text-align:right;">მოქმედება</th>
+            </tr>
+        </thead>
+        <tbody id="venues-tbody">
+            {% for v in venues %}
+            {% set vs = venue_stats[v.id] %}
+            <tr data-name="{{ v.name|lower }}" data-slug="{{ v.slug|lower }}"
+                data-plan="{{ v.plan }}" data-active="{{ '1' if v.is_active else '0' }}">
                 <td>
-                    <button class="bo-toggle {{ 'active' if v.is_active }}" onclick="toggleVenue({{ v.id }}, this)">
+                    <div class="bo-table__name">{{ v.name }}</div>
+                    {% if v.venue_code %}
+                    <div class="bo-table__sub" style="font-family:monospace;">{{ v.venue_code }}</div>
+                    {% endif %}
+                </td>
+                <td><code style="font-size:.75rem;color:var(--bo-text-2);">/{{ v.slug }}</code></td>
+                <td><span class="bo-badge bo-badge--plan-{{ v.plan }}">{{ v.plan_display }}</span></td>
+                <td>{{ vs.items }}</td>
+                <td>{{ vs.categories }}</td>
+                <td>{{ vs.admins }}</td>
+                <td>
+                    <button class="bo-toggle {{ 'active' if v.is_active }}" onclick="toggleVenue({{ v.id }}, this)" title="სტატუსის გადართვა">
                         <span class="bo-toggle__dot"></span>
                     </button>
                 </td>
-                <td>{{ v.categories|length }} cats</td>
-                <td>
-                    <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost" style="padding:6px 12px; font-size:.8rem;">
-                        <i class="fas fa-cog"></i> Features
-                    </a>
+                <td style="text-align:right;">
+                    <div class="bo-table__actions" style="justify-content:flex-end;">
+                        <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-icon-btn bo-icon-btn--sm" title="ფუნქციების მართვა">
+                            <i class="fas fa-cog"></i>
+                        </a>
+                        <a href="{{ request.scheme }}://{{ request.host }}/{{ v.slug }}/table/1" target="_blank" class="bo-icon-btn bo-icon-btn--sm" title="მენიუს ნახვა">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <div id="venue-empty" class="um-no-results" style="display:none;">
+        <i class="fas fa-search"></i>
+        ობიექტი ვერ მოიძებნა
+    </div>
 </div>
 
 <script>
 function toggleVenue(id, btn) {
     fetch(`/backoffice/venues/${id}/toggle-active`, {method:'POST'})
-        .then(r=>r.json()).then(d => btn.classList.toggle('active', d.is_active));
+        .then(r=>r.json()).then(d => {
+            btn.classList.toggle('active', d.is_active);
+            const row = btn.closest('tr');
+            if (row) row.dataset.active = d.is_active ? '1' : '0';
+        });
 }
+
+(function(){
+    const search = document.getElementById('venue-search');
+    const planF = document.getElementById('plan-filter');
+    const statusF = document.getElementById('status-filter');
+    const empty = document.getElementById('venue-empty');
+    function apply(){
+        const q = (search.value || '').trim().toLowerCase();
+        const p = planF.value;
+        const s = statusF.value;
+        let shown = 0;
+        document.querySelectorAll('#venues-tbody tr').forEach(r => {
+            const matchQ = !q || r.dataset.name.includes(q) || r.dataset.slug.includes(q);
+            const matchP = !p || r.dataset.plan === p;
+            const matchS = !s || (s === 'active' ? r.dataset.active === '1' : r.dataset.active === '0');
+            const ok = matchQ && matchP && matchS;
+            r.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+        empty.style.display = shown === 0 ? '' : 'none';
+    }
+    [search, planF, statusF].forEach(el => el.addEventListener('input', apply));
+})();
 </script>
 {% endblock %}

@@ -257,15 +257,53 @@ def profile():
 def dashboard():
     admin = get_current_admin()
     if admin.is_super:
-        venues = Venue.query.all()
+        venues = Venue.query.order_by(Venue.created_at.desc()).all()
         total_items = FoodItem.query.count()
         total_orders = Order.query.count()
+
+        # Plan distribution
+        plan_counts = {p: 0 for p in PLAN_FEATURES.keys()}
+        active_count = 0
+        for v in venues:
+            plan_counts[v.plan] = plan_counts.get(v.plan, 0) + 1
+            if v.is_active:
+                active_count += 1
+
+        # Per-venue stats (item + admin count) — keep cheap
+        venue_stats = {}
+        for v in venues:
+            venue_stats[v.id] = {
+                'items': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
+                'admins': AdminUser.query.filter_by(venue_id=v.id).count(),
+            }
+
+        # Recent (last 7 days) venue signups
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        recent_venues = sum(1 for v in venues if v.created_at and v.created_at >= week_ago)
+
         return render_template('backoffice/super_dashboard.html', admin=admin,
-                               venues=venues, total_items=total_items, total_orders=total_orders)
+                               venues=venues, total_items=total_items, total_orders=total_orders,
+                               plan_counts=plan_counts, active_count=active_count,
+                               inactive_count=len(venues) - active_count,
+                               recent_venues=recent_venues, venue_stats=venue_stats,
+                               feature_list=FEATURE_LIST)
     else:
         venue = admin.venue
         features = venue.get_all_features() if venue else {}
-        return render_template('backoffice/dashboard.html', admin=admin, venue=venue, features=features)
+        # Server-side stats (avoid '—' flash)
+        stats = {
+            'items': 0, 'categories': 0, 'promotions': 0,
+            'tables': venue.total_tables if venue else 0,
+            'bookings': 0, 'max_items': MAX_ITEMS_PER_VENUE,
+        }
+        if venue:
+            stats['items'] = venue.item_count()
+            stats['categories'] = Category.query.filter_by(venue_id=venue.id).count()
+            stats['promotions'] = Promotion.query.filter_by(venue_id=venue.id).count()
+            if features.get('reservations'):
+                stats['bookings'] = Booking.query.filter_by(venue_id=venue.id).count()
+        return render_template('backoffice/dashboard.html', admin=admin, venue=venue,
+                               features=features, stats=stats, feature_list=FEATURE_LIST)
 
 
 # ============================================================
@@ -277,8 +315,16 @@ def dashboard():
 @super_required
 def venues_list():
     admin = get_current_admin()
-    venues = Venue.query.all()
-    return render_template('backoffice/super_venues.html', admin=admin, venues=venues)
+    venues = Venue.query.order_by(Venue.created_at.desc()).all()
+    venue_stats = {}
+    for v in venues:
+        venue_stats[v.id] = {
+            'items': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
+            'admins': AdminUser.query.filter_by(venue_id=v.id).count(),
+            'categories': Category.query.filter_by(venue_id=v.id).count(),
+        }
+    return render_template('backoffice/super_venues.html', admin=admin, venues=venues,
+                           venue_stats=venue_stats, plans=list(PLAN_FEATURES.keys()))
 
 
 @bo_bp.route('/venues/<int:venue_id>/features', methods=['GET', 'POST'])
@@ -563,8 +609,10 @@ def add_item():
         _trigger_item_translation(item, name, name_en, description, description_en,
                                    ingredients, ingredients_en)
 
-        flash(f'"{name}" added')
-        return redirect(url_for('bo_bp.menu_list'))
+        flash(f'"{name}" დაემატა')
+        if request.form.get('add_another'):
+            return redirect(url_for('bo_bp.add_item', cat=cat_id))
+        return redirect(url_for('bo_bp.menu_list', category=cat_id))
 
     return render_template('backoffice/item_form.html', admin=admin, categories=categories,
                            subcategories=subcategories, item=None, title='Add Item',
@@ -603,6 +651,8 @@ def edit_item(item_id):
             upload_dir = os.path.join(current_app.root_path, 'static', 'images')
             file.save(os.path.join(upload_dir, filename))
             item.ImageFilename = filename
+        elif request.form.get('remove_image') == '1':
+            item.ImageFilename = 'default-image.png'
 
         db.session.commit()
 
@@ -611,8 +661,8 @@ def edit_item(item_id):
                                    item.Description, item.Description_en,
                                    item.Ingredients, item.Ingredients_en)
 
-        flash(f'"{item.FoodName}" updated')
-        return redirect(url_for('bo_bp.menu_list'))
+        flash(f'"{item.FoodName}" განახლდა')
+        return redirect(url_for('bo_bp.menu_list', category=item.CategoryID))
 
     return render_template('backoffice/item_form.html', admin=admin, categories=categories,
                            subcategories=subcategories, item=item, title='Edit Item',

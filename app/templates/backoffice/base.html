@@ -22,12 +22,12 @@
             <div class="bo-sidebar__logo"><i class="fas fa-utensils"></i><span>QR Menu</span></div>
             <nav class="bo-nav">
                 <a href="{{ url_for('bo_bp.dashboard') }}" class="bo-nav__item {% if request.endpoint == 'bo_bp.dashboard' %}active{% endif %}">
-                    <i class="fas fa-th-large"></i> Dashboard
+                    <i class="fas fa-th-large"></i> მთავარი
                 </a>
 
                 {% if admin and admin.is_super %}
                     <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-nav__item {% if 'venue' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-store"></i> Venues
+                        <i class="fas fa-store"></i> ობიექტები
                     </a>
                     <a href="{{ url_for('lib_bp.library_index') }}" class="bo-nav__item {% if 'lib_bp' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-database"></i> პროდუქტების ბიბლიოთეკა
@@ -55,22 +55,22 @@
                     </a>
                     {% if vf.get('promotions') %}
                     <a href="{{ url_for('bo_bp.promotions_list') }}" class="bo-nav__item {% if 'promotion' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-tags"></i> Promotions
+                        <i class="fas fa-tags"></i> აქციები
                     </a>
                     {% endif %}
                     {% if vf.get('reservations') %}
-                    <a href="{{ url_for('bo_bp.reservations_list') }}" class="bo-nav__item {% if 'reservation' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-calendar-check"></i> Reservations
+                    <a href="{{ url_for('bo_bp.reservations_list') }}" class="bo-nav__item {% if 'reservations_list' in request.endpoint or request.endpoint == 'bo_bp.admin_cancel_booking' %}active{% endif %}">
+                        <i class="fas fa-calendar-check"></i> დაჯავშნები
                     </a>
                     <a href="{{ url_for('bo_bp.reservation_layout') }}" class="bo-nav__item {% if 'layout' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-drafting-compass"></i> Layout Builder
+                        <i class="fas fa-drafting-compass"></i> მაგიდების გეგმა
                     </a>
                     <a href="{{ url_for('bo_bp.reservation_settings') }}" class="bo-nav__item {% if 'reservation_settings' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-cog"></i> Res. Settings
+                        <i class="fas fa-cog"></i> ჯავშნის პარამეტრები
                     </a>
                     {% endif %}
                     <a href="{{ url_for('bo_bp.venue_settings') }}" class="bo-nav__item {% if 'venue_settings' in request.endpoint %}active{% endif %}">
-                        <i class="fas fa-sliders-h"></i> Venue Settings
+                        <i class="fas fa-sliders-h"></i> ობიექტის პარამეტრები
                     </a>
 
                     {# ── Chain / Group section ── #}
@@ -112,7 +112,7 @@
                 {% endif %}
                 <span class="bo-sidebar__user"><i class="fas fa-user-circle"></i> {{ admin.username if admin }}</span>
                 <a href="{{ url_for('bo_bp.profile') }}" class="bo-nav__item {% if 'profile' in request.endpoint %}active{% endif %}"><i class="fas fa-user"></i> პროფილი</a>
-                <a href="{{ url_for('bo_bp.logout') }}" class="bo-nav__item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="{{ url_for('bo_bp.logout') }}" class="bo-nav__item"><i class="fas fa-sign-out-alt"></i> გასვლა</a>
             </div>
         </aside>
         <main class="bo-main">

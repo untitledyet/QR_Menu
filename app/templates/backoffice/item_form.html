@@ -1,73 +1,83 @@
 {% extends 'backoffice/base.html' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<div class="bo-header">
-    <h1>{{ title }}</h1>
-    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost"><i class="fas fa-arrow-left"></i> Back</a>
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <h1>{{ 'ნივთის რედაქტირება' if item else 'ახალი ნივთი' }}</h1>
+    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost bo-btn--sm">
+        <i class="fas fa-arrow-left"></i> უკან
+    </a>
 </div>
 
-<form method="POST" enctype="multipart/form-data" class="bo-item-form">
+<form method="POST" enctype="multipart/form-data" class="bo-item-form" id="item-form">
     <div class="bo-form-grid">
-        <!-- Left: image preview -->
+        <!-- Left: image preview / drop zone -->
         <div class="bo-form-image">
-            <div class="bo-image-preview" id="image-preview">
-                {% if item and item.ImageFilename %}
-                <img src="{{ url_for('static', filename='images/' ~ item.ImageFilename) }}" id="preview-img">
+            <div class="bo-image-preview bo-image-dropzone" id="image-dropzone"
+                 onclick="document.getElementById('image-input').click()">
+                {% if item and item.ImageFilename and item.ImageFilename != 'default-image.png' %}
+                <button type="button" class="bo-image-dropzone__remove" onclick="event.stopPropagation();removeImage()" title="სურათის მოშორება">
+                    <i class="fas fa-times"></i>
+                </button>
+                <img src="{{ url_for('static', filename='images/' ~ item.ImageFilename) }}" id="preview-img" style="width:100%;height:100%;object-fit:cover;">
                 {% else %}
-                <div class="bo-image-placeholder"><i class="fas fa-camera"></i><span>Upload Image</span></div>
+                <div class="bo-image-placeholder" id="image-placeholder">
+                    <i class="fas fa-camera"></i>
+                    <span>დააწკაპუნეთ ან ჩააგდეთ სურათი</span>
+                </div>
                 {% endif %}
             </div>
             <input type="file" name="image" id="image-input" accept="image/*" style="display:none;">
-            <button type="button" class="bo-btn bo-btn--outline bo-btn--full" onclick="document.getElementById('image-input').click()" style="margin-top:10px;">
-                <i class="fas fa-upload"></i> {{ 'Change Image' if item else 'Upload Image' }}
-            </button>
+            <input type="hidden" name="remove_image" id="remove-image-flag" value="0">
+            <small class="bo-form-hint" style="margin-top:8px;text-align:center;display:block;">
+                PNG / JPG / WEBP · მაქს. 5MB
+            </small>
         </div>
 
         <!-- Right: fields -->
         <div class="bo-form-fields">
             <div class="bo-form-row">
                 <div class="bo-form-group">
-                    <label>სახელი (ქარ) *</label>
-                    <input type="text" name="name" value="{{ item.FoodName if item else '' }}" required placeholder="მაგ. ჩიზბურგერი">
+                    <label>სახელი (ქარ.) *</label>
+                    <input type="text" name="name" value="{{ item.FoodName if item else '' }}" required placeholder="მაგ. ჩიზბურგერი" maxlength="120">
                 </div>
                 <div class="bo-form-group">
-                    <label>Name (EN)</label>
-                    <input type="text" name="name_en" value="{{ item.FoodName_en if item else '' }}" placeholder="e.g. Cheeseburger">
+                    <label>Name (EN) <span class="bo-form-hint--inline">ცარიელი → ავტო-თარგმანი</span></label>
+                    <input type="text" name="name_en" value="{{ item.FoodName_en if item else '' }}" placeholder="e.g. Cheeseburger" maxlength="120">
                 </div>
             </div>
 
             <div class="bo-form-row">
                 <div class="bo-form-group">
-                    <label>აღწერა (ქარ)</label>
-                    <textarea name="description" rows="2" placeholder="მოკლე აღწერა">{{ item.Description if item else '' }}</textarea>
+                    <label>აღწერა (ქარ.)</label>
+                    <textarea name="description" rows="2" placeholder="მოკლე აღწერა" maxlength="500">{{ item.Description if item else '' }}</textarea>
                 </div>
                 <div class="bo-form-group">
                     <label>Description (EN)</label>
-                    <textarea name="description_en" rows="2" placeholder="Short description">{{ item.Description_en if item else '' }}</textarea>
+                    <textarea name="description_en" rows="2" placeholder="Short description" maxlength="500">{{ item.Description_en if item else '' }}</textarea>
                 </div>
             </div>
 
             <div class="bo-form-row">
                 <div class="bo-form-group">
-                    <label>შემადგენლობა (ქარ)</label>
-                    <input type="text" name="ingredients" value="{{ item.Ingredients if item else '' }}" placeholder="მძიმით გამოყოფილი: ძროხის, ყველი, სალათი">
+                    <label>შემადგენლობა (ქარ.)</label>
+                    <input type="text" name="ingredients" value="{{ item.Ingredients if item else '' }}" placeholder="მძიმით გამოყოფილი: ხორცი, ყველი, სალათი">
                 </div>
                 <div class="bo-form-group">
                     <label>Ingredients (EN)</label>
-                    <input type="text" name="ingredients_en" value="{{ item.Ingredients_en if item else '' }}" placeholder="Comma separated: Beef, Cheese, Lettuce">
+                    <input type="text" name="ingredients_en" value="{{ item.Ingredients_en if item else '' }}" placeholder="Beef, Cheese, Lettuce">
                 </div>
             </div>
-            <small class="bo-form-hint">Separate ingredients with commas. They appear in the item detail popup.</small>
+            <small class="bo-form-hint">ინგრედიენტები გამოეჩინება მომხმარებელს ნივთის დეტალებში.</small>
 
             <div class="bo-form-row">
                 <div class="bo-form-group">
-                    <label>Price (₾) *</label>
-                    <input type="number" name="price" step="0.01" min="0" value="{{ '%.2f'|format(item.Price) if item else '' }}" required placeholder="0.00">
+                    <label>ფასი (₾) *</label>
+                    <input type="number" name="price" step="0.01" min="0" value="{{ '%.2f'|format(item.Price) if item else '' }}" required placeholder="0.00" inputmode="decimal">
                 </div>
                 <div class="bo-form-group">
-                    <label>Category *</label>
+                    <label>კატეგორია *</label>
                     <select name="category_id" id="category-select" required>
-                        <option value="">Select...</option>
+                        <option value="">აირჩიეთ...</option>
                         {% for cat in categories %}
                         <option value="{{ cat.CategoryID }}" {{ 'selected' if (item and item.CategoryID == cat.CategoryID) or (not item and preselect_cat == cat.CategoryID) }}>{{ cat.CategoryName }}</option>
                         {% endfor %}
@@ -76,9 +86,9 @@
             </div>
 
             <div class="bo-form-group">
-                <label>Subcategory</label>
+                <label>ქვეკატეგორია</label>
                 <select name="subcategory_id" id="subcategory-select">
-                    <option value="">None</option>
+                    <option value="">— არცერთი —</option>
                     {% for sub in subcategories %}
                     <option value="{{ sub.SubcategoryID }}" data-cat="{{ sub.CategoryID }}" {{ 'selected' if item and item.SubcategoryID == sub.SubcategoryID }}>{{ sub.SubcategoryName }}</option>
                     {% endfor %}
@@ -89,15 +99,20 @@
             <div class="bo-form-group">
                 <label class="bo-checkbox-label">
                     <input type="checkbox" name="allow_customization" {{ 'checked' if not item or item.allow_customization }}>
-                    <span>Allow ingredient customization</span>
+                    <span>ინგრედიენტების პერსონალიზაციის დაშვება</span>
                 </label>
             </div>
             {% endif %}
 
             <div class="bo-form-actions">
-                <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost">Cancel</a>
+                <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+                {% if not item %}
+                <button type="submit" name="add_another" value="1" class="bo-btn bo-btn--outline" title="შენახვა და ახალი ნივთის დამატება">
+                    <i class="fas fa-plus"></i> შენახვა + ახალი
+                </button>
+                {% endif %}
                 <button type="submit" class="bo-btn bo-btn--primary">
-                    <i class="fas fa-check"></i> {{ 'Save Changes' if item else 'Add Item' }}
+                    <i class="fas fa-check"></i> {{ 'შეცვლა' if item else 'დამატება' }}
                 </button>
             </div>
         </div>
@@ -105,15 +120,51 @@
 </form>
 
 <script>
-// Image preview
-document.getElementById('image-input').addEventListener('change', function(e) {
+const dropzone = document.getElementById('image-dropzone');
+const input = document.getElementById('image-input');
+const removeFlag = document.getElementById('remove-image-flag');
+
+function showPreview(src){
+    dropzone.innerHTML =
+        '<button type="button" class="bo-image-dropzone__remove" onclick="event.stopPropagation();removeImage()" title="სურათის მოშორება"><i class="fas fa-times"></i></button>' +
+        '<img src="' + src + '" id="preview-img" style="width:100%;height:100%;object-fit:cover;">';
+}
+function showPlaceholder(){
+    dropzone.innerHTML =
+        '<div class="bo-image-placeholder" id="image-placeholder">' +
+        '<i class="fas fa-camera"></i><span>დააწკაპუნეთ ან ჩააგდეთ სურათი</span></div>';
+}
+
+input.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('სურათი უნდა იყოს 5MB-ზე ნაკლები'); input.value=''; return; }
+    removeFlag.value = '0';
     const reader = new FileReader();
-    reader.onload = function(ev) {
-        document.getElementById('image-preview').innerHTML = '<img src="' + ev.target.result + '" id="preview-img">';
-    };
+    reader.onload = ev => showPreview(ev.target.result);
     reader.readAsDataURL(file);
+});
+
+function removeImage(){
+    input.value = '';
+    removeFlag.value = '1';
+    showPlaceholder();
+}
+window.removeImage = removeImage;
+
+// Drag & drop
+['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.add('bo-image-dropzone--over');
+}));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.remove('bo-image-dropzone--over');
+}));
+dropzone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (!f || !f.type.startsWith('image/')) return;
+    if (f.size > 5 * 1024 * 1024) { alert('სურათი უნდა იყოს 5MB-ზე ნაკლები'); return; }
+    const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
 });
 
 // Filter subcategories by selected category
@@ -121,12 +172,11 @@ document.getElementById('category-select').addEventListener('change', function()
     const catId = this.value;
     const subSelect = document.getElementById('subcategory-select');
     Array.from(subSelect.options).forEach(opt => {
-        if (!opt.value) return; // keep "None"
+        if (!opt.value) return;
         opt.style.display = (opt.dataset.cat === catId) ? '' : 'none';
         if (opt.dataset.cat !== catId && opt.selected) opt.selected = false;
     });
 });
-// Trigger on load
 document.getElementById('category-select').dispatchEvent(new Event('change'));
 </script>
 {% endblock %}

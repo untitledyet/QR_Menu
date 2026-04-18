@@ -3,97 +3,97 @@
 {% block content %}
 <div class="bo-header">
     <h1>პროფილი</h1>
+    <p class="bo-header__sub">ანგარიშის ინფორმაცია და უსაფრთხოება</p>
 </div>
 
-<div style="max-width:520px;display:flex;flex-direction:column;gap:20px;">
+<div style="max-width:620px;display:flex;flex-direction:column;gap:16px;">
 
     {# ── Basic Info ── #}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
-        <h3 style="margin:0 0 16px;font-size:1rem;color:#374151;">ძირითადი ინფორმაცია</h3>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            {% if admin.venue %}
-            <div style="display:flex;gap:12px;align-items:center;">
-                <i class="fas fa-store" style="color:#FF6B35;width:18px;text-align:center;"></i>
-                <div>
-                    <div style="font-size:.75rem;color:#6b7280;">ობიექტის სახელი</div>
-                    <div style="font-weight:600;color:#111827;">{{ admin.venue.name }}</div>
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;align-items:center;">
-                <i class="fas fa-link" style="color:#6b7280;width:18px;text-align:center;"></i>
-                <div>
-                    <div style="font-size:.75rem;color:#6b7280;">Slug</div>
-                    <div style="color:#374151;">{{ admin.venue.slug }}</div>
-                </div>
-            </div>
-            {% if admin.venue.address %}
-            <div style="display:flex;gap:12px;align-items:flex-start;">
-                <i class="fas fa-map-marker-alt" style="color:#6b7280;width:18px;text-align:center;margin-top:2px;"></i>
-                <div>
-                    <div style="font-size:.75rem;color:#6b7280;">მისამართი</div>
-                    <div style="color:#374151;">{{ admin.venue.address }}</div>
-                </div>
-            </div>
-            {% endif %}
-            {% endif %}
-            <div style="display:flex;gap:12px;align-items:center;">
-                <i class="fas fa-envelope" style="color:#6b7280;width:18px;text-align:center;"></i>
-                <div>
-                    <div style="font-size:.75rem;color:#6b7280;">ელ. ფოსტა</div>
-                    <div style="color:#374151;">
-                        {{ admin.email }}
-                        {% if admin.email_verified %}
-                            <span style="color:#059669;font-size:.75rem;margin-left:6px;"><i class="fas fa-check-circle"></i> დადასტურებული</span>
-                        {% else %}
-                            <span style="color:#D97706;font-size:.75rem;margin-left:6px;"><i class="fas fa-exclamation-circle"></i> დაუდასტურებელი</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;align-items:center;">
-                <i class="fas fa-phone" style="color:#6b7280;width:18px;text-align:center;"></i>
-                <div>
-                    <div style="font-size:.75rem;color:#6b7280;">ტელეფონი</div>
-                    <div style="color:#374151;">+{{ admin.phone }}</div>
-                </div>
-            </div>
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-id-card" style="color:var(--bo-primary);"></i>&nbsp; ძირითადი ინფორმაცია</h3>
+        {% if admin.venue %}
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">ობიექტი</span>
+            <span class="bo-info-row__value"><strong>{{ admin.venue.name }}</strong>
+                <span class="bo-badge bo-badge--plan-{{ admin.venue.plan }}" style="margin-left:8px;">{{ admin.venue.plan_display }}</span>
+            </span>
         </div>
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">Slug</span>
+            <code class="bo-info-row__value">/{{ admin.venue.slug }}</code>
+        </div>
+        {% if admin.venue.venue_code %}
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">Venue code</span>
+            <code class="bo-info-row__value">{{ admin.venue.venue_code }}</code>
+        </div>
+        {% endif %}
+        {% if admin.venue.address %}
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">მისამართი</span>
+            <span class="bo-info-row__value">{{ admin.venue.address }}</span>
+        </div>
+        {% endif %}
+        {% endif %}
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">ელ. ფოსტა</span>
+            <span class="bo-info-row__value">
+                {{ admin.email }}
+                {% if admin.email_verified %}
+                <span style="color:var(--bo-green);font-size:.75rem;margin-left:6px;">
+                    <i class="fas fa-check-circle"></i> დადასტურებული
+                </span>
+                {% else %}
+                <span style="color:#F59E0B;font-size:.75rem;margin-left:6px;">
+                    <i class="fas fa-exclamation-circle"></i> დაუდასტურებელი
+                </span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">ტელეფონი</span>
+            <span class="bo-info-row__value">+{{ admin.phone }}
+                {% if admin.phone_verified %}
+                <span style="color:var(--bo-green);font-size:.75rem;margin-left:6px;">
+                    <i class="fas fa-check-circle"></i> დადასტურებული
+                </span>
+                {% endif %}
+            </span>
+        </div>
+        {% if admin.created_at %}
+        <div class="bo-info-row">
+            <span class="bo-info-row__label">რეგისტრაცია</span>
+            <span class="bo-info-row__value">{{ admin.created_at.strftime('%Y-%m-%d') }}</span>
+        </div>
+        {% endif %}
     </div>
 
     {# ── Security ── #}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
-        <h3 style="margin:0 0 4px;font-size:1rem;color:#374151;">უსაფრთხოება</h3>
-        <p style="margin:0 0 16px;font-size:.82rem;color:#6b7280;">SMS ორ-ფაქტორიანი ავთენტიფიკაცია შესვლისას</p>
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-shield-alt" style="color:var(--bo-primary);"></i>&nbsp; უსაფრთხოება</h3>
         <form method="POST">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
-                <div>
-                    <div style="font-weight:500;color:#111827;">SMS 2FA</div>
-                    <div style="font-size:.78rem;color:#6b7280;">ყოველ შესვლაზე SMS კოდი</div>
+            <div class="bo-setting-card" style="margin-bottom:0;">
+                <div class="bo-setting-card__icon"><i class="fas fa-mobile-alt"></i></div>
+                <div class="bo-setting-card__body">
+                    <h3>SMS 2FA</h3>
+                    <p>ყოველ შესვლაზე 6-ნიშნა კოდი გაიგზავნება თქვენს ნომერზე</p>
                 </div>
-                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+                <label class="bo-switch">
                     <input type="checkbox" id="two-fa-toggle" name="two_fa_enabled" value="1"
                            {% if admin.two_fa_enabled %}checked{% endif %}
-                           style="opacity:0;width:0;height:0;"
                            onchange="this.form.submit()">
-                    <span id="toggle-track" style="
-                        position:absolute;top:0;left:0;right:0;bottom:0;
-                        background:{{ '#FF6B35' if admin.two_fa_enabled else '#d1d5db' }};
-                        border-radius:24px;transition:.2s;
-                    "></span>
-                    <span style="
-                        position:absolute;top:3px;left:{{ '23px' if admin.two_fa_enabled else '3px' }};
-                        width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;
-                    "></span>
+                    <span class="bo-switch__slider"></span>
                 </label>
             </div>
             {% if not admin.two_fa_enabled %}
-            <p style="margin:8px 0 0;font-size:.78rem;color:#D97706;">
+            <p style="margin:10px 0 0;font-size:.78rem;color:#F59E0B;">
                 <i class="fas fa-exclamation-triangle"></i> 2FA გამორთულია — ანგარიში ნაკლებად დაცულია
             </p>
             {% endif %}
         </form>
-        <div style="margin-top:14px;">
-            <a href="{{ url_for('bo_bp.change_password') }}" style="font-size:.85rem;color:#FF6B35;text-decoration:none;">
+
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bo-border);">
+            <a href="{{ url_for('bo_bp.change_password') }}" class="bo-btn bo-btn--ghost bo-btn--sm">
                 <i class="fas fa-key"></i> პაროლის შეცვლა
             </a>
         </div>

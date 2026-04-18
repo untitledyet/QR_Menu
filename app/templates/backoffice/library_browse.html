@@ -3,113 +3,150 @@
 {% block content %}
 
 <style>
-.browse-layout { display:flex; gap:24px; align-items:flex-start; }
+.browse-layout { display:flex; gap:20px; align-items:flex-start; }
 .browse-sidebar {
-    width:200px; flex-shrink:0; position:sticky; top:24px;
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;
+    width:220px; flex-shrink:0; position:sticky; top:24px;
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:var(--bo-radius); overflow:hidden;
+    max-height:calc(100vh - 48px); display:flex; flex-direction:column;
 }
 .browse-sidebar__header {
-    padding:12px 16px; border-bottom:1px solid #e5e7eb;
-    font-size:.75rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.05em;
+    padding:12px 16px; border-bottom:1px solid var(--bo-border);
+    font-size:.75rem; font-weight:700; color:var(--bo-text-2);
+    text-transform:uppercase; letter-spacing:.05em;
 }
+.browse-cat-list { overflow-y:auto; }
 .browse-cat-item {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 16px; cursor:pointer; border-bottom:1px solid #f3f4f6;
-    transition:background .15s;
+    display:flex; align-items:center; gap:6px;
+    padding:10px 16px; cursor:pointer; border-bottom:1px solid var(--bo-border);
+    transition:background .15s; color:var(--bo-text-2);
 }
-.browse-cat-item:hover { background:#fef6f3; }
-.browse-cat-item.active { background:#fff5f2; border-left:3px solid #FF6B35; }
-.browse-cat-item.active span:first-child { color:#FF6B35; font-weight:600; }
-.browse-cat-item span:first-child { font-size:.83rem; color:#374151; flex:1; }
-.browse-cat-item .cnt { font-size:.72rem; background:#f3f4f6; color:#6b7280; border-radius:10px; padding:2px 7px; }
+.browse-cat-item:hover { background:var(--bo-surface-2); color:var(--bo-text); }
+.browse-cat-item.active { background:rgba(255,107,53,.12); color:var(--bo-primary); border-left:3px solid var(--bo-primary); padding-left:13px; }
+.browse-cat-item span:first-child { font-size:.83rem; flex:1; }
+.browse-cat-item .cnt {
+    font-size:.7rem; background:var(--bo-surface-2); color:var(--bo-text-2);
+    border-radius:10px; padding:2px 7px; flex-shrink:0;
+}
+.browse-cat-item.active .cnt { background:rgba(255,107,53,.2); color:var(--bo-primary); }
 
 .browse-main { flex:1; min-width:0; }
+.browse-search {
+    position:relative; margin-bottom:16px;
+}
+.browse-search input {
+    width:100%; padding:10px 14px 10px 38px;
+    background:var(--bo-surface-2); border:1px solid var(--bo-border);
+    border-radius:8px; color:var(--bo-text); font-family:inherit;
+    font-size:.9rem; outline:none;
+}
+.browse-search input:focus { border-color:var(--bo-primary); }
+.browse-search i {
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    color:var(--bo-text-2);
+}
+
 .browse-section { display:none; }
 .browse-section.active { display:block; }
+.browse-section h2 {
+    font-size:1.05rem; font-weight:600; color:var(--bo-text); margin-bottom:14px;
+}
 
 .browse-grid {
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
-    gap:16px;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    gap:14px;
 }
 .browse-card {
-    background:#fff; border:1px solid #e5e7eb; border-radius:10px;
-    overflow:hidden; transition:box-shadow .15s; display:flex; flex-direction:column;
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:10px; overflow:hidden; display:flex; flex-direction:column;
+    transition:border-color .15s;
 }
-.browse-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+.browse-card:hover { border-color:var(--bo-primary); }
 .browse-card__img {
-    width:100%; height:130px; background:#f9fafb;
-    display:flex; align-items:center; justify-content:center; color:#d1d5db; font-size:2rem;
-    overflow:hidden;
+    width:100%; height:130px; background:var(--bo-surface-2);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--bo-text-2); font-size:2rem; overflow:hidden;
 }
 .browse-card__img img { width:100%; height:130px; object-fit:cover; }
 .browse-card__body { padding:12px; flex:1; }
-.browse-card__name { font-size:.85rem; font-weight:600; color:#111827; margin:0 0 4px; }
-.browse-card__desc { font-size:.74rem; color:#6b7280; margin:0; line-height:1.4; }
-.browse-card__footer { padding:10px 12px; border-top:1px solid #f3f4f6; }
+.browse-card__name {
+    font-size:.86rem; font-weight:600; color:var(--bo-text); margin:0 0 4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.browse-card__desc {
+    font-size:.72rem; color:var(--bo-text-2); margin:0; line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+.browse-card__footer { padding:10px 12px; border-top:1px solid var(--bo-border); }
 .browse-card__footer button {
     width:100%; padding:7px; font-size:.8rem;
-    background:#FF6B35; color:#fff; border:none; border-radius:7px;
+    background:var(--bo-primary); color:#fff; border:none; border-radius:7px;
     cursor:pointer; font-weight:600; transition:background .15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
 }
-.browse-card__footer button:hover { background:#e55a25; }
+.browse-card__footer button:hover { background:var(--bo-primary-dark); }
 
-/* Import modal */
-.import-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
-    z-index:1000; align-items:center; justify-content:center;
-}
-.import-overlay.open { display:flex; }
-.import-modal {
-    background:#fff; border-radius:14px; padding:28px;
-    width:100%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,.2);
-}
-.import-modal h3 { margin:0 0 6px; font-size:1rem; color:#111827; }
-.import-modal .sub { font-size:.8rem; color:#6b7280; margin:0 0 20px; }
-.import-close { float:right; background:none; border:none; font-size:1.2rem; color:#9ca3af; cursor:pointer; }
-.import-close:hover { color:#374151; }
+.import-modal h3 { margin:0 0 6px; font-size:1rem; color:var(--bo-text); }
+.import-modal .sub { font-size:.82rem; color:var(--bo-text-2); margin:0 0 16px; }
 
-@media(max-width:600px){
+@media(max-width:768px){
     .browse-layout { flex-direction:column; }
-    .browse-sidebar { width:100%; position:static; }
-    .browse-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
+    .browse-sidebar { width:100%; position:static; max-height:none; }
+    .browse-cat-list {
+        display:flex; flex-direction:row; overflow-x:auto;
+        padding:8px; gap:4px;
+    }
+    .browse-cat-item {
+        flex-shrink:0; border-bottom:none; border-radius:20px;
+        padding:6px 12px; white-space:nowrap;
+    }
+    .browse-cat-item.active { padding-left:12px; border-left:none; }
+    .browse-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+    .browse-card__img { height:100px; }
 }
 </style>
 
 <div class="bo-header">
     <h1>პროდუქტების ბიბლიოთეკა</h1>
-    <p class="bo-header__sub">მოძებნეთ და დაამატეთ პროდუქტები თქვენს მენიუში</p>
+    <p class="bo-header__sub">მოძებნეთ და დაამატეთ მზა პროდუქტები თქვენს მენიუში</p>
 </div>
 
 {% if not categories %}
-<div style="text-align:center;padding:60px;color:#9ca3af;">
-    <i class="fas fa-box-open" style="font-size:3rem;margin-bottom:12px;display:block;"></i>
+<div class="um-empty">
+    <i class="fas fa-box-open"></i>
     <p>ბიბლიოთეკა ამჟამად ცარიელია</p>
 </div>
 {% else %}
 <div class="browse-layout">
 
-    {# Sidebar #}
     <aside class="browse-sidebar">
         <div class="browse-sidebar__header">კატეგორიები</div>
-        {% for cat in categories %}
-        <div class="browse-cat-item {% if loop.first %}active{% endif %}"
-             onclick="browseSection({{ cat.id }}, this)">
-            <span>{{ cat.name }}</span>
-            <span class="cnt">{{ cat.items|length }}</span>
+        <div class="browse-cat-list">
+            {% for cat in categories %}
+            <div class="browse-cat-item {% if loop.first %}active{% endif %}"
+                 onclick="browseSection({{ cat.id }}, this)">
+                <span>{{ cat.name }}</span>
+                <span class="cnt">{{ cat.items|length }}</span>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </aside>
 
-    {# Main #}
     <div class="browse-main">
+        <div class="browse-search">
+            <i class="fas fa-search"></i>
+            <input type="search" id="lib-search" placeholder="ძებნა პროდუქტის სახელით…" autocomplete="off">
+        </div>
+
         {% for cat in categories %}
         <div class="browse-section {% if loop.first %}active{% endif %}" id="browse-{{ cat.id }}">
-            <h2 style="font-size:1.1rem;font-weight:700;color:#111827;margin:0 0 16px;">{{ cat.name }}</h2>
+            <h2>{{ cat.name }}</h2>
             {% if cat.items %}
             <div class="browse-grid">
                 {% for item in cat.items %}
-                <div class="browse-card">
+                <div class="browse-card" data-name="{{ item.name|lower }}">
                     <div class="browse-card__img">
                         {% if item.image_filename %}
                         <img src="{{ url_for('static', filename='images/' + item.image_filename) }}"
@@ -132,8 +169,13 @@
                 </div>
                 {% endfor %}
             </div>
+            <div class="um-no-results section-empty" style="display:none;">
+                <i class="fas fa-search"></i>
+                ძებნის შედეგი არ მოიძებნა
+            </div>
             {% else %}
-            <div style="padding:40px;text-align:center;color:#9ca3af;font-size:.85rem;">
+            <div class="um-no-results">
+                <i class="fas fa-box-open"></i>
                 ამ კატეგორიაში პროდუქტი არ არის
             </div>
             {% endif %}
@@ -144,41 +186,42 @@
 {% endif %}
 
 {# Import Modal #}
-<div class="import-overlay" id="import-overlay" onclick="if(event.target===this)closeImport()">
-    <div class="import-modal">
-        <button class="import-close" onclick="closeImport()">✕</button>
-        <h3 id="import-item-name">პროდუქტის დამატება</h3>
-        <p class="sub">აირჩიეთ კატეგორია და მიუთითეთ ფასი</p>
-
-        <div class="bo-form-group" style="margin-bottom:4px;">
-            <label class="bo-label">კატეგორია *</label>
-            <select id="import-cat" class="bo-input" onchange="handleCatSelect(this)">
-                <option value="">— აირჩიეთ კატეგორია —</option>
-                {% for cat in admin.venue.categories if not cat.group_id %}
-                <option value="{{ cat.CategoryID }}">{{ cat.CategoryName }}</option>
-                {% endfor %}
-                <option value="__copy__">📋 ბიბლიოთეკის კატეგორიის კოპირება</option>
-                <option value="__new__">+ ახალი კატეგორიის შექმნა</option>
-            </select>
+<div class="bo-modal-backdrop import-modal" id="import-overlay" style="display:none;" onclick="if(event.target===this)closeImport()">
+    <div class="bo-modal-box" style="max-width:440px;">
+        <div class="bo-modal-box__header">
+            <h3 id="import-item-name">პროდუქტის დამატება</h3>
+            <button class="bo-icon-btn" onclick="closeImport()"><i class="fas fa-times"></i></button>
         </div>
+        <div class="bo-modal-box__body">
+            <p class="sub">აირჩიეთ კატეგორია და მიუთითეთ ფასი</p>
 
-        {# Inline new category input (shown only for __new__) #}
-        <div id="new-cat-row" style="display:none;margin-bottom:4px;">
-            <input type="text" id="new-cat-name" class="bo-input"
-                   placeholder="კატეგორიის სახელი — Enter-ით შექმნა">
-            <div id="new-cat-msg" style="font-size:.75rem;color:#ef4444;margin-top:4px;display:none;"></div>
+            <div class="bo-form-group">
+                <label>კატეგორია *</label>
+                <select id="import-cat" class="bo-input" onchange="handleCatSelect(this)">
+                    <option value="">— აირჩიეთ კატეგორია —</option>
+                    {% for cat in admin.venue.categories if not cat.group_id %}
+                    <option value="{{ cat.CategoryID }}">{{ cat.CategoryName }}</option>
+                    {% endfor %}
+                    <option value="__copy__">📋 ბიბლიოთეკის კატეგორიის კოპირება</option>
+                    <option value="__new__">+ ახალი კატეგორიის შექმნა</option>
+                </select>
+            </div>
+
+            <div id="new-cat-row" style="display:none;margin-top:-8px;margin-bottom:12px;">
+                <input type="text" id="new-cat-name" class="bo-input"
+                       placeholder="კატეგორიის სახელი — Enter-ით შექმნა">
+                <div id="new-cat-msg" style="font-size:.75rem;color:var(--bo-red);margin-top:4px;display:none;"></div>
+            </div>
+
+            <div class="bo-form-group">
+                <label>ფასი (₾) *</label>
+                <input type="number" id="import-price" class="bo-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
+            </div>
+            <div id="import-msg" style="font-size:.82rem;color:var(--bo-red);margin-bottom:4px;display:none;"></div>
         </div>
-
-        <div style="margin-bottom:16px;"></div>
-
-        <div class="bo-form-group" style="margin-bottom:20px;">
-            <label class="bo-label">ფასი (₾) *</label>
-            <input type="number" id="import-price" class="bo-input" step="0.01" min="0" placeholder="0.00">
-        </div>
-        <div id="import-msg" style="font-size:.82rem;color:#ef4444;margin-bottom:12px;display:none;"></div>
-        <div style="display:flex;gap:8px;">
-            <button onclick="doImport()" class="bo-btn bo-btn--primary" id="import-btn">დამატება</button>
+        <div class="bo-modal-box__footer">
             <button onclick="closeImport()" class="bo-btn bo-btn--ghost">გაუქმება</button>
+            <button onclick="doImport()" class="bo-btn bo-btn--primary" id="import-btn">დამატება</button>
         </div>
     </div>
 </div>
@@ -195,6 +238,7 @@ function browseSection(catId, el) {
     el.classList.add('active');
     _currentGlobalCatName = el.querySelector('span:first-child').textContent.trim();
     _currentGlobalCatId = catId;
+    applyLibSearch();
 }
 
 function handleCatSelect(sel) {
@@ -203,7 +247,6 @@ function handleCatSelect(sel) {
     document.getElementById('new-cat-msg').style.display = 'none';
 
     if (sel.value === '__copy__') {
-        // Auto-create immediately with global category name + icon
         sel.disabled = true;
         doCreateCategory(_currentGlobalCatName, _currentGlobalCatId);
     } else if (sel.value === '__new__') {
@@ -240,18 +283,39 @@ function doCreateCategory(name, globalCatId) {
     });
 }
 
-// Enter key in new category input
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('new-cat-name').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const name = this.value.trim();
-            if (!name) return;
-            document.getElementById('import-cat').disabled = true;
-            doCreateCategory(name, null);
-        }
-    });
+    const newCatInput = document.getElementById('new-cat-name');
+    if (newCatInput) {
+        newCatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const name = this.value.trim();
+                if (!name) return;
+                document.getElementById('import-cat').disabled = true;
+                doCreateCategory(name, null);
+            }
+        });
+    }
+    const search = document.getElementById('lib-search');
+    if (search) search.addEventListener('input', applyLibSearch);
 });
+
+function applyLibSearch(){
+    const search = document.getElementById('lib-search');
+    if (!search) return;
+    const q = search.value.trim().toLowerCase();
+    const active = document.querySelector('.browse-section.active');
+    if (!active) return;
+    const cards = active.querySelectorAll('.browse-card');
+    let shown = 0;
+    cards.forEach(c => {
+        const match = !q || (c.dataset.name || '').includes(q);
+        c.style.display = match ? '' : 'none';
+        if (match) shown++;
+    });
+    const empty = active.querySelector('.section-empty');
+    if (empty) empty.style.display = (shown === 0 && q) ? '' : 'none';
+}
 
 function openImport(itemId, name) {
     _importItemId = itemId;
@@ -261,12 +325,12 @@ function openImport(itemId, name) {
     document.getElementById('import-msg').style.display = 'none';
     document.getElementById('new-cat-row').style.display = 'none';
     document.getElementById('new-cat-msg').style.display = 'none';
-    document.getElementById('import-overlay').classList.add('open');
+    document.getElementById('import-overlay').style.display = 'flex';
     setTimeout(() => document.getElementById('import-cat').focus(), 100);
 }
 
 function closeImport() {
-    document.getElementById('import-overlay').classList.remove('open');
+    document.getElementById('import-overlay').style.display = 'none';
     _importItemId = null;
 }
 
@@ -311,9 +375,9 @@ function showMsg(text) {
 function showToast(text) {
     var t = document.createElement('div');
     t.textContent = text;
-    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 20px;border-radius:8px;font-size:.85rem;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3);';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bo-surface);border:1px solid var(--bo-border);color:var(--bo-text);padding:10px 20px;border-radius:8px;font-size:.85rem;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,.4);';
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => t.remove(), 2800);
 }
 </script>
 {% endblock %}

@@ -1,17 +1,24 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}{{ venue.name }} — Features{% endblock %}
+{% block title %}{{ venue.name }} — ფუნქციები{% endblock %}
 {% block content %}
-<div class="bo-header">
-    <h1>{{ venue.name }}</h1>
-    <p class="bo-header__sub">Feature Management</p>
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+        <h1>{{ venue.name }}</h1>
+        <p class="bo-header__sub">ფუნქციების მართვა
+            {% if venue.venue_code %}· <code style="color:var(--bo-text-2);font-size:.78rem;">{{ venue.venue_code }}</code>{% endif %}
+        </p>
+    </div>
+    <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost bo-btn--sm">
+        <i class="fas fa-arrow-left"></i> უკან
+    </a>
 </div>
 
 <form method="POST">
     <div class="bo-setting-card" style="margin-bottom:20px;">
         <div class="bo-setting-card__icon"><i class="fas fa-crown"></i></div>
         <div class="bo-setting-card__body">
-            <h3>Subscription Plan</h3>
-            <p>Select the base plan. Toggles update automatically. You can still override individually.</p>
+            <h3>გეგმა</h3>
+            <p>აირჩიეთ ბაზის გეგმა. გადამრთველები განახლდება ავტომატურად. შეგიძლიათ ცალკე გადააწერით.</p>
         </div>
         <select name="plan" id="plan-select" class="bo-plan-select">
             {% for p in plans %}
@@ -20,9 +27,15 @@
         </select>
     </div>
 
-    <h2 style="margin:24px 0 12px;">Features</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px;gap:10px;flex-wrap:wrap;">
+        <h2 style="font-size:1rem;font-weight:600;">ფუნქციები</h2>
+        <button type="button" onclick="resetToDefaults()" class="bo-btn bo-btn--ghost bo-btn--sm">
+            <i class="fas fa-undo"></i> ნაგულისხმევზე დაბრუნება
+        </button>
+    </div>
     <p class="bo-header__sub" style="margin-bottom:16px;">
-        Toggle features individually. Overrides are marked with <span class="bo-badge bo-badge--override">override</span>
+        ცალკე გადართეთ. გადაწერები აღნიშნულია
+        <span class="bo-badge bo-badge--override">override</span> ნიშნით.
     </p>
 
     <div class="bo-settings-grid">
@@ -34,7 +47,7 @@
                     <span class="bo-badge bo-badge--override" style="{{ '' if key in overrides else 'display:none' }}">override</span>
                 </h3>
                 <p>{{ desc }}</p>
-                <small class="plan-default-label" style="color:var(--bo-text-2);">Plan default: {{ '✓' if plan_defaults.get(key, False) else '✕' }}</small>
+                <small class="plan-default-label" style="color:var(--bo-text-2);">გეგმის ნაგულისხმევი: {{ '✓' if plan_defaults.get(key, False) else '✕' }}</small>
             </div>
             <label class="bo-switch">
                 <input type="checkbox" name="{{ key }}" {{ 'checked' if features.get(key, False) }}>
@@ -45,35 +58,35 @@
     </div>
 
     <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
-        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">Back</a>
-        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> Save Features</button>
+        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> შენახვა</button>
     </div>
 </form>
 
 <script>
-// Plan feature definitions (from Python PLAN_FEATURES)
 var PLAN_FEATURES = {{ plan_features_json|safe }};
 
-document.getElementById('plan-select').addEventListener('change', function() {
-    var plan = this.value;
+function applyDefaultsForPlan(plan) {
     var defaults = PLAN_FEATURES[plan] || {};
-
     document.querySelectorAll('.bo-setting-card[data-feature]').forEach(function(card) {
         var key = card.dataset.feature;
         var checkbox = card.querySelector('input[type="checkbox"]');
         var defaultLabel = card.querySelector('.plan-default-label');
         var overrideBadge = card.querySelector('.bo-badge--override');
         var planDefault = defaults[key] || false;
-
-        // Update checkbox to match plan default
         checkbox.checked = planDefault;
-
-        // Update "Plan default" label
-        defaultLabel.textContent = 'Plan default: ' + (planDefault ? '✓' : '✕');
-
-        // Hide override badge (will be recalculated on save)
+        defaultLabel.textContent = 'გეგმის ნაგულისხმევი: ' + (planDefault ? '✓' : '✕');
         overrideBadge.style.display = 'none';
     });
+}
+
+document.getElementById('plan-select').addEventListener('change', function() {
+    applyDefaultsForPlan(this.value);
 });
+
+function resetToDefaults() {
+    if (!confirm('ყველა override წაიშლება და გეგმის ნაგულისხმევზე დაბრუნდება?')) return;
+    applyDefaultsForPlan(document.getElementById('plan-select').value);
+}
 </script>
 {% endblock %}

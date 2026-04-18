@@ -2,6 +2,8 @@
 {% block title %}მენიუ{% endblock %}
 {% block content %}
 {% set has_customization = features.get('ingredient_customization', False) %}
+{% set total_items = item_counts.values()|sum %}
+{% set max_items = 999 %}
 
 <div class="um-layout">
 
@@ -18,7 +20,7 @@
       <a href="{{ url_for('bo_bp.menu_list') }}"
          class="um-cat-row {{ 'um-cat-row--active' if not selected_cat }}">
         <span class="um-cat-row__name">ყველა</span>
-        <span class="um-cat-row__badge">{{ items|length if not selected_cat else (item_counts.values()|sum) }}</span>
+        <span class="um-cat-row__badge">{{ total_items }}</span>
       </a>
 
       {% for cat in categories %}
@@ -38,7 +40,7 @@
         </div>
       </div>
 
-      {# Subcategories for this category #}
+      {# Subcategories (desktop inline) for this category #}
       {% if selected_cat == cat.CategoryID %}
       <div class="um-subs" id="subs-{{ cat.CategoryID }}">
         {% for sub in subs_by_cat.get(cat.CategoryID, []) %}
@@ -60,6 +62,24 @@
 
   {# ══════ MAIN PANEL ══════ #}
   <main class="um-main">
+
+    {# Mobile subcategory strip (duplicated here, visible only on mobile for selected cat) #}
+    {% if selected_cat %}
+    <div class="um-subs-mobile">
+      {% for sub in subs_by_cat.get(selected_cat, []) %}
+      <div class="um-sub-chip" data-sub-id="{{ sub.SubcategoryID }}">
+        <span>{{ sub.SubcategoryName }}</span>
+        <button onclick="deleteSub({{ sub.SubcategoryID }}, this)" title="წაშლა">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      {% endfor %}
+      <button class="um-sub-add-btn" onclick="openSubModal({{ selected_cat }})">
+        <i class="fas fa-plus"></i> ქვეკატეგორია
+      </button>
+    </div>
+    {% endif %}
+
     <div class="um-main__header">
       <h2 class="um-main__title">
         {% if selected_cat %}
@@ -69,19 +89,48 @@
         {% endif %}
         <span class="um-main__count">({{ items|length }})</span>
       </h2>
-      <a href="{{ url_for('bo_bp.add_item') }}{% if selected_cat %}?cat={{ selected_cat }}{% endif %}"
-         class="bo-btn bo-btn--primary bo-btn--sm">
-        <i class="fas fa-plus"></i> ნივთის დამატება
-      </a>
     </div>
 
+    {# Toolbar: search + add actions #}
+    <div class="um-toolbar">
+      <div class="um-search">
+        <i class="fas fa-search"></i>
+        <input type="search" id="um-item-search" placeholder="ძებნა ნივთის სახელით…" autocomplete="off">
+      </div>
+      <div class="um-toolbar__actions">
+        <a href="{{ url_for('lib_bp.browse_library') }}" class="bo-btn bo-btn--ghost bo-btn--sm" title="ძირითადი ბიბლიოთეკიდან">
+          <i class="fas fa-database"></i> ბიბლიოთეკიდან
+        </a>
+        <a href="{{ url_for('bo_bp.add_item') }}{% if selected_cat %}?cat={{ selected_cat }}{% endif %}"
+           class="bo-btn bo-btn--primary bo-btn--sm">
+          <i class="fas fa-plus"></i> ახალი ნივთი
+        </a>
+      </div>
+    </div>
+
+    {# Item limit progress (only when getting close to limit) #}
+    {% if total_items > 0 %}
+    {% set pct = (total_items * 100 / max_items)|int %}
+    {% if pct >= 60 %}
+    <div style="padding:10px 24px;border-bottom:1px solid var(--bo-border);font-size:.78rem;color:var(--bo-text-2);">
+      ნივთების ლიმიტი: {{ total_items }} / {{ max_items }}
+      <div class="bo-progress" style="margin-top:6px;">
+        <div class="bo-progress__bar {% if pct >= 90 %}bo-progress__bar--danger{% elif pct >= 75 %}bo-progress__bar--warn{% endif %}"
+             style="width:{{ pct }}%;"></div>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     {% if items %}
-    <div class="um-items-grid">
+    <div class="um-items-grid" id="um-items-grid">
       {% for item in items %}
-      <div class="um-item-card {{ '' if item.is_active else 'um-item-card--inactive' }}">
+      <div class="um-item-card {{ '' if item.is_active else 'um-item-card--inactive' }}"
+           data-name="{{ item.FoodName|lower }}"
+           data-name-en="{{ (item.FoodName_en or '')|lower }}">
         <div class="um-item-card__img-wrap">
           <img src="{{ url_for('static', filename='images/' ~ (item.ImageFilename or 'default-image.png')) }}"
-               class="um-item-card__img" loading="lazy">
+               class="um-item-card__img" loading="lazy" alt="{{ item.FoodName }}">
           {% if not item.is_active %}
           <span class="um-item-card__badge-inactive">გამორთული</span>
           {% endif %}
@@ -125,14 +174,23 @@
       </div>
       {% endfor %}
     </div>
+    <div class="um-no-results" id="um-no-results" style="display:none;">
+      <i class="fas fa-search"></i>
+      ძებნის შედეგი არ მოიძებნა
+    </div>
     {% else %}
     <div class="um-empty">
       <i class="fas fa-utensils"></i>
-      <p>ნივთები არ არის. დაამატეთ პირველი ნივთი.</p>
-      <a href="{{ url_for('bo_bp.add_item') }}{% if selected_cat %}?cat={{ selected_cat }}{% endif %}"
-         class="bo-btn bo-btn--primary">
-        <i class="fas fa-plus"></i> ნივთის დამატება
-      </a>
+      <p>ნივთები ჯერ არ არის. დაიწყეთ თქვენი მენიუს შექმნა.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+        <a href="{{ url_for('bo_bp.add_item') }}{% if selected_cat %}?cat={{ selected_cat }}{% endif %}"
+           class="bo-btn bo-btn--primary">
+          <i class="fas fa-plus"></i> ახალი ნივთი
+        </a>
+        <a href="{{ url_for('lib_bp.browse_library') }}" class="bo-btn bo-btn--ghost">
+          <i class="fas fa-database"></i> ბიბლიოთეკიდან
+        </a>
+      </div>
     </div>
     {% endif %}
   </main>
@@ -149,17 +207,17 @@
     </div>
     <div class="bo-modal-box__body">
       <div class="bo-form-group">
-        <label>სახელი (KA) *</label>
-        <input id="um-cat-name" type="text" class="bo-input" placeholder="კატეგორიის სახელი">
+        <label>სახელი (ქართ.) *</label>
+        <input id="um-cat-name" type="text" class="bo-input" placeholder="მაგ. ცხელი კერძები">
       </div>
       <div class="bo-form-group">
-        <label>სახელი (EN)</label>
-        <input id="um-cat-name-en" type="text" class="bo-input" placeholder="Category name">
+        <label>Name (EN) <span class="bo-form-hint--inline">ცარიელი → ავტო-თარგმანი</span></label>
+        <input id="um-cat-name-en" type="text" class="bo-input" placeholder="e.g. Hot dishes">
       </div>
       <p id="um-cat-err" style="color:var(--bo-red);font-size:.8rem;margin-top:4px;display:none"></p>
     </div>
     <div class="bo-modal-box__footer">
-      <button class="bo-btn" onclick="document.getElementById('um-cat-modal').style.display='none'">გაუქმება</button>
+      <button class="bo-btn bo-btn--ghost" onclick="document.getElementById('um-cat-modal').style.display='none'">გაუქმება</button>
       <button class="bo-btn bo-btn--primary" id="um-cat-save-btn" onclick="saveCat()">შენახვა</button>
     </div>
   </div>
@@ -182,7 +240,7 @@
       <p id="um-sub-err" style="color:var(--bo-red);font-size:.8rem;margin-top:4px;display:none"></p>
     </div>
     <div class="bo-modal-box__footer">
-      <button class="bo-btn" onclick="document.getElementById('um-sub-modal').style.display='none'">გაუქმება</button>
+      <button class="bo-btn bo-btn--ghost" onclick="document.getElementById('um-sub-modal').style.display='none'">გაუქმება</button>
       <button class="bo-btn bo-btn--primary" onclick="saveSub()">დამატება</button>
     </div>
   </div>
@@ -222,15 +280,18 @@ function saveCat() {
     }).then(r => r.json()).then(d => {
         document.getElementById('um-cat-save-btn').disabled = false;
         if (!d.success) { errEl.textContent = d.error; errEl.style.display = ''; return; }
-        // Reload to reflect changes
-        window.location.href = '{{ url_for("bo_bp.menu_list") }}';
+        window.location.reload();
     }).catch(() => {
         document.getElementById('um-cat-save-btn').disabled = false;
         errEl.textContent = 'შეცდომა. სცადეთ ხელახლა.'; errEl.style.display = '';
     });
 }
 document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && document.getElementById('um-cat-modal').style.display !== 'none') saveCat();
+    if (e.key === 'Enter' && document.getElementById('um-cat-modal').style.display === 'flex') saveCat();
+    if (e.key === 'Escape') {
+        document.getElementById('um-cat-modal').style.display = 'none';
+        document.getElementById('um-sub-modal').style.display = 'none';
+    }
 });
 
 // ── Delete Category ──
@@ -265,17 +326,9 @@ function saveSub() {
         body: JSON.stringify({name})
     }).then(r => r.json()).then(d => {
         if (!d.success) { errEl.textContent = d.error; errEl.style.display = ''; return; }
-        // Add chip to sidebar
         document.getElementById('um-sub-modal').style.display = 'none';
-        const container = document.getElementById(`subs-${_addSubCatId}`);
-        if (container) {
-            const addBtn = container.querySelector('.um-sub-add-btn');
-            const chip = document.createElement('div');
-            chip.className = 'um-sub-chip';
-            chip.dataset.subId = d.id;
-            chip.innerHTML = `<span>${d.name}</span><button onclick="deleteSub(${d.id},this)" title="წაშლა"><i class="fas fa-times"></i></button>`;
-            container.insertBefore(chip, addBtn);
-        }
+        // Reload so both desktop inline + mobile strip update consistently
+        window.location.reload();
     }).catch(() => { errEl.textContent = 'შეცდომა.'; errEl.style.display = ''; });
 }
 
@@ -285,7 +338,8 @@ function deleteSub(id, btn) {
     fetch(`/backoffice/subcategories/delete-json/${id}`, {method: 'POST'})
         .then(r => r.json()).then(d => {
             if (!d.success) { alert(d.error); return; }
-            btn.closest('.um-sub-chip').remove();
+            // Remove all chips with this sub id (mobile + desktop may have duplicates)
+            document.querySelectorAll(`.um-sub-chip[data-sub-id="${id}"]`).forEach(el => el.remove());
         });
 }
 
@@ -315,5 +369,25 @@ function copyItem(id, btn) {
             window.location.href = d.redirect;
         }).catch(() => { btn.disabled = false; });
 }
+
+// ── Live search ──
+(function(){
+    const input = document.getElementById('um-item-search');
+    if (!input) return;
+    const noResults = document.getElementById('um-no-results');
+    input.addEventListener('input', function(){
+        const q = this.value.trim().toLowerCase();
+        const cards = document.querySelectorAll('#um-items-grid .um-item-card');
+        let shown = 0;
+        cards.forEach(c => {
+            const name = c.dataset.name || '';
+            const nameEn = c.dataset.nameEn || '';
+            const match = !q || name.includes(q) || nameEn.includes(q);
+            c.style.display = match ? '' : 'none';
+            if (match) shown++;
+        });
+        if (noResults) noResults.style.display = (shown === 0 && q) ? '' : 'none';
+    });
+})();
 </script>
 {% endblock %}

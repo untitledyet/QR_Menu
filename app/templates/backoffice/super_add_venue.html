@@ -1,39 +1,48 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Add Venue{% endblock %}
+{% block title %}ახალი ობიექტი{% endblock %}
 {% block content %}
 <div class="bo-header">
-    <h1>Add New Venue</h1>
+    <h1>ახალი ობიექტი</h1>
+    <p class="bo-header__sub">დაამატეთ ახალი ობიექტი პლატფორმაზე</p>
 </div>
 
-<form method="POST" class="bo-item-form" style="max-width:500px;">
-    <div class="bo-form-group">
-        <label>Venue Name *</label>
-        <input type="text" name="name" required placeholder="e.g. Valhalla">
+<form method="POST" class="bo-item-form" style="max-width:560px;">
+    <div class="bo-form-row">
+        <div class="bo-form-group">
+            <label>სახელი *</label>
+            <input type="text" name="name" required placeholder="მაგ. Valhalla">
+        </div>
+        <div class="bo-form-group">
+            <label>URL slug *</label>
+            <input type="text" name="slug" required placeholder="valhalla" pattern="[a-z0-9-]+">
+            <small class="bo-form-hint">დაბალი რეგისტრი, გარეშე ცარიელი სივრცეები.</small>
+        </div>
     </div>
     <div class="bo-form-group">
-        <label>URL Slug *</label>
-        <input type="text" name="slug" required placeholder="e.g. valhalla" pattern="[a-z0-9-]+">
-        <small class="bo-form-hint">Lowercase, no spaces. Menu URL: /slug/table/1</small>
-    </div>
-    <div class="bo-form-group">
-        <label>Plan</label>
+        <label>გეგმა</label>
         <select name="plan">
             {% for p in plans %}<option value="{{ p }}">{{ p|capitalize }}</option>{% endfor %}
         </select>
     </div>
+
     <hr style="border-color:var(--bo-border); margin:20px 0;">
-    <h3 style="margin-bottom:12px;">Venue Admin Account</h3>
-    <div class="bo-form-group">
-        <label>Admin Username</label>
-        <input type="text" name="admin_username" placeholder="Leave empty to skip">
+    <h3 style="margin-bottom:4px;font-size:1rem;">ობიექტის ადმინი <span style="color:var(--bo-text-2);font-size:.78rem;font-weight:400;">(არასავალდებულო)</span></h3>
+    <p style="color:var(--bo-text-2);font-size:.82rem;margin-bottom:12px;">ცარიელი დატოვეთ — ობიექტი შეიქმნება ადმინის გარეშე.</p>
+
+    <div class="bo-form-row">
+        <div class="bo-form-group">
+            <label>ადმინის username</label>
+            <input type="text" name="admin_username" placeholder="username">
+        </div>
+        <div class="bo-form-group">
+            <label>ადმინის პაროლი</label>
+            <input type="password" name="admin_password" placeholder="•••••••">
+        </div>
     </div>
-    <div class="bo-form-group">
-        <label>Admin Password</label>
-        <input type="password" name="admin_password" placeholder="Leave empty to skip">
-    </div>
+
     <div class="bo-form-actions">
-        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">Cancel</a>
-        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Create Venue</button>
+        <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> შექმნა</button>
     </div>
 </form>
 {% endblock %}

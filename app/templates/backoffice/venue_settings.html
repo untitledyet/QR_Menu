@@ -1,25 +1,23 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Venue Settings{% endblock %}
+{% block title %}ობიექტის პარამეტრები{% endblock %}
 {% block content %}
 <div class="bo-header">
-    <h1>Venue Settings</h1>
+    <h1>ობიექტის პარამეტრები</h1>
     <p class="bo-header__sub">{{ venue.name }}</p>
 </div>
 
-<div style="max-width:560px;display:flex;flex-direction:column;gap:20px;">
+<div style="max-width:620px;display:flex;flex-direction:column;gap:16px;">
 
     {# ── Table count ── #}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
-        <h3 style="margin:0 0 4px;font-size:1rem;color:#374151;">მაგიდების რაოდენობა</h3>
-        <p style="margin:0 0 16px;font-size:.82rem;color:#6b7280;">
-            რამდენი ფიზიკური მაგიდა აქვს ობიექტს? 0 = შეუზღუდავი.
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-chair" style="color:var(--bo-primary);"></i>&nbsp; მაგიდების რაოდენობა</h3>
+        <p style="color:var(--bo-text-2);font-size:.85rem;margin-bottom:14px;">
+            რამდენი ფიზიკური მაგიდა აქვს ობიექტს? <strong>0</strong> = შეუზღუდავი ლინკები.
         </p>
-        <form method="POST">
-            <div class="bo-form-group">
-                <input type="number" name="total_tables" class="bo-input" min="0"
-                       value="{{ venue.total_tables or 0 }}" style="max-width:140px;">
-            </div>
-            <button type="submit" class="bo-btn bo-btn--primary" style="margin-top:12px;">
+        <form method="POST" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="number" name="total_tables" class="bo-input" min="0"
+                   value="{{ venue.total_tables or 0 }}" style="max-width:160px;">
+            <button type="submit" class="bo-btn bo-btn--primary">
                 <i class="fas fa-save"></i> შენახვა
             </button>
         </form>
@@ -28,31 +26,42 @@
     {# ── Table URLs ── #}
     {% set total = venue.total_tables or 0 %}
     {% if total > 0 %}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
-        <h3 style="margin:0 0 4px;font-size:1rem;color:#374151;">მაგიდების ლინკები</h3>
-        <p style="margin:0 0 16px;font-size:.82rem;color:#6b7280;">
-            QR კოდზე ჩასასვლელი მისამართი თითოეული მაგიდისთვის.
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-qrcode" style="color:var(--bo-primary);"></i>&nbsp; მაგიდების ლინკები</h3>
+        <p style="color:var(--bo-text-2);font-size:.85rem;margin-bottom:14px;">
+            QR კოდზე დასაპრინტ ლინკები თითოეული მაგიდისთვის.
         </p>
-        <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto;padding-right:4px;">
             {% set base = request.scheme + '://' + request.host %}
             {% for i in range(1, total + 1) %}
             {% set url = base + '/' + venue.slug + '/table/' + i|string %}
-            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb;">
-                <span style="font-size:.75rem;font-weight:600;color:#6b7280;min-width:24px;">{{ i }}</span>
-                <code style="font-size:.78rem;color:#374151;flex:1;word-break:break-all;">{{ url }}</code>
-                <button onclick="navigator.clipboard.writeText('{{ url }}');this.textContent='✓'"
-                        style="font-size:.75rem;padding:4px 8px;background:#FF6B35;color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">
-                    კოპირება
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bo-surface-2);border-radius:8px;">
+                <span style="font-size:.75rem;font-weight:700;color:var(--bo-primary);min-width:28px;">#{{ i }}</span>
+                <code style="font-size:.78rem;color:var(--bo-text);flex:1;word-break:break-all;">{{ url }}</code>
+                <button onclick="copyOne(this, '{{ url }}')" class="bo-copy-btn">
+                    <i class="fas fa-copy"></i> კოპირება
                 </button>
             </div>
             {% endfor %}
         </div>
     </div>
     {% elif total == 0 %}
-    <div style="background:#f9fafb;border:1px dashed #d1d5db;border-radius:12px;padding:20px;color:#6b7280;font-size:.85rem;">
-        <i class="fas fa-info-circle"></i> მაგიდების რაოდენობა 0-ზეა — ლინკები შეუზღუდავია (<code>/{{ venue.slug }}/table/1</code>, <code>/2</code>, ...)
+    <div style="background:var(--bo-surface);border:1px dashed var(--bo-border);border-radius:12px;padding:18px;color:var(--bo-text-2);font-size:.85rem;">
+        <i class="fas fa-info-circle" style="color:var(--bo-primary);"></i>
+        მაგიდების რაოდენობა 0-ზეა — ლინკები შეუზღუდავია.
+        მაგალითად: <code style="color:var(--bo-primary);">/{{ venue.slug }}/table/1</code>, <code style="color:var(--bo-primary);">/2</code>, ...
     </div>
     {% endif %}
 
 </div>
+
+<script>
+function copyOne(btn, url){
+    navigator.clipboard.writeText(url).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> დაკოპირდა';
+        setTimeout(() => btn.innerHTML = orig, 1400);
+    });
+}
+</script>
 {% endblock %}

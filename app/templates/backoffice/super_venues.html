@@ -1,46 +1,94 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Venues{% endblock %}
+{% block title %}ობიექტები{% endblock %}
 {% block content %}
-<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
-    <h1>All Venues</h1>
-    <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Venue</a>
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+        <h1>ყველა ობიექტი</h1>
+        <p class="bo-header__sub">{{ venues|length }} სულ</p>
+    </div>
+    <a href="{{ url_for('bo_bp.add_venue') }}" class="bo-btn bo-btn--primary">
+        <i class="fas fa-plus"></i> ახალი ობიექტი
+    </a>
 </div>
 
-<div class="bo-card-grid">
+<div class="bo-super-toolbar">
+    <div class="um-search" style="max-width:360px;flex:1;">
+        <i class="fas fa-search"></i>
+        <input type="search" id="venue-search" placeholder="ძებნა სახელით / slug-ით / კოდით…" autocomplete="off">
+    </div>
+    <select id="plan-filter">
+        <option value="">ყველა გეგმა</option>
+        {% for p in plans %}<option value="{{ p }}">{{ p|capitalize }}</option>{% endfor %}
+    </select>
+    <select id="status-filter">
+        <option value="">ყველა სტატუსი</option>
+        <option value="active">აქტიური</option>
+        <option value="inactive">გამორთული</option>
+    </select>
+</div>
+
+<div class="bo-card-grid" id="venue-cards">
     {% for v in venues %}
-    <div class="bo-card" style="flex-direction:column; align-items:stretch; gap:12px;">
-        <div style="display:flex; align-items:center; gap:12px;">
+    {% set vs = venue_stats[v.id] %}
+    <div class="bo-card" style="flex-direction:column;align-items:stretch;gap:12px;"
+         data-name="{{ v.name|lower }}" data-slug="{{ v.slug|lower }}"
+         data-code="{{ (v.venue_code or '')|lower }}"
+         data-plan="{{ v.plan }}" data-active="{{ '1' if v.is_active else '0' }}">
+        <div style="display:flex;align-items:center;gap:12px;">
             <div class="bo-card__icon"><i class="fas fa-store"></i></div>
-            <div>
-                <h3>{{ v.name }}</h3>
+            <div style="flex:1;min-width:0;">
+                <h3 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ v.name }}</h3>
                 <small style="color:var(--bo-text-2);">/{{ v.slug }}</small>
                 {% if v.venue_code %}
-                <div style="font-size:.72rem;color:var(--bo-text-3);margin-top:2px;font-family:monospace;">{{ v.venue_code }}</div>
+                <div style="font-size:.72rem;color:var(--bo-text-2);margin-top:2px;font-family:monospace;">{{ v.venue_code }}</div>
                 {% endif %}
             </div>
-            <span class="bo-badge bo-badge--plan-{{ v.plan }}" style="margin-left:auto;">{{ v.plan_display }}</span>
+            <span class="bo-badge bo-badge--plan-{{ v.plan }}">{{ v.plan_display }}</span>
         </div>
-        <div style="display:flex; gap:8px;">
-            <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost bo-btn--full" style="font-size:.8rem;">
-                <i class="fas fa-cog"></i> Features
+
+        <div style="display:flex;gap:12px;font-size:.8rem;color:var(--bo-text-2);padding:8px 0;border-top:1px solid var(--bo-border);border-bottom:1px solid var(--bo-border);">
+            <span><i class="fas fa-utensils"></i> {{ vs.items }} ნივთი</span>
+            <span><i class="fas fa-layer-group"></i> {{ vs.categories }} კატ.</span>
+            <span><i class="fas fa-user"></i> {{ vs.admins }} ადმინ.</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--bo-text-2);">
+            <span>სტატუსი:</span>
+            <button class="bo-toggle {{ 'active' if v.is_active }}" onclick="toggleVenue({{ v.id }}, this)">
+                <span class="bo-toggle__dot"></span>
+            </button>
+            <span class="status-label">{{ 'აქტიური' if v.is_active else 'გამორთული' }}</span>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{{ url_for('bo_bp.venue_features', venue_id=v.id) }}" class="bo-btn bo-btn--ghost bo-btn--sm" style="flex:1;text-align:center;">
+                <i class="fas fa-cog"></i> ფუნქციები
+            </a>
+            <a href="{{ request.scheme }}://{{ request.host }}/{{ v.slug }}/table/1" target="_blank" class="bo-btn bo-btn--outline bo-btn--sm" title="მენიუს ნახვა">
+                <i class="fas fa-external-link-alt"></i>
             </a>
             <button onclick="confirmDelete({{ v.id }}, '{{ v.name|e }}')"
-                    class="bo-btn bo-btn--danger" style="font-size:.8rem;padding:0 12px;"
-                    title="სრული წაშლა">
+                    class="bo-btn bo-btn--danger bo-btn--sm" title="სრული წაშლა">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
     </div>
     {% endfor %}
 </div>
+<div id="cards-empty" class="um-no-results" style="display:none;">
+    <i class="fas fa-search"></i>
+    ობიექტი ვერ მოიძებნა
+</div>
 
 <!-- Confirm delete modal -->
-<div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;">
-    <div style="background:var(--bo-surface);border-radius:12px;padding:32px;max-width:400px;width:90%;text-align:center;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
-        <h3 style="margin-bottom:8px;">ობიექტის წაშლა</h3>
-        <p id="delete-msg" style="color:var(--bo-text-2);font-size:.9rem;margin-bottom:24px;"></p>
-        <div style="display:flex;gap:10px;justify-content:center;">
+<div id="delete-modal" class="bo-modal-backdrop" style="display:none;">
+    <div class="bo-modal-box" style="max-width:420px;text-align:center;">
+        <div class="bo-modal-box__body">
+            <div style="font-size:2rem;margin-bottom:10px;color:var(--bo-red);"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 style="margin-bottom:10px;">ობიექტის წაშლა</h3>
+            <p id="delete-msg" style="color:var(--bo-text-2);font-size:.88rem;"></p>
+        </div>
+        <div class="bo-modal-box__footer" style="justify-content:center;">
             <button onclick="closeDeleteModal()" class="bo-btn bo-btn--ghost">გაუქმება</button>
             <button onclick="doDelete()" class="bo-btn bo-btn--danger" id="confirm-delete-btn">წაშლა</button>
         </div>
@@ -48,13 +96,50 @@
 </div>
 
 <script>
+function toggleVenue(id, btn) {
+    fetch(`/backoffice/venues/${id}/toggle-active`, {method:'POST'})
+        .then(r=>r.json()).then(d => {
+            btn.classList.toggle('active', d.is_active);
+            const card = btn.closest('.bo-card');
+            if (card) {
+                card.dataset.active = d.is_active ? '1' : '0';
+                const lbl = card.querySelector('.status-label');
+                if (lbl) lbl.textContent = d.is_active ? 'აქტიური' : 'გამორთული';
+            }
+        });
+}
+
+// Filters
+(function(){
+    const search = document.getElementById('venue-search');
+    const planF = document.getElementById('plan-filter');
+    const statusF = document.getElementById('status-filter');
+    const empty = document.getElementById('cards-empty');
+    function apply(){
+        const q = (search.value || '').trim().toLowerCase();
+        const p = planF.value;
+        const s = statusF.value;
+        let shown = 0;
+        document.querySelectorAll('#venue-cards .bo-card').forEach(c => {
+            const matchQ = !q || c.dataset.name.includes(q) || c.dataset.slug.includes(q) || c.dataset.code.includes(q);
+            const matchP = !p || c.dataset.plan === p;
+            const matchS = !s || (s === 'active' ? c.dataset.active === '1' : c.dataset.active === '0');
+            const ok = matchQ && matchP && matchS;
+            c.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+        empty.style.display = shown === 0 ? '' : 'none';
+    }
+    [search, planF, statusF].forEach(el => el.addEventListener('input', apply));
+})();
+
+// Delete modal
 var _deleteVenueId = null;
 function confirmDelete(id, name) {
     _deleteVenueId = id;
     document.getElementById('delete-msg').textContent =
-        '"' + name + '" — წაიშლება ობიექტი და მისი ყველა მონაცემი: მენიუ, კატეგორიები, ჯავშნები, ადმინი. ეს მოქმედება შეუქცევადია.';
-    var modal = document.getElementById('delete-modal');
-    modal.style.display = 'flex';
+        '"' + name + '" — წაიშლება ობიექტი და მისი ყველა მონაცემი (მენიუ, კატეგორიები, ჯავშნები, ადმინი). მოქმედება შეუქცევადია.';
+    document.getElementById('delete-modal').style.display = 'flex';
 }
 function closeDeleteModal() {
     document.getElementById('delete-modal').style.display = 'none';
@@ -62,16 +147,14 @@ function closeDeleteModal() {
 }
 async function doDelete() {
     if (!_deleteVenueId) return;
-    var btn = document.getElementById('confirm-delete-btn');
+    const btn = document.getElementById('confirm-delete-btn');
     btn.disabled = true; btn.textContent = 'იშლება...';
-    var r = await fetch('/backoffice/venues/' + _deleteVenueId + '/delete', {method: 'POST'});
-    var d = await r.json();
-    if (d.success) {
-        window.location.reload();
-    } else {
-        alert(d.error || 'შეცდომა');
-        btn.disabled = false; btn.textContent = 'წაშლა';
-    }
+    try {
+        const r = await fetch('/backoffice/venues/' + _deleteVenueId + '/delete', {method: 'POST'});
+        const d = await r.json();
+        if (d.success) { window.location.reload(); }
+        else { alert(d.error || 'შეცდომა'); btn.disabled = false; btn.textContent = 'წაშლა'; }
+    } catch { btn.disabled = false; btn.textContent = 'წაშლა'; alert('ქსელის შეცდომა'); }
 }
 document.getElementById('delete-modal').addEventListener('click', function(e) {
     if (e.target === this) closeDeleteModal();

@@ -1,58 +1,171 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}მთავარი{% endblock %}
 {% block content %}
+{% set base = request.scheme + '://' + request.host %}
+{% set first_table_url = base + '/' + venue.slug + '/table/1' if venue else '' %}
+{% set item_pct = (stats.items * 100 / stats.max_items)|int if stats.items else 0 %}
+
+{# ── Feature label lookup (Georgian) ── #}
+{% set feature_labels = {
+    'menu': ('მენიუ', 'fas fa-book-open'),
+    'categories': ('კატეგორიები', 'fas fa-layer-group'),
+    'subcategories': ('ქვეკატეგორიები', 'fas fa-sitemap'),
+    'ingredient_customization': ('ინგრედიენტების არჩევა', 'fas fa-sliders-h'),
+    'promotions': ('აქციები', 'fas fa-tags'),
+    'cart': ('კალათა და შეკვეთა', 'fas fa-shopping-cart'),
+    'payments': ('ონლაინ გადახდა', 'fas fa-credit-card'),
+    'ratings': ('რეიტინგი და შეფასებები', 'fas fa-star'),
+    'analytics': ('ანალიტიკა', 'fas fa-chart-bar'),
+    'reservations': ('დაჯავშნები', 'fas fa-calendar-check'),
+} %}
+
 <div class="bo-header">
-    <h1>Dashboard</h1>
-    <p class="bo-header__sub">{{ venue.name }} · <span class="bo-badge bo-badge--plan-{{ venue.plan }}">{{ venue.plan_display }}</span></p>
+    <h1>მთავარი</h1>
+    <p class="bo-header__sub">
+        {{ venue.name }} ·
+        <span class="bo-badge bo-badge--plan-{{ venue.plan }}">{{ venue.plan_display }}</span>
+        {% if venue.venue_code %}
+        · <code style="background:var(--bo-surface-2);padding:2px 8px;border-radius:4px;font-size:.78rem;color:var(--bo-text-2);">{{ venue.venue_code }}</code>
+        {% endif %}
+    </p>
 </div>
 
+{# ── Stats ── #}
 <div class="bo-stats">
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
         <div class="bo-stat-card__body">
-            <div class="bo-stat-card__value" id="stat-items">—</div>
-            <div class="bo-stat-card__label">Menu Items</div>
+            <div class="bo-stat-card__value">{{ stats.items }}</div>
+            <div class="bo-stat-card__label">ნივთი მენიუში</div>
+            {% if item_pct >= 60 %}
+            <div class="bo-progress" style="margin-top:6px;">
+                <div class="bo-progress__bar {% if item_pct >= 90 %}bo-progress__bar--danger{% elif item_pct >= 75 %}bo-progress__bar--warn{% endif %}"
+                     style="width:{{ item_pct }}%;"></div>
+            </div>
+            <small style="font-size:.7rem;color:var(--bo-text-2);">ლიმიტი: {{ stats.max_items }}</small>
+            {% endif %}
         </div>
     </div>
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-layer-group"></i></div>
         <div class="bo-stat-card__body">
-            <div class="bo-stat-card__value" id="stat-cats">—</div>
-            <div class="bo-stat-card__label">Categories</div>
+            <div class="bo-stat-card__value">{{ stats.categories }}</div>
+            <div class="bo-stat-card__label">კატეგორია</div>
         </div>
     </div>
     {% if features.get('promotions') %}
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-tags"></i></div>
         <div class="bo-stat-card__body">
-            <div class="bo-stat-card__value" id="stat-promos">—</div>
-            <div class="bo-stat-card__label">Promotions</div>
+            <div class="bo-stat-card__value">{{ stats.promotions }}</div>
+            <div class="bo-stat-card__label">აქცია</div>
         </div>
     </div>
     {% endif %}
+    {% if features.get('reservations') %}
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ stats.bookings }}</div>
+            <div class="bo-stat-card__label">ჯავშანი სულ</div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="bo-stat-card">
+        <div class="bo-stat-card__icon"><i class="fas fa-chair"></i></div>
+        <div class="bo-stat-card__body">
+            <div class="bo-stat-card__value">{{ stats.tables if stats.tables else '∞' }}</div>
+            <div class="bo-stat-card__label">მაგიდა</div>
+        </div>
+    </div>
 </div>
 
-<!-- Quick feature overview -->
-<h2 style="margin:24px 0 12px;">Your Features</h2>
-<div class="bo-settings-grid">
-    {% for key, val in features.items() %}
-    <div class="bo-setting-card" style="padding:12px 16px;">
-        <span style="font-size:.85rem;">{{ key|replace('_',' ')|capitalize }}</span>
-        <span class="bo-badge {{ 'bo-badge--green' if val else 'bo-badge--red' }}" style="margin-left:auto;">
-            {{ '✓ Active' if val else '✕ Inactive' }}
+{# ── Quick actions ── #}
+<h2 style="font-size:1rem;font-weight:600;margin:24px 0 12px;">სწრაფი მოქმედებები</h2>
+<div class="bo-quick-actions">
+    <a href="{{ url_for('bo_bp.add_item') }}" class="bo-quick-action">
+        <i class="fas fa-plus"></i>
+        <div>
+            <div class="bo-quick-action__title">ახალი ნივთი</div>
+            <div class="bo-quick-action__sub">დაამატეთ სათითაოდ</div>
+        </div>
+    </a>
+    <a href="{{ url_for('lib_bp.browse_library') }}" class="bo-quick-action">
+        <i class="fas fa-database"></i>
+        <div>
+            <div class="bo-quick-action__title">ბიბლიოთეკა</div>
+            <div class="bo-quick-action__sub">მზა ნივთები</div>
+        </div>
+    </a>
+    <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-quick-action">
+        <i class="fas fa-book-open"></i>
+        <div>
+            <div class="bo-quick-action__title">მენიუს მართვა</div>
+            <div class="bo-quick-action__sub">{{ stats.items }} ნივთი, {{ stats.categories }} კატეგორია</div>
+        </div>
+    </a>
+    {% if first_table_url %}
+    <a href="{{ first_table_url }}" target="_blank" class="bo-quick-action">
+        <i class="fas fa-external-link-alt"></i>
+        <div>
+            <div class="bo-quick-action__title">საჯარო მენიუს ნახვა</div>
+            <div class="bo-quick-action__sub">როგორც ხედავს კლიენტი</div>
+        </div>
+    </a>
+    {% endif %}
+</div>
+
+{# ── Public URLs panel ── #}
+{% if venue %}
+<div class="bo-info-panel">
+    <h3><i class="fas fa-link"></i>&nbsp; მენიუს მისამართი</h3>
+    <div class="bo-info-row">
+        <span class="bo-info-row__label">მაგიდა 1</span>
+        <code class="bo-info-row__value">{{ first_table_url }}</code>
+        <button class="bo-copy-btn" onclick="copyLink(this, '{{ first_table_url }}')">
+            <i class="fas fa-copy"></i> კოპირება
+        </button>
+    </div>
+    {% if venue.total_tables and venue.total_tables > 1 %}
+    <div class="bo-info-row">
+        <span class="bo-info-row__label">ყველა მაგიდა</span>
+        <span class="bo-info-row__value">{{ venue.total_tables }} ლინკი მზადაა ·
+            <a href="{{ url_for('bo_bp.venue_settings') }}" style="color:var(--bo-primary);text-decoration:none;">ნახვა →</a>
         </span>
+    </div>
+    {% endif %}
+    {% if venue.venue_code %}
+    <div class="bo-info-row">
+        <span class="bo-info-row__label">Venue code</span>
+        <code class="bo-info-row__value">{{ venue.venue_code }}</code>
+        <button class="bo-copy-btn" onclick="copyLink(this, '{{ venue.venue_code }}')">
+            <i class="fas fa-copy"></i>
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Feature overview ── #}
+<h2 style="font-size:1rem;font-weight:600;margin:24px 0 12px;">თქვენი ფუნქციები</h2>
+<div class="bo-feature-grid">
+    {% for key, val in features.items() %}
+    {% set lbl = feature_labels.get(key, (key|replace('_',' ')|capitalize, 'fas fa-check')) %}
+    <div class="bo-feature-pill {{ 'bo-feature-pill--on' if val else 'bo-feature-pill--off' }}">
+        <i class="{{ lbl[1] }}"></i>
+        <span style="flex:1;">{{ lbl[0] }}</span>
+        <i class="fas {{ 'fa-check-circle' if val else 'fa-times-circle' }}" style="font-size:.75rem;"></i>
     </div>
     {% endfor %}
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/backoffice/api/stats').then(r=>r.json()).then(d => {
-        var el;
-        el = document.getElementById('stat-items'); if(el) el.textContent = d.items;
-        el = document.getElementById('stat-promos'); if(el) el.textContent = d.promos;
-        el = document.getElementById('stat-cats'); if(el) el.textContent = d.categories;
-    }).catch(() => {});
-});
+function copyLink(btn, text){
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> დაკოპირდა';
+        setTimeout(() => btn.innerHTML = orig, 1500);
+    });
+}
 </script>
 {% endblock %}
