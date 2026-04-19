@@ -66,8 +66,14 @@ body {
   background: var(--bo-surface); border: 1px solid var(--bo-border);
   border-radius: var(--bo-radius); padding: 20px;
   display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.bo-stat-card__icon { font-size: 1.4rem; color: var(--bo-primary); width: 44px; height: 44px; border-radius: 10px; background: rgba(255,107,53,.1); display: flex; align-items: center; justify-content: center; }
+.bo-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.bo-stat-card__icon { font-size: 1.4rem; color: var(--bo-primary); width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, rgba(255,107,53,.1), rgba(255,107,53,.2)); display: flex; align-items: center; justify-content: center; }
 .bo-stat-card__value { font-size: 1.5rem; font-weight: 700; }
 .bo-stat-card__label { font-size: .8rem; color: var(--bo-text-2); }
 

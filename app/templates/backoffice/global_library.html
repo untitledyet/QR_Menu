@@ -3,143 +3,150 @@
 {% block content %}
 
 <style>
-.lib-layout { display:flex; gap:24px; align-items:flex-start; }
+.lib-layout { display:flex; gap:20px; align-items:flex-start; }
 .lib-sidebar {
     width:220px; flex-shrink:0; position:sticky; top:24px;
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:var(--bo-radius); overflow:hidden;
+    max-height:calc(100vh - 80px); display:flex; flex-direction:column;
 }
 .lib-sidebar__header {
-    padding:14px 16px; border-bottom:1px solid #e5e7eb;
-    font-size:.78rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.05em;
+    padding:12px 16px; border-bottom:1px solid var(--bo-border);
+    font-size:.72rem; font-weight:700; color:var(--bo-text-2);
+    text-transform:uppercase; letter-spacing:.05em; flex-shrink:0;
 }
+.lib-cat-list { overflow-y:auto; flex:1; }
 .lib-cat-item {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 16px; cursor:pointer; border-bottom:1px solid #f3f4f6;
-    transition:background .15s; gap:8px;
+    display:flex; align-items:center; gap:8px;
+    padding:10px 16px; cursor:pointer; border-bottom:1px solid var(--bo-border);
+    transition:background .15s; color:var(--bo-text-2); font-size:.85rem;
 }
-.lib-cat-item:hover { background:#fef6f3; }
-.lib-cat-item.active { background:#fff5f2; border-left:3px solid #FF6B35; }
-.lib-cat-item.active .lib-cat-name { color:#FF6B35; font-weight:600; }
-.lib-cat-name { font-size:.85rem; color:#374151; flex:1; }
-.lib-cat-count { font-size:.72rem; background:#f3f4f6; color:#6b7280; border-radius:10px; padding:2px 7px; }
+.lib-cat-item:hover { background:var(--bo-surface-2); color:var(--bo-text); }
+.lib-cat-item.active {
+    background:rgba(255,107,53,.1); color:var(--bo-primary);
+    border-left:3px solid var(--bo-primary); padding-left:13px;
+}
+.lib-cat-item .cnt {
+    font-size:.68rem; background:var(--bo-surface-2); color:var(--bo-text-2);
+    border-radius:10px; padding:2px 7px; margin-left:auto; flex-shrink:0;
+}
+.lib-cat-item.active .cnt { background:rgba(255,107,53,.2); color:var(--bo-primary); }
 .lib-add-cat-btn {
-    display:flex; align-items:center; gap:6px; padding:12px 16px;
-    color:#FF6B35; font-size:.82rem; font-weight:600; cursor:pointer;
-    border:none; background:none; width:100%; text-align:left;
-    border-top:1px solid #e5e7eb;
+    display:flex; align-items:center; gap:8px; padding:12px 16px;
+    color:var(--bo-primary); font-size:.82rem; font-weight:600;
+    cursor:pointer; border:none; background:none; width:100%; text-align:left;
+    border-top:1px solid var(--bo-border); font-family:inherit;
+    transition:background .15s; flex-shrink:0;
 }
-.lib-add-cat-btn:hover { background:#fff5f2; }
+.lib-add-cat-btn:hover { background:rgba(255,107,53,.08); }
 
 .lib-main { flex:1; min-width:0; }
 .lib-section { display:none; }
 .lib-section.active { display:block; }
 
 .lib-section-header {
-    display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:20px; flex-wrap:wrap; gap:12px;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    margin-bottom:16px; gap:12px; flex-wrap:wrap;
 }
-.lib-section-title { font-size:1.2rem; font-weight:700; color:#111827; margin:0; }
-.lib-section-meta { font-size:.8rem; color:#6b7280; margin-top:2px; }
+.lib-section-title { font-size:1.1rem; font-weight:700; color:var(--bo-text); margin:0; }
+.lib-section-meta { font-size:.78rem; color:var(--bo-text-2); margin-top:3px; }
 
-/* Subcategory chips */
-.lib-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; align-items:center; }
+.lib-chips {
+    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; align-items:center;
+}
 .lib-chip {
     display:inline-flex; align-items:center; gap:5px;
-    background:#f3f4f6; border:1px solid #e5e7eb; border-radius:20px;
-    padding:4px 12px; font-size:.78rem; color:#374151;
+    background:var(--bo-surface-2); border:1px solid var(--bo-border);
+    border-radius:20px; padding:4px 10px; font-size:.75rem; color:var(--bo-text-2);
 }
 .lib-chip-del {
-    background:none; border:none; color:#9ca3af; cursor:pointer;
-    font-size:.72rem; line-height:1; padding:0; margin-left:2px;
-    transition:color .15s;
+    background:none; border:none; color:var(--bo-text-2); cursor:pointer;
+    font-size:.7rem; padding:0; margin-left:2px; transition:color .15s;
 }
-.lib-chip-del:hover { color:#ef4444; }
+.lib-chip-del:hover { color:var(--bo-red); }
 
-/* Items grid */
-.lib-grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
-    gap:16px;
-    margin-bottom:24px;
-}
-.lib-card {
-    background:#fff; border:1px solid #e5e7eb; border-radius:10px;
-    overflow:hidden; transition:box-shadow .15s;
-}
-.lib-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
-.lib-card__img {
-    width:100%; height:140px; object-fit:cover; background:#f9fafb;
-    display:flex; align-items:center; justify-content:center; color:#d1d5db; font-size:2rem;
-}
-.lib-card__img img { width:100%; height:140px; object-fit:cover; }
-.lib-card__body { padding:12px; }
-.lib-card__name { font-size:.88rem; font-weight:600; color:#111827; margin:0 0 4px; }
-.lib-card__desc { font-size:.75rem; color:#6b7280; margin:0 0 6px; line-height:1.4; }
-.lib-card__sub { font-size:.72rem; color:#9ca3af; }
-.lib-card__footer {
-    padding:8px 12px; border-top:1px solid #f3f4f6;
-    display:flex; justify-content:flex-end;
-}
+.lib-add-sub-row { display:flex; gap:6px; align-items:center; }
+.lib-add-sub-row .bo-input { width:140px; font-size:.78rem; padding:5px 10px; height:28px; }
+.lib-add-sub-row .bo-btn { font-size:.72rem; padding:4px 10px; height:28px; }
 
-/* Add item panel */
 .lib-add-panel {
-    background:#f9fafb; border:1px dashed #d1d5db; border-radius:10px;
-    padding:20px; margin-top:8px;
+    background:var(--bo-surface-2); border:1px dashed var(--bo-border);
+    border-radius:var(--bo-radius); padding:18px; margin-bottom:20px;
 }
-.lib-add-panel h4 { margin:0 0 14px; font-size:.9rem; color:#374151; }
+.lib-add-panel h4 { margin:0 0 12px; font-size:.88rem; color:var(--bo-text); }
 .lib-form-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
 .lib-form-row .bo-input { flex:1; min-width:140px; }
 .lib-form-row textarea.bo-input { resize:vertical; min-height:60px; }
 
-/* Modal */
-.lib-modal-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
-    z-index:1000; align-items:center; justify-content:center;
+.lib-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    gap:14px; margin-bottom:24px;
 }
-.lib-modal-overlay.open { display:flex; }
-.lib-modal {
-    background:#fff; border-radius:14px; padding:28px;
-    width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
-    box-shadow:0 20px 60px rgba(0,0,0,.2);
+.lib-card {
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:10px; overflow:hidden; transition:border-color .15s;
+    display:flex; flex-direction:column;
 }
-.lib-modal h3 { margin:0 0 20px; font-size:1rem; color:#111827; }
-.lib-modal-close {
-    float:right; background:none; border:none; font-size:1.2rem;
-    color:#9ca3af; cursor:pointer; margin-top:-4px;
+.lib-card:hover { border-color:var(--bo-primary); }
+.lib-card__img {
+    width:100%; height:130px; background:var(--bo-surface-2);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--bo-text-2); font-size:2rem; overflow:hidden;
 }
-.lib-modal-close:hover { color:#374151; }
+.lib-card__img img { width:100%; height:130px; object-fit:cover; }
+.lib-card__body { padding:12px; flex:1; }
+.lib-card__name { font-size:.86rem; font-weight:600; color:var(--bo-text); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lib-card__desc { font-size:.72rem; color:var(--bo-text-2); margin:0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.lib-card__meta { font-size:.68rem; color:var(--bo-text-2); margin-top:4px; }
+.lib-card__footer { padding:8px 12px; border-top:1px solid var(--bo-border); display:flex; justify-content:flex-end; }
 
-@media(max-width:640px){
+.lib-empty {
+    text-align:center; padding:48px 20px; color:var(--bo-text-2);
+    border:1px dashed var(--bo-border); border-radius:var(--bo-radius);
+}
+.lib-empty i { font-size:2.5rem; opacity:.3; display:block; margin-bottom:12px; }
+
+@media(max-width:768px){
     .lib-layout { flex-direction:column; }
-    .lib-sidebar { width:100%; position:static; }
-    .lib-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+    .lib-sidebar { width:100%; position:static; max-height:none; }
+    .lib-cat-list { display:flex; flex-direction:row; overflow-x:auto; padding:8px; gap:4px; flex-wrap:nowrap; }
+    .lib-cat-item { flex-shrink:0; border-bottom:none; border-radius:20px; padding:6px 12px; white-space:nowrap; }
+    .lib-cat-item.active { padding-left:12px; border-left:none; }
+    .lib-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+    .lib-card__img { height:100px; }
 }
 </style>
 
-<div class="bo-header">
-    <h1>პროდუქტების ბიბლიოთეკა</h1>
-    <p class="bo-header__sub">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+        <h1>პროდუქტების ბიბლიოთეკა</h1>
+        <p class="bo-header__sub">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
+    </div>
+    <button onclick="document.getElementById('modal-add-cat').style.display='flex'" class="bo-btn bo-btn--primary">
+        <i class="fas fa-folder-plus"></i> კატეგორია
+    </button>
 </div>
 
 <div class="lib-layout">
 
-    {# ── Left sidebar: category list ── #}
+    {# ── Sidebar ── #}
     <aside class="lib-sidebar">
-        <div class="lib-sidebar__header">კატეგორიები</div>
-        {% for cat in categories %}
-        <div class="lib-cat-item {% if loop.first %}active{% endif %}" onclick="showSection({{ cat.id }}, this)">
-            <span class="lib-cat-name">{{ cat.name }}</span>
-            <span class="lib-cat-count">{{ cat.items|length }}</span>
+        <div class="lib-sidebar__header">კატეგორიები ({{ categories|length }})</div>
+        <div class="lib-cat-list">
+            {% for cat in categories %}
+            <div class="lib-cat-item {% if loop.first %}active{% endif %}"
+                 onclick="showSection({{ cat.id }}, this)">
+                <span style="flex:1;">{{ cat.name }}</span>
+                <span class="cnt">{{ cat.items|length }}</span>
+            </div>
+            {% else %}
+            <div style="padding:16px;font-size:.82rem;color:var(--bo-text-2);">კატეგორია არ არის</div>
+            {% endfor %}
         </div>
-        {% else %}
-        <div style="padding:16px;font-size:.82rem;color:#9ca3af;">კატეგორია არ არის</div>
-        {% endfor %}
-        <button class="lib-add-cat-btn" onclick="document.getElementById('modal-add-cat').classList.add('open')">
-            <i class="fas fa-plus"></i> კატეგორიის დამატება
-        </button>
     </aside>
 
-    {# ── Main content ── #}
+    {# ── Main ── #}
     <div class="lib-main">
         {% for cat in categories %}
         <div class="lib-section {% if loop.first %}active{% endif %}" id="section-{{ cat.id }}">
@@ -147,59 +154,48 @@
             <div class="lib-section-header">
                 <div>
                     <h2 class="lib-section-title">{{ cat.name }}</h2>
-                    <div class="lib-section-meta">{{ cat.items|length }} პროდუქტი · {{ cat.subcategories|length }} საბკატეგორია</div>
+                    <div class="lib-section-meta">{{ cat.items|length }} პროდუქტი · {{ cat.subcategories|length }} ქვეკატეგ.</div>
                 </div>
-                <div style="display:flex;gap:8px;">
-                    <button onclick="toggleAddItem({{ cat.id }})" class="bo-btn bo-btn--primary" style="font-size:.82rem;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button onclick="toggleAddItem({{ cat.id }})" class="bo-btn bo-btn--primary bo-btn--sm">
                         <i class="fas fa-plus"></i> პროდუქტი
                     </button>
                     <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
                           onsubmit="return confirm('კატეგორია და ყველა პროდუქტი წაიშალოს?')">
-                        <button class="bo-btn bo-btn--ghost" style="color:#ef4444;font-size:.82rem;">
+                        <button class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);">
                             <i class="fas fa-trash"></i>
                         </button>
                     </form>
                 </div>
             </div>
 
-            {# Subcategories #}
+            {# Subcategory chips #}
             <div class="lib-chips">
-                <span style="font-size:.75rem;font-weight:600;color:#9ca3af;margin-right:4px;">ᲡᲣᲑ:</span>
                 {% for sub in cat.subcategories %}
                 <span class="lib-chip">
                     {{ sub.name }}
                     <form method="POST" action="{{ url_for('lib_bp.delete_global_subcategory', sub_id=sub.id) }}"
                           onsubmit="return confirm('წაიშალოს?')" style="display:inline;">
-                        <button class="lib-chip-del" type="submit">✕</button>
+                        <button class="lib-chip-del" type="submit" title="წაშლა">✕</button>
                     </form>
                 </span>
                 {% endfor %}
                 <form method="POST" action="{{ url_for('lib_bp.add_global_subcategory') }}"
-                      style="display:flex;gap:4px;align-items:center;">
+                      class="lib-add-sub-row">
                     <input type="hidden" name="category_id" value="{{ cat.id }}">
-                    <input type="text" name="name" class="bo-input"
-                           placeholder="+ საბკატეგორია"
-                           style="width:150px;font-size:.78rem;padding:4px 10px;height:28px;">
-                    <button class="bo-btn bo-btn--ghost" style="font-size:.75rem;padding:4px 10px;height:28px;">დამატება</button>
+                    <input type="text" name="name" class="bo-input" placeholder="+ ქვეკატეგ.">
+                    <button class="bo-btn bo-btn--ghost bo-btn--sm">დამატება</button>
                 </form>
             </div>
 
-            {# Add item form (hidden by default) #}
-            <div id="add-item-{{ cat.id }}" class="lib-add-panel" style="display:none;margin-bottom:20px;">
-                <h4><i class="fas fa-plus-circle" style="color:#FF6B35;"></i> ახალი პროდუქტი</h4>
+            {# Add item panel #}
+            <div id="add-item-{{ cat.id }}" class="lib-add-panel" style="display:none;">
+                <h4><i class="fas fa-plus-circle" style="color:var(--bo-primary);margin-right:6px;"></i>ახალი პროდუქტი</h4>
                 <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data">
                     <input type="hidden" name="category_id" value="{{ cat.id }}">
                     <div class="lib-form-row">
                         <input type="text" name="name" class="bo-input" placeholder="სახელი (ქარ) *" required>
                         <input type="text" name="name_en" class="bo-input" placeholder="Name (EN)">
-                    </div>
-                    <div class="lib-form-row">
-                        <select name="subcategory_id" class="bo-input">
-                            <option value="">— საბკატეგორია —</option>
-                            {% for sub in cat.subcategories %}
-                            <option value="{{ sub.id }}">{{ sub.name }}</option>
-                            {% endfor %}
-                        </select>
                     </div>
                     <div class="lib-form-row">
                         <input type="text" name="description" class="bo-input" placeholder="აღწერა (ქარ)">
@@ -210,10 +206,10 @@
                         <input type="text" name="ingredients_en" class="bo-input" placeholder="Ingredients (EN)">
                     </div>
                     <div class="lib-form-row">
-                        <input type="file" name="image" accept="image/*" class="bo-input">
+                        <input type="file" name="image" accept="image/*" class="bo-input" style="padding:6px;">
                     </div>
                     <div style="display:flex;gap:8px;margin-top:4px;">
-                        <button type="submit" class="bo-btn bo-btn--primary">შენახვა</button>
+                        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> შენახვა</button>
                         <button type="button" onclick="toggleAddItem({{ cat.id }})" class="bo-btn bo-btn--ghost">გაუქმება</button>
                     </div>
                 </form>
@@ -233,21 +229,21 @@
                         {% endif %}
                     </div>
                     <div class="lib-card__body">
-                        <p class="lib-card__name">{{ item.name }}</p>
+                        <p class="lib-card__name" title="{{ item.name }}">{{ item.name }}</p>
+                        {% if item.name_en %}
+                        <p class="lib-card__desc" style="color:var(--bo-primary);opacity:.7;">{{ item.name_en }}</p>
+                        {% endif %}
                         {% if item.description %}
                         <p class="lib-card__desc">{{ item.description }}</p>
                         {% endif %}
-                        {% if item.subcategory %}
-                        <span class="lib-card__sub"><i class="fas fa-tag"></i> {{ item.subcategory.name }}</span>
-                        {% endif %}
                         {% if item.ingredients %}
-                        <p class="lib-card__desc" style="margin-top:4px;">🥗 {{ item.ingredients }}</p>
+                        <p class="lib-card__meta"><i class="fas fa-leaf"></i> {{ item.ingredients|truncate(40) }}</p>
                         {% endif %}
                     </div>
                     <div class="lib-card__footer">
                         <form method="POST" action="{{ url_for('lib_bp.delete_global_item', item_id=item.id) }}"
                               onsubmit="return confirm('წაიშალოს?')">
-                            <button class="bo-btn bo-btn--ghost" style="color:#ef4444;font-size:.75rem;padding:4px 10px;">
+                            <button class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);">
                                 <i class="fas fa-trash"></i> წაშლა
                             </button>
                         </form>
@@ -256,20 +252,20 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div style="text-align:center;padding:40px;color:#9ca3af;border:1px dashed #e5e7eb;border-radius:10px;">
-                <i class="fas fa-box-open" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+            <div class="lib-empty">
+                <i class="fas fa-box-open"></i>
                 ამ კატეგორიაში პროდუქტი არ არის
             </div>
             {% endif %}
 
         </div>
         {% else %}
-        <div style="text-align:center;padding:60px;color:#9ca3af;">
-            <i class="fas fa-database" style="font-size:3rem;margin-bottom:12px;display:block;"></i>
-            <p>ბიბლიოთეკა ცარიელია</p>
-            <button onclick="document.getElementById('modal-add-cat').classList.add('open')"
-                    class="bo-btn bo-btn--primary" style="margin-top:12px;">
-                პირველი კატეგორიის დამატება
+        <div class="lib-empty" style="padding:60px 20px;">
+            <i class="fas fa-database"></i>
+            <p style="margin-bottom:16px;">ბიბლიოთეკა ცარიელია</p>
+            <button onclick="document.getElementById('modal-add-cat').style.display='flex'"
+                    class="bo-btn bo-btn--primary">
+                <i class="fas fa-plus"></i> პირველი კატეგორია
             </button>
         </div>
         {% endfor %}
@@ -277,25 +273,32 @@
 </div>
 
 {# ── Add Category Modal ── #}
-<div class="lib-modal-overlay" id="modal-add-cat" onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="lib-modal">
-        <button class="lib-modal-close" onclick="document.getElementById('modal-add-cat').classList.remove('open')">✕</button>
-        <h3><i class="fas fa-folder-plus" style="color:#FF6B35;margin-right:8px;"></i>კატეგორიის დამატება</h3>
-        <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}">
-            <div class="bo-form-group" style="margin-bottom:12px;">
-                <label class="bo-label">სახელი *</label>
-                <input type="text" name="name" class="bo-input" placeholder="მაგ. სასმელები" required autofocus>
-            </div>
-            <div class="bo-form-group" style="margin-bottom:20px;">
-                <label class="bo-label">აღწერა</label>
-                <input type="text" name="description" class="bo-input" placeholder="სურვილისამებრ">
-            </div>
-            <div style="display:flex;gap:8px;">
-                <button type="submit" class="bo-btn bo-btn--primary">შენახვა</button>
-                <button type="button" onclick="document.getElementById('modal-add-cat').classList.remove('open')"
-                        class="bo-btn bo-btn--ghost">გაუქმება</button>
-            </div>
-        </form>
+<div class="bo-modal-backdrop" id="modal-add-cat" style="display:none;"
+     onclick="if(event.target===this)this.style.display='none'">
+    <div class="bo-modal-box" style="max-width:420px;width:92%;">
+        <div class="bo-modal-box__header">
+            <h3><i class="fas fa-folder-plus" style="color:var(--bo-primary);margin-right:8px;"></i>კატეგორიის დამატება</h3>
+            <button class="bo-icon-btn" onclick="document.getElementById('modal-add-cat').style.display='none'">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="bo-modal-box__body">
+            <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}">
+                <div class="bo-form-group">
+                    <label>სახელი *</label>
+                    <input type="text" name="name" class="bo-input" placeholder="მაგ. სასმელები" required autofocus>
+                </div>
+                <div class="bo-form-group">
+                    <label>აღწერა</label>
+                    <input type="text" name="description" class="bo-input" placeholder="სურვილისამებრ">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+                    <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> შენახვა</button>
+                    <button type="button" onclick="document.getElementById('modal-add-cat').style.display='none'"
+                            class="bo-btn bo-btn--ghost">გაუქმება</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -307,10 +310,13 @@ function showSection(catId, el) {
     el.classList.add('active');
 }
 function toggleAddItem(catId) {
-    const el = document.getElementById('add-item-' + catId);
-    const visible = el.style.display !== 'none';
+    var el = document.getElementById('add-item-' + catId);
+    var visible = el.style.display !== 'none';
     el.style.display = visible ? 'none' : 'block';
-    if (!visible) el.querySelector('input[name="name"]').focus();
+    if (!visible) {
+        var inp = el.querySelector('input[name="name"]');
+        if (inp) setTimeout(function(){ inp.focus(); }, 50);
+    }
 }
 </script>
 {% endblock %}

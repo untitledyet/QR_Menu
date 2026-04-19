@@ -44,8 +44,9 @@ def super_required(f):
 @login_required
 @super_required
 def library_index():
+    admin = AdminUser.query.get(session['admin_id'])
     categories = GlobalCategory.query.order_by(GlobalCategory.sort_order).all()
-    return render_template('backoffice/global_library.html', categories=categories)
+    return render_template('backoffice/global_library.html', admin=admin, categories=categories)
 
 
 @lib_bp.route('/categories/add', methods=['POST'])
