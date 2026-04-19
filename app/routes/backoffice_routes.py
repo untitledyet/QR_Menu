@@ -273,7 +273,7 @@ def dashboard():
         venue_stats = {}
         for v in venues:
             venue_stats[v.id] = {
-                'items': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
+                'item_count': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
                 'admins': AdminUser.query.filter_by(venue_id=v.id).count(),
             }
 
@@ -319,7 +319,7 @@ def venues_list():
     venue_stats = {}
     for v in venues:
         venue_stats[v.id] = {
-            'items': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
+            'item_count': FoodItem.query.join(Category).filter(Category.venue_id == v.id).count(),
             'admins': AdminUser.query.filter_by(venue_id=v.id).count(),
             'categories': Category.query.filter_by(venue_id=v.id).count(),
         }

@@ -19,7 +19,7 @@
         </div>
     </div>
     <div class="bo-stat-card">
-        <div class="bo-stat-card__icon" style="background:rgba(16,185,129,.12);color:var(--bo-green);"><i class="fas fa-check-circle"></i></div>
+        <div class="bo-stat-card__icon" style="background:linear-gradient(135deg, rgba(16,185,129,.1), rgba(16,185,129,.2));color:var(--bo-green);"><i class="fas fa-check-circle"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ active_count }}</div>
             <div class="bo-stat-card__label">აქტიური</div>
@@ -29,14 +29,14 @@
         </div>
     </div>
     <div class="bo-stat-card">
-        <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
+        <div class="bo-stat-card__icon" style="background:linear-gradient(135deg, rgba(59,130,246,.1), rgba(59,130,246,.2));color:#3b82f6;"><i class="fas fa-utensils"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ total_items }}</div>
             <div class="bo-stat-card__label">ნივთი სულ</div>
         </div>
     </div>
     <div class="bo-stat-card">
-        <div class="bo-stat-card__icon"><i class="fas fa-receipt"></i></div>
+        <div class="bo-stat-card__icon" style="background:linear-gradient(135deg, rgba(147,51,234,.1), rgba(147,51,234,.2));color:#9333ea;"><i class="fas fa-receipt"></i></div>
         <div class="bo-stat-card__body">
             <div class="bo-stat-card__value">{{ total_orders }}</div>
             <div class="bo-stat-card__label">შეკვეთა სულ</div>
@@ -118,7 +118,7 @@
                 </td>
                 <td><code style="font-size:.75rem;color:var(--bo-text-2);">/{{ v.slug }}</code></td>
                 <td><span class="bo-badge bo-badge--plan-{{ v.plan }}">{{ v.plan_display }}</span></td>
-                <td>{{ vs.items }}</td>
+                <td>{{ vs.item_count }}</td>
                 <td>{{ vs.categories }}</td>
                 <td>{{ vs.admins }}</td>
                 <td>
