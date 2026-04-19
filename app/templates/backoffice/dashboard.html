@@ -3,7 +3,7 @@
 {% block content %}
 {% set base = request.scheme + '://' + request.host %}
 {% set first_table_url = base + '/' + venue.slug + '/table/1' if venue else '' %}
-{% set item_pct = (stats.items * 100 / stats.max_items)|int if stats.items else 0 %}
+{% set item_pct = (stats.item_count * 100 / stats.max_items)|int if stats.item_count else 0 %}
 
 {# ── Feature label lookup (Georgian) ── #}
 {% set feature_labels = {
@@ -35,7 +35,7 @@
     <div class="bo-stat-card">
         <div class="bo-stat-card__icon"><i class="fas fa-utensils"></i></div>
         <div class="bo-stat-card__body">
-            <div class="bo-stat-card__value">{{ stats.items }}</div>
+            <div class="bo-stat-card__value">{{ stats.item_count }}</div>
             <div class="bo-stat-card__label">ნივთი მენიუში</div>
             {% if item_pct >= 60 %}
             <div class="bo-progress" style="margin-top:6px;">
@@ -101,7 +101,7 @@
         <i class="fas fa-book-open"></i>
         <div>
             <div class="bo-quick-action__title">მენიუს მართვა</div>
-            <div class="bo-quick-action__sub">{{ stats.items }} ნივთი, {{ stats.categories }} კატეგორია</div>
+            <div class="bo-quick-action__sub">{{ stats.item_count }} ნივთი, {{ stats.categories }} კატეგორია</div>
         </div>
     </a>
     {% if first_table_url %}

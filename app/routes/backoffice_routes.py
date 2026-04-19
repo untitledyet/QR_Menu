@@ -292,12 +292,12 @@ def dashboard():
         features = venue.get_all_features() if venue else {}
         # Server-side stats (avoid '—' flash)
         stats = {
-            'items': 0, 'categories': 0, 'promotions': 0,
+            'item_count': 0, 'categories': 0, 'promotions': 0,
             'tables': venue.total_tables if venue else 0,
             'bookings': 0, 'max_items': MAX_ITEMS_PER_VENUE,
         }
         if venue:
-            stats['items'] = venue.item_count()
+            stats['item_count'] = venue.item_count()
             stats['categories'] = Category.query.filter_by(venue_id=venue.id).count()
             stats['promotions'] = Promotion.query.filter_by(venue_id=venue.id).count()
             if features.get('reservations'):
