@@ -61,12 +61,17 @@ def _get_client_ip():
 
 
 def _find_admin_by_identifier(identifier: str):
-    """Find admin by phone (9-digit or full 995-prefix) or by email."""
+    """Find admin by phone (9-digit or full 995-prefix), email, or username."""
     identifier = identifier.strip()
     normalized = _normalize_phone(identifier)
     if normalized:
         return AdminUser.query.filter_by(phone=normalized).first()
-    return AdminUser.query.filter_by(email=identifier.lower()).first()
+    # Try email first
+    admin = AdminUser.query.filter_by(email=identifier.lower()).first()
+    if admin:
+        return admin
+    # Fallback to username
+    return AdminUser.query.filter_by(username=identifier).first()
 
 
 # ============================================================
@@ -81,11 +86,12 @@ def landing():
 
 @landing_bp.route('/login')
 def venue_login_page():
-    """Venue admin login page."""
+    """Venue admin login — redirect to landing modal."""
     from flask import session as flask_session
     if 'admin_id' in flask_session:
         return redirect('/backoffice')
-    return render_template('venue_login.html')
+    venues = Venue.query.filter_by(is_active=True).all()
+    return render_template('landing.html', venues=venues, open_modal='login')
 
 
 @landing_bp.route('/admin')

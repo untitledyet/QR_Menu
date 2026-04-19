@@ -18,8 +18,7 @@
         <a href="/" class="t-nav__logo">tab<span>ly</span></a>
         <div class="t-nav__actions">
             <button class="t-lang-btn" onclick="toggleLang()" id="lang-btn">EN</button>
-            <button class="t-btn t-btn--ghost t-btn--sm" onclick="openModal('login')" data-i18n="navLogin">შესვლა</button>
-            <button class="t-btn t-btn--primary t-btn--sm" onclick="openModal('register')" data-i18n="navRegister">რეგისტრაცია</button>
+            <button class="t-btn t-btn--primary t-btn--sm" onclick="openModal('login')" data-i18n="navAuth">შესვლა</button>
         </div>
     </div>
 </nav>
@@ -111,8 +110,8 @@
     <div class="t-modal" style="max-height:90vh;overflow-y:auto;">
         <button class="t-modal__close" onclick="closeModal()">&#x2715;</button>
         <div class="t-modal__tabs">
-            <div class="t-modal__tab active" onclick="switchTab('login')" id="tab-login">შესვლა</div>
-            <div class="t-modal__tab" onclick="switchTab('register')" id="tab-register">რეგისტრაცია</div>
+            <div class="t-modal__tab active" onclick="switchTab('login')" id="tab-login" data-i18n="tabLogin">შესვლა</div>
+            <div class="t-modal__tab" onclick="switchTab('register')" id="tab-register" data-i18n="tabRegister">რეგისტრაცია</div>
         </div>
         <div id="auth-msg"></div>
 
@@ -120,12 +119,12 @@
         <div id="form-login">
             <div id="login-step-1">
                 <div class="t-form-group">
-                    <label>ტელეფონი ან ელ. ფოსტა</label>
+                    <label data-i18n="loginIdLabel">ტელეფონი ან ელ. ფოსტა</label>
                     <input type="text" class="t-input" id="login-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
                 </div>
                 <div class="t-form-group">
                     <label style="display:flex;justify-content:space-between;align-items:center;">
-                        <span>პაროლი</span>
+                        <span data-i18n="loginPwdLabel">პაროლი</span>
                         <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;">პაროლი დამავიწყდა</button>
                     </label>
                     <div style="position:relative;">
@@ -178,12 +177,12 @@
             <div class="reg-steps">
                 <div class="reg-step active" id="rstep-1">
                     <div class="reg-step__dot">1</div>
-                    <span class="reg-step__label">ანგარიში</span>
+                    <span class="reg-step__label" data-i18n="regStep1">ანგარიში</span>
                 </div>
                 <div class="reg-step__line" id="rline-1"></div>
                 <div class="reg-step" id="rstep-2">
                     <div class="reg-step__dot">2</div>
-                    <span class="reg-step__label">ტელეფონი</span>
+                    <span class="reg-step__label" data-i18n="regStep2">ტელეფონი</span>
                 </div>
             </div>
 
@@ -191,11 +190,11 @@
             <div class="reg-panel" id="reg-panel-1">
                 <div class="t-float-group">
                     <input type="text" class="t-float-input" id="reg-venue" placeholder=" " autocomplete="organization">
-                    <label class="t-float-label" for="reg-venue">ობიექტის სახელი</label>
+                    <label class="t-float-label" for="reg-venue" data-i18n="regVenueLbl">ობიექტის სახელი</label>
                 </div>
                 <div class="t-float-group">
                     <input type="text" class="t-float-input" id="reg-address" placeholder=" " oninput="onAddressInput()" onfocus="schedulePlacesSearch()" autocomplete="off">
-                    <label class="t-float-label" for="reg-address">მისამართი (Google Maps)</label>
+                    <label class="t-float-label" for="reg-address" data-i18n="regAddrLbl">მისამართი (Google Maps)</label>
                     <input type="hidden" id="reg-place-id">
                     <div id="place-confirmed" style="display:none;" class="reg-field-hint reg-field-hint--ok">
                         <i class="fas fa-check-circle"></i> <span id="place-confirmed-text"></span>
@@ -204,12 +203,12 @@
                 <div class="t-float-group">
                     <input type="email" class="t-float-input" id="reg-email" placeholder=" " autocomplete="email"
                            onblur="validateEmailField(this)">
-                    <label class="t-float-label" for="reg-email">ელ. ფოსტა</label>
+                    <label class="t-float-label" for="reg-email" data-i18n="regEmailLbl">ელ. ფოსტა</label>
                     <div id="reg-email-err" class="reg-field-err" style="display:none;"></div>
                 </div>
                 <div class="t-float-group t-float-group--pwd">
                     <input type="password" class="t-float-input" id="reg-password" placeholder=" " autocomplete="new-password" style="padding-right:44px;" oninput="checkPasswordStrength()">
-                    <label class="t-float-label" for="reg-password">პაროლი (მინ. 8 სიმბოლო)</label>
+                    <label class="t-float-label" for="reg-password" data-i18n="regPwdLbl">პაროლი (მინ. 8 სიმბოლო)</label>
                     <button type="button" class="reg-pwd-toggle" onclick="togglePwd('reg-password')" title="ჩვენება"><i class="fas fa-eye" id="pwd-eye-icon"></i></button>
                 </div>
                 <div class="reg-pwd-extras">
@@ -725,7 +724,12 @@ function resendResetSms() {
 /* i18n */
 var LANG = {
     ka: {
-        navLogin: 'შესვლა', navRegister: 'რეგისტრაცია',
+        navLogin: 'შესვლა', navRegister: 'რეგისტრაცია', navAuth: 'შესვლა',
+        tabLogin: 'შესვლა', tabRegister: 'რეგისტრაცია',
+        loginIdLabel: 'ტელეფონი ან ელ. ფოსტა', loginPwdLabel: 'პაროლი',
+        regStep1: 'ანგარიში', regStep2: 'ტელეფონი',
+        regVenueLbl: 'ობიექტის სახელი', regAddrLbl: 'მისამართი (Google Maps)',
+        regEmailLbl: 'ელ. ფოსტა', regPwdLbl: 'პაროლი (მინ. 8 სიმბოლო)',
         heroBadge: 'უფასო QR მენიუ ყველა რესტორნისთვის',
         heroTitle: 'შენი რესტორნის<br><span>ციფრული პლატფორმა</span>',
         heroSub: 'QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში.',
@@ -744,7 +748,12 @@ var LANG = {
         ctaBtn: 'დაიწყე ახლავე', footerRights: 'ყველა უფლება დაცულია.',
     },
     en: {
-        navLogin: 'Sign In', navRegister: 'Register',
+        navLogin: 'Sign In', navRegister: 'Register', navAuth: 'Sign In',
+        tabLogin: 'Sign In', tabRegister: 'Register',
+        loginIdLabel: 'Phone or Email', loginPwdLabel: 'Password',
+        regStep1: 'Account', regStep2: 'Phone',
+        regVenueLbl: 'Venue Name', regAddrLbl: 'Address (Google Maps)',
+        regEmailLbl: 'Email', regPwdLbl: 'Password (min. 8 chars)',
         heroBadge: 'Free QR Menu for every restaurant',
         heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
         heroSub: 'QR menu, table reservations, online ordering \u2014 all in one place.',
@@ -763,6 +772,7 @@ var LANG = {
         ctaBtn: 'Start Now', footerRights: 'All rights reserved.',
     }
 };
+{% if open_modal %}window.addEventListener('DOMContentLoaded', function(){ openModal('{{ open_modal }}'); });{% endif %}
 var currentLang = 'ka';
 function toggleLang() {
     currentLang = currentLang === 'ka' ? 'en' : 'ka';
