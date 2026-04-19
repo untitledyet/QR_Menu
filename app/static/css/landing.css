@@ -421,7 +421,7 @@ body {
 .reg-link-btn:hover { text-decoration: underline; }
 
 /* Panel animations */
-.reg-panel { overflow: hidden; }
+.reg-panel { overflow: hidden; padding-top: 12px; }
 .reg-panel--hidden { display: none !important; }
 @keyframes regSlideInFwd {
   from { opacity: 0; transform: translateX(24px); }
