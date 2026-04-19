@@ -125,48 +125,48 @@
                 <div class="t-form-group">
                     <label style="display:flex;justify-content:space-between;align-items:center;">
                         <span data-i18n="loginPwdLabel">პაროლი</span>
-                        <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;">პაროლი დამავიწყდა</button>
+                        <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;" data-i18n="loginForgotLink">პაროლი დამავიწყდა</button>
                     </label>
                     <div style="position:relative;">
                         <input type="password" class="t-input" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password" style="padding-right:44px;">
                         <button type="button" onclick="togglePwd('login-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
                     </div>
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep1()">შესვლა</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep1()" data-i18n="loginBtn">შესვლა</button>
             </div>
 
             <!-- Forgot password -->
             <div id="login-forgot" style="display:none;">
-                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;">შეიყვანეთ ტელეფონი ან ელ. ფოსტა პაროლის აღდგენისთვის.</p>
+                <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;" data-i18n="forgotHint">შეიყვანეთ ტელეფონი ან ელ. ფოსტა პაროლის აღდგენისთვის.</p>
                 <div class="t-form-group">
-                    <label>ტელეფონი ან ელ. ფოსტა</label>
+                    <label data-i18n="loginIdLabel">ტელეფონი ან ელ. ფოსტა</label>
                     <input type="text" class="t-input" id="forgot-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()">აღდგენა</button>
-                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">&larr; უკან</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()" data-i18n="forgotBtn">აღდგენა</button>
+                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;" data-i18n="backBtn">&larr; უკან</button>
             </div>
 
             <!-- SMS OTP for password reset -->
             <div id="login-reset-sms" style="display:none;">
                 <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;" id="reset-sms-hint"></p>
                 <div class="t-form-group">
-                    <label>SMS კოდი</label>
+                    <label data-i18n="smsCodeLbl">SMS კოდი</label>
                     <input type="text" class="t-input" id="reset-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doVerifyResetSms()">დადასტურება</button>
-                <button type="button" onclick="resendResetSms()" id="resend-reset-btn" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-primary);font-size:.85rem;cursor:pointer;font-family:inherit;">ხელახლა გაგზავნა</button>
-                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:4px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;">&larr; უკან</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doVerifyResetSms()" data-i18n="confirmBtn">დადასტურება</button>
+                <button type="button" onclick="resendResetSms()" id="resend-reset-btn" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-primary);font-size:.85rem;cursor:pointer;font-family:inherit;" data-i18n="resendBtn">ხელახლა გაგზავნა</button>
+                <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:4px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;" data-i18n="backBtn">&larr; უკან</button>
             </div>
 
             <!-- Login 2FA SMS -->
             <div id="login-step-2" style="display:none;">
                 <p style="color:var(--t-text-2);font-size:.9rem;margin-bottom:16px;" id="login-sms-hint"></p>
                 <div class="t-form-group">
-                    <label>SMS კოდი</label>
+                    <label data-i18n="smsCodeLbl">SMS კოდი</label>
                     <input type="text" class="t-input" id="login-sms-code" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.3em;font-size:1.2rem;text-align:center;" oninput="showLoginSmsErr('')">
                     <div id="login-sms-err" class="reg-field-err" style="display:none;margin-top:6px;"></div>
                 </div>
-                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep2()" title="კოდის დადასტურება">დადასტურება</button>
+                <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doLoginStep2()" data-i18n="confirmBtn">დადასტურება</button>
             </div>
         </div>
 
@@ -214,39 +214,39 @@
                 <div class="reg-pwd-extras">
                     <div class="reg-pwd-strength-bar"><div id="pwd-strength-bar"></div></div>
                     <span id="pwd-strength-label" class="reg-pwd-label"></span>
-                    <button type="button" onclick="suggestPassword()" class="reg-autogen-btn"><i class="fas fa-key"></i> ავტო</button>
+                    <button type="button" onclick="suggestPassword()" class="reg-autogen-btn"><i class="fas fa-key"></i> <span data-i18n="regAutoBtn">ავტო</span></button>
                 </div>
                 <button class="t-btn t-btn--primary reg-next-btn" id="reg-step1-next" onclick="goToRegStep(2)" style="margin-top:20px;">
-                    შემდეგი &nbsp;<i class="fas fa-arrow-right" style="font-size:.78rem;"></i>
+                    <span data-i18n="regNextLbl">შემდეგი</span> &nbsp;<i class="fas fa-arrow-right" style="font-size:.78rem;"></i>
                 </button>
             </div>
 
             <!-- Step 2: Phone verification -->
             <div class="reg-panel reg-panel--hidden" id="reg-panel-2">
-                <p class="reg-step-hint">SMS კოდი გაიგზავნება თქვენს ნომერზე ანგარიშის დასადასტურებლად.</p>
+                <p class="reg-step-hint" data-i18n="regPhoneHint">SMS კოდი გაიგზავნება თქვენს ნომერზე ანგარიშის დასადასტურებლად.</p>
                 <div class="t-float-group">
-                    <label class="reg-static-label">ტელეფონი</label>
+                    <label class="reg-static-label" data-i18n="regPhoneLbl">ტელეფონი</label>
                     <div class="reg-phone-group">
                         <span class="reg-phone-cc">+995</span>
                         <input type="tel" class="t-phone-bare" id="reg-phone" placeholder="5XX XXX XXX" oninput="onPhoneInput(this)" maxlength="9" autocomplete="tel">
-                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" class="reg-send-sms-btn" style="display:none;" title="SMS კოდის გაგზავნა">კოდი</button>
+                        <button id="send-sms-btn" type="button" onclick="sendPhoneSms()" class="reg-send-sms-btn" style="display:none;" data-i18n="regSendSms">კოდი</button>
                     </div>
                 </div>
                 <div id="phone-otp-wrap" style="display:none;" class="reg-otp-wrap">
-                    <label class="reg-static-label">SMS კოდი</label>
+                    <label class="reg-static-label" data-i18n="smsCodeLbl">SMS კოდი</label>
                     <input type="text" class="t-input reg-otp-input" id="phone-otp-input" placeholder="• • • • • •" maxlength="6" inputmode="numeric" oninput="onOtpInput(this)">
                     <div id="otp-err" class="reg-field-err" style="display:none;"></div>
                     <div class="reg-otp-meta">
                         <span id="otp-timer-wrap" class="reg-field-hint"></span>
-                        <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" class="reg-link-btn" style="display:none;" title="SMS კოდის ხელახლა გაგზავნა">ხელახლა გაგზავნა</button>
+                        <button id="resend-otp-btn" type="button" onclick="resendPhoneSms()" class="reg-link-btn" style="display:none;" data-i18n="resendBtn">ხელახლა გაგზავნა</button>
                     </div>
                 </div>
                 <div id="phone-verified-badge" style="display:none;" class="reg-field-hint reg-field-hint--ok">
-                    <i class="fas fa-check-circle"></i> ტელეფონი დადასტურდა
+                    <i class="fas fa-check-circle"></i> <span data-i18n="regPhoneVerified">ტელეფონი დადასტურდა</span>
                 </div>
                 <div class="reg-nav" style="margin-top:20px;">
-                    <button class="t-btn t-btn--ghost" onclick="goToRegStep(1)" title="უკან"><i class="fas fa-arrow-left" style="font-size:.78rem;"></i></button>
-                    <button class="t-btn t-btn--primary" id="reg-submit-btn" onclick="doRegister()" style="flex:1;" title="ანგარიშის შექმნა">რეგისტრაცია</button>
+                    <button class="t-btn t-btn--ghost" onclick="goToRegStep(1)"><i class="fas fa-arrow-left" style="font-size:.78rem;"></i></button>
+                    <button class="t-btn t-btn--primary" id="reg-submit-btn" onclick="doRegister()" style="flex:1;" data-i18n="regSubmitBtn">რეგისტრაცია</button>
                 </div>
             </div>
 
@@ -727,9 +727,17 @@ var LANG = {
         navLogin: 'შესვლა', navRegister: 'რეგისტრაცია', navAuth: 'შესვლა',
         tabLogin: 'შესვლა', tabRegister: 'რეგისტრაცია',
         loginIdLabel: 'ტელეფონი ან ელ. ფოსტა', loginPwdLabel: 'პაროლი',
+        loginForgotLink: 'პაროლი დამავიწყდა', loginBtn: 'შესვლა',
+        forgotHint: 'შეიყვანეთ ტელეფონი ან ელ. ფოსტა პაროლის აღდგენისთვის.',
+        forgotBtn: 'აღდგენა', backBtn: '← უკან',
+        smsCodeLbl: 'SMS კოდი', confirmBtn: 'დადასტურება', resendBtn: 'ხელახლა გაგზავნა',
         regStep1: 'ანგარიში', regStep2: 'ტელეფონი',
         regVenueLbl: 'ობიექტის სახელი', regAddrLbl: 'მისამართი (Google Maps)',
         regEmailLbl: 'ელ. ფოსტა', regPwdLbl: 'პაროლი (მინ. 8 სიმბოლო)',
+        regAutoBtn: 'ავტო', regNextLbl: 'შემდეგი',
+        regPhoneHint: 'SMS კოდი გაიგზავნება თქვენს ნომერზე ანგარიშის დასადასტურებლად.',
+        regPhoneLbl: 'ტელეფონი', regSendSms: 'კოდი',
+        regPhoneVerified: 'ტელეფონი დადასტურდა', regSubmitBtn: 'რეგისტრაცია',
         heroBadge: 'უფასო QR მენიუ ყველა რესტორნისთვის',
         heroTitle: 'შენი რესტორნის<br><span>ციფრული პლატფორმა</span>',
         heroSub: 'QR მენიუ, მაგიდის ჯავშანი, ონლაინ შეკვეთა — ყველაფერი ერთ სივრცეში.',
@@ -751,9 +759,17 @@ var LANG = {
         navLogin: 'Sign In', navRegister: 'Register', navAuth: 'Sign In',
         tabLogin: 'Sign In', tabRegister: 'Register',
         loginIdLabel: 'Phone or Email', loginPwdLabel: 'Password',
+        loginForgotLink: 'Forgot password', loginBtn: 'Sign In',
+        forgotHint: 'Enter your phone or email to reset your password.',
+        forgotBtn: 'Recover', backBtn: '← Back',
+        smsCodeLbl: 'SMS Code', confirmBtn: 'Confirm', resendBtn: 'Resend',
         regStep1: 'Account', regStep2: 'Phone',
         regVenueLbl: 'Venue Name', regAddrLbl: 'Address (Google Maps)',
         regEmailLbl: 'Email', regPwdLbl: 'Password (min. 8 chars)',
+        regAutoBtn: 'Auto', regNextLbl: 'Next',
+        regPhoneHint: 'An SMS code will be sent to your number to verify your account.',
+        regPhoneLbl: 'Phone', regSendSms: 'Code',
+        regPhoneVerified: 'Phone verified', regSubmitBtn: 'Register',
         heroBadge: 'Free QR Menu for every restaurant',
         heroTitle: 'Your restaurant\'s<br><span>digital platform</span>',
         heroSub: 'QR menu, table reservations, online ordering \u2014 all in one place.',
