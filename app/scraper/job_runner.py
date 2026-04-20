@@ -78,7 +78,7 @@ def _worker(app, venue_id: int, place_id: str, venue_name: str):
         db.session.commit()
 
         try:
-            result = _run_pipeline(place_id, venue_id)
+            result = _run_pipeline(place_id, venue_id, venue_name)
             _match_library_photos(result, GlobalItem, db)
             job.status = 'done'
             job.result_json = result
@@ -99,10 +99,10 @@ def _worker(app, venue_id: int, place_id: str, venue_name: str):
 # Pipeline
 # ---------------------------------------------------------------------------
 
-def _run_pipeline(place_id: str, venue_id: int) -> dict:
+def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
     from app.scraper.google_menu import extract_google_text_menu
     from app.scraper.google_photos import extract_google_menu_photos
-    from app.scraper.glovo_menu import find_glovo_url, extract_glovo_menu
+    from app.scraper.glovo_menu import find_glovo_url, find_glovo_url_direct, extract_glovo_menu
     from app.scraper.ai_analyzer import analyze_menu_photo, categorize_items, enrich_ingredients
     from app.scraper.merger import merge_menu
     from app.services.r2_storage import upload_from_url, upload_from_path
@@ -179,9 +179,15 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                 plog.step('Google Maps ფოტოები', str(e), 'error')
                 logger.warning(f'[ScraperJob] Google photos error: {e}')
 
-            # Step 3 — Glovo
+            # Step 3 — Glovo (try Google Maps first, fall back to direct Glovo search)
             try:
                 glovo_url = find_glovo_url(page, maps_url)
+                if not glovo_url and venue_name:
+                    plog.step('Glovo (Google Maps)', 'ვერ მოიძებნა — პირდაპირ ვეძებ Glovo.com-ზე', 'warn')
+                    gp_search = ctx.new_page()
+                    glovo_url = find_glovo_url_direct(gp_search, venue_name)
+                    gp_search.close()
+
                 if glovo_url:
                     plog.step('Glovo ბმული', glovo_url, 'ok')
                     gp = ctx.new_page()
@@ -193,7 +199,7 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                     else:
                         plog.step('Glovo მენიუ', 'კერძები ვერ ამოიღო', 'warn')
                 else:
-                    plog.step('Glovo', 'ბმული ვერ მოიძებნა (გეო-შეზღუდვა — Railway US IP)', 'warn')
+                    plog.step('Glovo', 'ბმული ვერ მოიძებნა (Google Maps + Glovo.com ძიება)', 'warn')
             except Exception as e:
                 plog.step('Glovo', str(e), 'error')
                 logger.warning(f'[ScraperJob] Glovo error: {e}')

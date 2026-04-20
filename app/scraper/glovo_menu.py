@@ -3,6 +3,77 @@ import os
 import re
 
 
+# Georgian city slugs to try on Glovo
+_GE_CITIES = ['tbilisi', 'batumi', 'rustavi', 'kutaisi', 'gori', 'zugdidi', 'telavi']
+
+
+def find_glovo_url_direct(page, venue_name: str) -> str | None:
+    """
+    Search Glovo website directly by venue name — bypasses Google Maps geo-restriction.
+    Tries Georgian Glovo search for each city until a match is found.
+    Returns the restaurant page URL or None.
+    """
+    print(f"[Glovo] Direct search for: '{venue_name}'")
+    page.set_default_navigation_timeout(60000)
+
+    # Glovo search URL — Georgian locale
+    search_query = venue_name.strip().split()[0]  # use first word for better match
+    search_url = f'https://glovoapp.com/ge/ka/search/?q={search_query}'
+    print(f"[Glovo] Search URL: {search_url}")
+
+    try:
+        page.goto(search_url)
+        page.wait_for_timeout(5000)
+
+        # Dismiss cookie/address popups
+        for sel in (
+            'button[data-testid="address-modal-close"]',
+            'button[aria-label="Close"]',
+            'button:has-text("Accept")',
+            'button:has-text("Accept all")',
+            '[data-testid="modal-close"]',
+        ):
+            try:
+                b = page.locator(sel).first
+                if b.is_visible(timeout=1000):
+                    b.click()
+                    page.wait_for_timeout(800)
+            except Exception:
+                pass
+
+        # Look for restaurant links in search results
+        url = page.evaluate(
+            "() => {"
+            "  var links = document.querySelectorAll('a[href*=\"/ge/ka/\"]');"
+            "  for (var i = 0; i < links.length; i++) {"
+            "    var href = links[i].href || '';"
+            "    var txt = (links[i].textContent || '').trim().toLowerCase();"
+            "    if (href && txt && txt.length > 2) return href;"
+            "  }"
+            "  return null;"
+            "}"
+        )
+
+        if url:
+            print(f"[Glovo] Direct search found: {url}")
+            return url
+
+        # Also try raw HTML regex
+        html = page.content()
+        m = re.search(r'https?://glovoapp\.com/ge/ka/[^"\'<>\s]+', html)
+        if m:
+            result = m.group(0)
+            print(f"[Glovo] Direct search (regex) found: {result}")
+            return result
+
+        print(f"[Glovo] Direct search — no results for '{search_query}'")
+
+    except Exception as e:
+        print(f"[Glovo] Direct search error: {e}")
+
+    return None
+
+
 def _dismiss_consent(page):
     for selector in (
         'button[aria-label="Accept all"]',
