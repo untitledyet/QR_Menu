@@ -108,6 +108,17 @@
         <a href="{{ url_for('bo_bp.photo_import_page') }}" class="bo-btn bo-btn--outline bo-btn--sm">
           <i class="fas fa-camera"></i> ფოტოდან იმპორტი
         </a>
+        {% if items %}
+        {% if selected_cat %}
+        <button class="bo-btn bo-btn--danger bo-btn--sm" onclick="confirmDeleteCatItems({{ selected_cat }})">
+          <i class="fas fa-trash"></i> კატეგ. გასუფთავება
+        </button>
+        {% else %}
+        <button class="bo-btn bo-btn--danger bo-btn--sm" onclick="confirmDeleteAll()">
+          <i class="fas fa-trash"></i> ყველა წაშლა
+        </button>
+        {% endif %}
+        {% endif %}
       </div>
     </div>
 
@@ -167,12 +178,10 @@
              class="bo-icon-btn bo-icon-btn--sm" title="რედაქტირება">
             <i class="fas fa-pen"></i>
           </a>
-          <form method="POST" action="{{ url_for('bo_bp.delete_item', item_id=item.FoodItemID) }}"
-                style="display:inline;"
-                onsubmit="return confirm('წაიშალოს {{ item.FoodName }}?')">
-            <button type="submit" class="bo-icon-btn bo-icon-btn--sm bo-icon-btn--danger"
-                    title="წაშლა"><i class="fas fa-trash"></i></button>
-          </form>
+          <button class="bo-icon-btn bo-icon-btn--sm bo-icon-btn--danger" title="წაშლა"
+                  onclick="confirmDeleteItem({{ item.FoodItemID }}, '{{ item.FoodName|replace("'", "\\'") }}', this)">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
       {% endfor %}
@@ -249,9 +258,40 @@
   </div>
 </div>
 
+{# ══════ Danger Confirm Modal ══════ #}
+<div id="um-danger-modal" class="bo-modal-backdrop" style="display:none">
+  <div class="bo-modal-box" style="max-width:420px">
+    <div class="bo-modal-box__header">
+      <h3 id="um-danger-title">დადასტურება</h3>
+      <button class="bo-icon-btn" onclick="document.getElementById('um-danger-modal').style.display='none'">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="bo-modal-box__body">
+      <p id="um-danger-msg" style="margin:0;font-size:.92rem;"></p>
+    </div>
+    <div class="bo-modal-box__footer">
+      <button class="bo-btn bo-btn--ghost" onclick="document.getElementById('um-danger-modal').style.display='none'">გაუქმება</button>
+      <button class="bo-btn bo-btn--danger" id="um-danger-confirm-btn">წაშლა</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let _editCatId = null;
 let _addSubCatId = null;
+
+// ── Danger confirm modal helpers ──
+function showDangerModal(msg, onConfirm) {
+    document.getElementById('um-danger-msg').textContent = msg;
+    const modal = document.getElementById('um-danger-modal');
+    const btn = document.getElementById('um-danger-confirm-btn');
+    btn.onclick = () => { modal.style.display = 'none'; onConfirm(); };
+    modal.style.display = 'flex';
+}
+document.getElementById('um-danger-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
 
 // ── Category Modal ──
 function openCatModal(id, name, nameEn) {
@@ -294,18 +334,23 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         document.getElementById('um-cat-modal').style.display = 'none';
         document.getElementById('um-sub-modal').style.display = 'none';
+        document.getElementById('um-danger-modal').style.display = 'none';
     }
 });
 
 // ── Delete Category ──
 function deleteCat(id, name) {
-    if (!confirm(`წაიშალოს კატეგორია "${name}"?`)) return;
-    fetch(`/backoffice/categories/delete-json/${id}`, {method: 'POST'})
-        .then(r => r.json()).then(d => {
-            if (!d.success) { alert(d.error); return; }
-            window.location.href = '{{ url_for("bo_bp.menu_list") }}';
-        });
+    showDangerModal(`წაიშალოს კატეგორია "${name}"?`, () => {
+        fetch(`/backoffice/categories/delete-json/${id}`, {method: 'POST'})
+            .then(r => r.json()).then(d => {
+                if (!d.success) { alert(d.error); return; }
+                window.location.href = '{{ url_for("bo_bp.menu_list") }}';
+            });
+    });
 }
+
+// ── Delete Subcategory ──
+
 
 // ── Subcategory Modal ──
 function openSubModal(catId) {
@@ -337,13 +382,52 @@ function saveSub() {
 
 // ── Delete Subcategory ──
 function deleteSub(id, btn) {
-    if (!confirm('წაიშალოს ქვეკატეგორია?')) return;
-    fetch(`/backoffice/subcategories/delete-json/${id}`, {method: 'POST'})
-        .then(r => r.json()).then(d => {
-            if (!d.success) { alert(d.error); return; }
-            // Remove all chips with this sub id (mobile + desktop may have duplicates)
-            document.querySelectorAll(`.um-sub-chip[data-sub-id="${id}"]`).forEach(el => el.remove());
-        });
+    showDangerModal('წაიშალოს ქვეკატეგორია?', () => {
+        fetch(`/backoffice/subcategories/delete-json/${id}`, {method: 'POST'})
+            .then(r => r.json()).then(d => {
+                if (!d.success) { alert(d.error); return; }
+                document.querySelectorAll(`.um-sub-chip[data-sub-id="${id}"]`).forEach(el => el.remove());
+            });
+    });
+}
+
+// ── Delete Item (AJAX) ──
+function confirmDeleteItem(id, name, btn) {
+    showDangerModal(`წაიშალოს "${name}"?`, () => {
+        btn.disabled = true;
+        fetch(`/backoffice/menu/delete/${id}`, {
+            method: 'POST',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).then(r => r.json()).then(d => {
+            if (!d.success) { btn.disabled = false; alert(d.error); return; }
+            const card = btn.closest('.um-item-card');
+            card.style.transition = 'opacity .2s';
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 200);
+        }).catch(() => { btn.disabled = false; });
+    });
+}
+
+// ── Delete All Items in Category ──
+function confirmDeleteCatItems(catId) {
+    showDangerModal('წაიშალოს კატეგორიის ყველა ნივთი? კატეგორია დარჩება.', () => {
+        fetch(`/backoffice/menu/delete-category-items/${catId}`, {method: 'POST'})
+            .then(r => r.json()).then(d => {
+                if (!d.success) { alert(d.error); return; }
+                window.location.reload();
+            });
+    });
+}
+
+// ── Delete All Items (entire venue) ──
+function confirmDeleteAll() {
+    showDangerModal('წაიშალოს მენიუს ყველა ნივთი? ეს მოქმედება შეუქცევადია.', () => {
+        fetch('/backoffice/menu/delete-all-items', {method: 'POST'})
+            .then(r => r.json()).then(d => {
+                if (!d.success) { alert(d.error); return; }
+                window.location.reload();
+            });
+    });
 }
 
 // ── Toggle Item Active / Customization ──

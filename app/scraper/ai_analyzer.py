@@ -309,6 +309,88 @@ def enrich_missing_ingredients(items: list) -> list:
     return items
 
 
+def translate_items_bilingual(items: list) -> list:
+    """
+    For every item produce name_ka, name_en, ingredients_ka, ingredients_en.
+    Detects source language per item and translates to the other.
+    Uses culinary-domain restaurant menu vocabulary.
+    Modifies items in-place and returns them.
+    """
+    if not items:
+        return items
+    try:
+        client = _get_client()
+    except ImportError:
+        for it in items:
+            it.setdefault("name_ka", it.get("name", ""))
+            it.setdefault("name_en", it.get("name", ""))
+            it.setdefault("ingredients_ka", it.get("ingredients", ""))
+            it.setdefault("ingredients_en", "")
+        return items
+
+    BATCH = 40
+    for i in range(0, len(items), BATCH):
+        batch = items[i:i + BATCH]
+        payload = [
+            {
+                "i": j,
+                "name": it.get("name", ""),
+                "category": it.get("category", ""),
+                "ingredients": it.get("ingredients", ""),
+            }
+            for j, it in enumerate(batch)
+        ]
+        prompt = (
+            "You are a professional restaurant menu translator specializing in Georgian and international cuisine.\n"
+            "TASK: For each menu item provide BOTH Georgian (ka) and English (en) versions of the name, "
+            "category, and ingredients.\n\n"
+            "CRITICAL RULES:\n"
+            "- This is a RESTAURANT MENU. Use precise culinary terminology as it appears on upscale menus — "
+            "NOT generic dictionary translations.\n"
+            "- For traditional Georgian dishes (ხინკალი, ლობიანი, მწვადი, ჩაქაფული, etc.): "
+            "keep the authentic Georgian name in 'name_ka'; use the standard English culinary term or "
+            "transliteration in 'name_en' (e.g. 'Khinkali', 'Lobiani', 'Mtsvadi').\n"
+            "- For international dishes (pizza, pasta, steak, etc.): translate/transliterate into Georgian "
+            "script for 'name_ka' using the accepted Georgian form.\n"
+            "- 'category_en': translate the category name to English (e.g. სალათები→Salads, ცხელი კერძები→Main Courses).\n"
+            "- Ingredients: comma-separated list of 3-6 typical ingredients in the target language. "
+            "If the input has ingredients, translate them accurately. If empty, generate typical ingredients "
+            "for that dish using culinary knowledge.\n"
+            "- For drinks: ingredients_ka and ingredients_en should be empty strings.\n"
+            "- Detect whether each input name is Georgian or English and translate to the OTHER language.\n\n"
+            "Return ONLY valid JSON array (SAME ORDER and COUNT as input):\n"
+            '[{"i":0,"name_ka":"ქართული სახელი","name_en":"English Name","category_en":"Category",'
+            '"ingredients_ka":"ინგ1, ინგ2, ინგ3","ingredients_en":"ing1, ing2, ing3"}]\n\n'
+            "Items:\n" + json.dumps(payload, ensure_ascii=False)
+        )
+        try:
+            response = client.chat.completions.create(
+                model=config.OPENAI_MODEL_MINI,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=4096,
+            )
+            results = _parse_json_response(response.choices[0].message.content)
+            result_map = {r["i"]: r for r in results if isinstance(r, dict)}
+            for j, it in enumerate(batch):
+                r = result_map.get(j, {})
+                it["name_ka"] = (r.get("name_ka") or it.get("name", "")).strip()
+                it["name_en"] = (r.get("name_en") or it.get("name", "")).strip()
+                it["category_en"] = (r.get("category_en") or it.get("category", "")).strip()
+                it["ingredients_ka"] = (r.get("ingredients_ka") or it.get("ingredients", "")).strip()
+                it["ingredients_en"] = (r.get("ingredients_en") or "").strip()
+        except Exception as e:
+            print(f"[AI] translate_items_bilingual error: {e}")
+            for it in batch:
+                it.setdefault("name_ka", it.get("name", ""))
+                it.setdefault("name_en", it.get("name", ""))
+                it.setdefault("category_en", it.get("category", ""))
+                it.setdefault("ingredients_ka", it.get("ingredients", ""))
+                it.setdefault("ingredients_en", "")
+
+    print(f"[AI] Bilingual translation done for {len(items)} items")
+    return items
+
+
 # ---------------------------------------------------------------------------
 # Categorization
 # ---------------------------------------------------------------------------

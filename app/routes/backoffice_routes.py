@@ -735,7 +735,8 @@ def analyze_photos():
     tmpdir = tempfile.mkdtemp(prefix='photo_import_')
     try:
         from app.scraper.ai_analyzer import (
-            analyze_menu_photo_structured, enrich_missing_ingredients, assign_global_categories
+            analyze_menu_photo_structured, enrich_missing_ingredients,
+            assign_global_categories, translate_items_bilingual
         )
         from app.models import GlobalItem, GlobalCategory, GlobalSubcategory
         from sqlalchemy import func
@@ -782,7 +783,10 @@ def analyze_photos():
         # Step 2: Enrich missing ingredients via AI
         enrich_missing_ingredients(deduped)
 
-        # Step 3: Match library photos by item name
+        # Step 3: Translate to both Georgian and English
+        translate_items_bilingual(deduped)
+
+        # Step 4: Match library photos by item name
         for it in deduped:
             name = it['name'].strip()
             lib = (GlobalItem.query
@@ -805,16 +809,20 @@ def analyze_photos():
 
         # Organise: {category: {subcategory: [items]}}
         organised = {}
+        cats_en = {}
         for it in deduped:
             cat = it.get('category') or 'სხვა'
             sub = it.get('subcategory') or ''
             organised.setdefault(cat, {}).setdefault(sub, []).append(it)
+            if cat not in cats_en and it.get('category_en'):
+                cats_en[cat] = it['category_en']
 
         return jsonify(
             success=True,
             total=len(deduped),
             categories=organised,
             cat_icons=cat_icons,
+            cats_en=cats_en,
         )
     except Exception as e:
         current_app.logger.exception('analyze_photos error')
@@ -833,6 +841,7 @@ def import_analyzed():
     venue_id = admin.venue.id
     data = request.get_json() or {}
     categories_data = data.get('categories', {})
+    cats_en = data.get('cats_en', {})
 
     imported_cats = 0
     imported_subs = 0
@@ -844,7 +853,8 @@ def import_analyzed():
             continue
         cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
         if not cat:
-            cat = Category(CategoryName=cat_name, venue_id=venue_id)
+            cat_name_en = (cats_en.get(cat_name) or '').strip() or None
+            cat = Category(CategoryName=cat_name, CategoryName_en=cat_name_en, venue_id=venue_id)
             db.session.add(cat)
             db.session.flush()
             imported_cats += 1
@@ -863,21 +873,23 @@ def import_analyzed():
             for item_data in items:
                 if item_data.get('excluded'):
                     continue
-                name = (item_data.get('name') or '').strip()
+                name = (item_data.get('name_ka') or item_data.get('name') or '').strip()
                 if not name:
                     continue
                 if FoodItem.query.filter_by(CategoryID=cat.CategoryID, FoodName=name).first():
                     continue
+                name_en = (item_data.get('name_en') or name).strip()
                 try:
                     price = float(item_data.get('price') or 0)
                 except (ValueError, TypeError):
                     price = 0.0
-                # Photo: prefer library photo (GlobalItem match)
                 photo = item_data.get('library_photo') or None
                 food = FoodItem(
                     FoodName=name,
+                    FoodName_en=name_en,
                     Description='',
-                    Ingredients=(item_data.get('ingredients') or '').strip(),
+                    Ingredients=(item_data.get('ingredients_ka') or item_data.get('ingredients') or '').strip(),
+                    Ingredients_en=(item_data.get('ingredients_en') or '').strip(),
                     Price=price,
                     ImageFilename=photo,
                     CategoryID=cat.CategoryID,
@@ -1038,13 +1050,44 @@ def edit_item(item_id):
 def delete_item(item_id):
     item = verify_item_ownership(item_id)
     if not item:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=False, error='Access denied'), 403
         flash('Access denied')
         return redirect(url_for('bo_bp.menu_list'))
     name = item.FoodName
     db.session.delete(item)
     db.session.commit()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(success=True)
     flash(f'"{name}" deleted')
     return redirect(url_for('bo_bp.menu_list'))
+
+
+@bo_bp.route('/menu/delete-category-items/<int:cat_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def delete_category_items(cat_id):
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    deleted = FoodItem.query.filter_by(CategoryID=cat_id).delete()
+    db.session.commit()
+    return jsonify(success=True, deleted=deleted)
+
+
+@bo_bp.route('/menu/delete-all-items', methods=['POST'])
+@login_required
+@email_verified_required
+def delete_all_items():
+    admin = get_current_admin()
+    venue = admin.venue
+    if not venue:
+        return jsonify(success=False, error='Access denied'), 403
+    cats = Category.query.filter_by(venue_id=venue.id).all()
+    cat_ids = [c.CategoryID for c in cats]
+    deleted = FoodItem.query.filter(FoodItem.CategoryID.in_(cat_ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify(success=True, deleted=deleted)
 
 
 @bo_bp.route('/promotions')
