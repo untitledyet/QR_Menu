@@ -426,6 +426,31 @@ def scraper_import():
     return jsonify(success=True, imported_items=imported_items, imported_categories=imported_cats)
 
 
+@bo_bp.route('/scraper/trigger', methods=['POST'])
+@login_required
+def scraper_trigger():
+    admin = get_current_admin()
+    if not admin.venue or not admin.venue.google_place_id:
+        return jsonify(error='place_id არ არის'), 400
+    try:
+        job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+        if not job:
+            job = ScraperJob(venue_id=admin.venue.id, status='pending')
+            db.session.add(job)
+        else:
+            job.status = 'pending'
+            job.result_json = None
+            job.error_message = None
+            job.finished_at = None
+        db.session.commit()
+        from app.scraper.job_runner import trigger_scraper_job
+        trigger_scraper_job(current_app._get_current_object(),
+                            admin.venue.id, admin.venue.google_place_id, admin.venue.name)
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+
 @bo_bp.route('/scraper/dismiss', methods=['POST'])
 @login_required
 def scraper_dismiss():

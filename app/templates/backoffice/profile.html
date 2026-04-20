@@ -111,5 +111,38 @@
         </div>
     </div>
 
+
+    {# ── DEV: Manual scraper trigger ── #}
+    {% if admin.venue and admin.venue.google_place_id %}
+    <div class="bo-info-panel" style="border-color:#f59e0b;">
+        <h3><i class="fas fa-flask" style="color:#f59e0b;"></i>&nbsp; სატესტო — მენიუს სკრეიპერი</h3>
+        <p style="font-size:.82rem;color:var(--bo-text-2);margin:0 0 12px;">ხელით გაუშვი მენიუს ძიება ამ ობიექტისთვის.</p>
+        <button class="bo-btn bo-btn--ghost bo-btn--sm" id="scraper-btn" onclick="triggerScraper()">
+            <i class="fas fa-search"></i> მენიუს ძიება
+        </button>
+        <span id="scraper-msg" style="font-size:.8rem;color:var(--bo-text-2);margin-left:10px;"></span>
+    </div>
+    {% endif %}
+
 </div>
+<script>
+function triggerScraper(){
+    const btn = document.getElementById('scraper-btn');
+    const msg = document.getElementById('scraper-msg');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> იშვება...';
+    fetch('/backoffice/scraper/trigger', {method:'POST', headers:{'Content-Type':'application/json'}})
+        .then(r => r.json())
+        .then(d => {
+            if(d.success){
+                msg.textContent = 'დაიწყო! შედეგი dashboard-ზე გამოჩნდება.';
+                btn.innerHTML = '<i class="fas fa-check"></i> გაეშვა';
+            } else {
+                msg.textContent = d.error || 'შეცდომა';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> მენიუს ძიება';
+            }
+        });
+}
+</script>
 {% endblock %}
