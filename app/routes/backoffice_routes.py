@@ -465,6 +465,73 @@ def scraper_dismiss():
 
 
 # ============================================================
+# DEV — Scraper test panel
+# ============================================================
+
+@bo_bp.route('/dev/scraper')
+@login_required
+def dev_scraper_panel():
+    admin = get_current_admin()
+    if not admin.venue:
+        return 'no venue', 400
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    return render_template('backoffice/dev_scraper.html', admin=admin, venue=admin.venue, job=job)
+
+
+@bo_bp.route('/dev/scraper/reset', methods=['POST'])
+@login_required
+def dev_scraper_reset():
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(error='no venue'), 400
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    if job:
+        job.status = 'pending'
+        job.result_json = None
+        job.error_message = None
+        job.finished_at = None
+        db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/dev/scraper/test-r2', methods=['POST'])
+@login_required
+def dev_test_r2():
+    try:
+        from app.services.r2_storage import _upload_bytes, R2_ENDPOINT, R2_BUCKET, R2_PUBLIC_URL
+        pixel = (
+            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01'
+            b'\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00'
+            b'\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82'
+        )
+        url = _upload_bytes(pixel, 'dev/test_pixel.png', 'image/png')
+        return jsonify(
+            success=bool(url), url=url,
+            endpoint=R2_ENDPOINT, bucket=R2_BUCKET, public_url=R2_PUBLIC_URL
+        )
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
+
+@bo_bp.route('/dev/scraper/test-openai', methods=['POST'])
+@login_required
+def dev_test_openai():
+    try:
+        import os, httpx
+        from openai import OpenAI
+        from app.scraper import config as sc
+        client = OpenAI(api_key=sc.OPENAI_API_KEY, http_client=httpx.Client())
+        resp = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'user', 'content': 'Reply with just: OK'}],
+            max_tokens=5,
+        )
+        return jsonify(success=True, response=resp.choices[0].message.content)
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
+
+# ============================================================
 # Super Admin — Venue Management
 # ============================================================
 

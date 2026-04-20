@@ -1,0 +1,153 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}DEV — Scraper Test{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1><i class="fas fa-flask" style="color:#f59e0b;"></i> DEV — Scraper Test Panel</h1>
+    <p class="bo-header__sub">{{ venue.name }} · place_id: <code>{{ venue.google_place_id }}</code></p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px;">
+
+    {# ── Job Status ── #}
+    <div class="bo-info-panel" style="grid-column:1/-1;">
+        <h3><i class="fas fa-database"></i> ScraperJob სტატუსი</h3>
+        {% if job %}
+        <div class="bo-info-row"><span class="bo-info-row__label">status</span>
+            <span class="bo-info-row__value">
+                <strong style="color:{% if job.status=='done' %}var(--bo-green){% elif job.status=='failed' %}#ef4444{% elif job.status=='running' %}#f59e0b{% else %}var(--bo-text-2){% endif %};">
+                    {{ job.status }}
+                </strong>
+            </span>
+        </div>
+        <div class="bo-info-row"><span class="bo-info-row__label">შექმნილია</span><span class="bo-info-row__value">{{ job.created_at }}</span></div>
+        <div class="bo-info-row"><span class="bo-info-row__label">დასრულდა</span><span class="bo-info-row__value">{{ job.finished_at or '—' }}</span></div>
+        {% if job.sources_found %}
+        <div class="bo-info-row"><span class="bo-info-row__label">წყაროები</span>
+            <span class="bo-info-row__value">
+                {% for src, found in job.sources_found.items() %}
+                <span style="margin-right:8px;color:{% if found %}var(--bo-green){% else %}#ef4444{% endif %};">
+                    <i class="fas fa-{% if found %}check{% else %}times{% endif %}"></i> {{ src }}
+                </span>
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
+        {% if job.result_json and job.result_json.get('_stats') %}
+        {% set st = job.result_json['_stats'] %}
+        <div class="bo-info-row"><span class="bo-info-row__label">სტატისტიკა</span>
+            <span class="bo-info-row__value">
+                {{ st.get('total_items',0) }} კერძი ·
+                {{ st.get('items_with_price',0) }} ფასით ·
+                {{ st.get('items_with_photo',0) }} ფოტოთი
+            </span>
+        </div>
+        {% endif %}
+        {% if job.error_message %}
+        <pre style="font-size:.72rem;background:#fff0f0;padding:10px;border-radius:6px;overflow:auto;margin-top:8px;color:#b91c1c;">{{ job.error_message[-1500:] }}</pre>
+        {% endif %}
+        {% else %}
+        <p style="color:var(--bo-text-2);font-size:.85rem;">job ჩანაწერი არ არის</p>
+        {% endif %}
+
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+            <button class="bo-btn bo-btn--primary bo-btn--sm" onclick="triggerJob()">
+                <i class="fas fa-play"></i> გაშვება
+            </button>
+            <button class="bo-btn bo-btn--ghost bo-btn--sm" onclick="resetJob()">
+                <i class="fas fa-redo"></i> Reset (pending)
+            </button>
+            {% if job and job.status == 'done' %}
+            <a href="{{ url_for('bo_bp.scraper_preview') }}" class="bo-btn bo-btn--outline bo-btn--sm">
+                <i class="fas fa-eye"></i> Preview
+            </a>
+            {% endif %}
+            <button class="bo-btn bo-btn--ghost bo-btn--sm" onclick="location.reload()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+        <div id="job-msg" style="font-size:.8rem;color:var(--bo-text-2);margin-top:8px;"></div>
+    </div>
+
+    {# ── R2 Test ── #}
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-cloud-upload-alt"></i> R2 Storage ტესტი</h3>
+        <p style="font-size:.82rem;color:var(--bo-text-2);">1x1 px PNG-ს ატვირთავს R2-ზე.</p>
+        <button class="bo-btn bo-btn--ghost bo-btn--sm" onclick="testR2()">
+            <i class="fas fa-vial"></i> ტესტი
+        </button>
+        <pre id="r2-result" style="font-size:.72rem;margin-top:10px;background:var(--bo-surface-2);padding:8px;border-radius:6px;display:none;word-break:break-all;"></pre>
+    </div>
+
+    {# ── OpenAI Test ── #}
+    <div class="bo-info-panel">
+        <h3><i class="fas fa-robot"></i> OpenAI ტესტი</h3>
+        <p style="font-size:.82rem;color:var(--bo-text-2);">GPT-4o-mini-ს გამოიძახებს.</p>
+        <button class="bo-btn bo-btn--ghost bo-btn--sm" onclick="testOpenAI()">
+            <i class="fas fa-vial"></i> ტესტი
+        </button>
+        <pre id="ai-result" style="font-size:.72rem;margin-top:10px;background:var(--bo-surface-2);padding:8px;border-radius:6px;display:none;"></pre>
+    </div>
+
+    {# ── Categories preview ── #}
+    {% if job and job.result_json and job.result_json.get('categories') %}
+    <div class="bo-info-panel" style="grid-column:1/-1;">
+        <h3><i class="fas fa-list"></i> მოძიებული კატეგორიები</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+        {% for cat, items in job.result_json['categories'].items() %}
+        <div style="background:var(--bo-surface-2);border:1px solid var(--bo-border);border-radius:8px;padding:8px 12px;font-size:.82rem;">
+            <strong>{{ cat }}</strong> <span style="color:var(--bo-text-2);">{{ items|length }} კერძი</span>
+            <ul style="margin:4px 0 0 16px;padding:0;font-size:.75rem;color:var(--bo-text-2);">
+            {% for item in items[:4] %}
+            <li>{{ item.name }}{% if item.get('price') %} — {{ item.price }}{% endif %}</li>
+            {% endfor %}
+            {% if items|length > 4 %}<li style="list-style:none;">+{{ items|length - 4 }} სხვა...</li>{% endif %}
+            </ul>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+function post(url, cb) {
+    fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}})
+        .then(r => r.json()).then(cb).catch(e => cb({success:false, error:String(e)}));
+}
+
+function triggerJob() {
+    document.getElementById('job-msg').textContent = 'იშვება...';
+    post('/backoffice/scraper/trigger', d => {
+        document.getElementById('job-msg').textContent = d.success ? '✓ დაიწყო — გვერდი განაახლე რამდენიმე წუთში' : '✗ ' + d.error;
+    });
+}
+
+function resetJob() {
+    post('/backoffice/dev/scraper/reset', d => {
+        document.getElementById('job-msg').textContent = d.success ? '✓ reset გაკეთდა' : '✗ ' + d.error;
+        setTimeout(() => location.reload(), 800);
+    });
+}
+
+function testR2() {
+    const el = document.getElementById('r2-result');
+    el.style.display = 'block';
+    el.textContent = 'მიდის...';
+    post('/backoffice/dev/scraper/test-r2', d => {
+        el.textContent = JSON.stringify(d, null, 2);
+        el.style.color = d.success ? 'var(--bo-green)' : '#ef4444';
+    });
+}
+
+function testOpenAI() {
+    const el = document.getElementById('ai-result');
+    el.style.display = 'block';
+    el.textContent = 'მიდის...';
+    post('/backoffice/dev/scraper/test-openai', d => {
+        el.textContent = JSON.stringify(d, null, 2);
+        el.style.color = d.success ? 'var(--bo-green)' : '#ef4444';
+    });
+}
+</script>
+{% endblock %}
