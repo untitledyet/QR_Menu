@@ -16,6 +16,29 @@ def _get_client():
     )
 
 
+_MAX_VISION_PX = 1568  # OpenAI's internal tile limit — no benefit sending larger
+
+
+def _prepare_image_b64(image_path: str) -> str:
+    """Resize image to max _MAX_VISION_PX on the longest side and return base64 JPEG."""
+    try:
+        from PIL import Image
+        import io
+        with Image.open(image_path) as img:
+            img = img.convert("RGB")
+            w, h = img.size
+            if max(w, h) > _MAX_VISION_PX:
+                scale = _MAX_VISION_PX / max(w, h)
+                img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=92, optimize=True)
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
+    except Exception:
+        # Pillow unavailable or unreadable — fall back to raw file
+        with open(image_path, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+
+
 def _parse_json_response(text: str):
     """Strip markdown fences and parse JSON."""
     text = text.strip()
@@ -110,8 +133,7 @@ def analyze_menu_photo_structured(image_path: str) -> list:
     except ImportError:
         return []
 
-    with open(image_path, "rb") as f:
-        img_b64 = base64.b64encode(f.read()).decode("utf-8")
+    img_b64 = _prepare_image_b64(image_path)
 
     prompt = (
         "This is a restaurant menu photo. Extract ALL menu items visible.\n"
