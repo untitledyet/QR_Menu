@@ -62,6 +62,42 @@ def _prepare_image_b64(image_path: str) -> str:
             return base64.b64encode(f.read()).decode("utf-8")
 
 
+def _vision_call(client, img_b64: str, prompt: str) -> str:
+    """
+    Call the vision model with an image.
+    Uses the Responses API (gpt-5.x) with fallback to Chat Completions API (gpt-4o).
+    """
+    try:
+        resp = client.responses.create(
+            model=config.OPENAI_MODEL,
+            input=[{
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt},
+                    {"type": "input_image", "image_base64": img_b64},
+                ],
+            }],
+        )
+        return resp.output_text.strip()
+    except AttributeError:
+        # client.responses not available — older SDK, fall back to chat.completions
+        resp = client.chat.completions.create(
+            model=config.OPENAI_MODEL,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{img_b64}",
+                        "detail": "high",
+                    }},
+                ],
+            }],
+            max_tokens=4096,
+        )
+        return resp.choices[0].message.content.strip()
+
+
 def _parse_json_response(text: str):
     """Strip markdown fences and parse JSON."""
     text = text.strip()
@@ -106,26 +142,8 @@ def analyze_menu_photo(image_path: str) -> list:
     )
 
     try:
-        response = client.chat.completions.create(
-            model=config.OPENAI_MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{img_b64}",
-                                "detail": "high",
-                            },
-                        },
-                    ],
-                }
-            ],
-            max_tokens=4096,
-        )
-        items = _parse_json_response(response.choices[0].message.content)
+        text = _vision_call(client, img_b64, prompt)
+        items = _parse_json_response(text)
         filtered = []
         for it in items:
             name = it.get("name", "").strip()
@@ -170,21 +188,7 @@ def analyze_menu_photo_structured(image_path: str) -> list:
         "Return ONLY the raw transcribed text, nothing else."
     )
     try:
-        ocr_resp = client.chat.completions.create(
-            model=config.OPENAI_MODEL,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": ocr_prompt},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/jpeg;base64,{img_b64}",
-                        "detail": "high",
-                    }},
-                ],
-            }],
-            max_tokens=4096,
-        )
-        raw_text = ocr_resp.choices[0].message.content.strip()
+        raw_text = _vision_call(client, img_b64, ocr_prompt)
         print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
     except Exception as e:
         print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
