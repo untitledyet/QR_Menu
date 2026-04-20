@@ -8,10 +8,9 @@ from . import config
 def _get_client():
     from openai import OpenAI
     import httpx
-    # Pass explicit httpx client to avoid Railway proxy injection issues
     return OpenAI(
         api_key=config.OPENAI_API_KEY,
-        http_client=httpx.Client(),
+        http_client=httpx.Client(timeout=60.0),
     )
 
 

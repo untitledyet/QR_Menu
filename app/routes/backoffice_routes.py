@@ -517,16 +517,20 @@ def dev_test_r2():
 @login_required
 def dev_test_openai():
     try:
-        import os, httpx
+        import httpx
         from openai import OpenAI
         from app.scraper import config as sc
-        client = OpenAI(api_key=sc.OPENAI_API_KEY, http_client=httpx.Client())
+        key = sc.OPENAI_API_KEY
+        if not key:
+            return jsonify(success=False, error='OPENAI_API_KEY არ არის დაყენებული Railway-ზე')
+        client = OpenAI(api_key=key, http_client=httpx.Client(timeout=30.0))
         resp = client.chat.completions.create(
             model='gpt-4o-mini',
             messages=[{'role': 'user', 'content': 'Reply with just: OK'}],
             max_tokens=5,
         )
-        return jsonify(success=True, response=resp.choices[0].message.content)
+        return jsonify(success=True, response=resp.choices[0].message.content,
+                       key_prefix=key[:8] + '...')
     except Exception as e:
         return jsonify(success=False, error=str(e))
 
