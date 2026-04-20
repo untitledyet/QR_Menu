@@ -175,6 +175,76 @@ def enrich_ingredients(items: list) -> list:
 
 
 # ---------------------------------------------------------------------------
+# AI deduplication
+# ---------------------------------------------------------------------------
+
+def ai_deduplicate(categories: dict) -> dict:
+    """
+    Use GPT-4o-mini to find duplicate items across all categories and remove them.
+    Returns cleaned categories dict. Each item keeps its best data.
+    Prices from earlier sources (google_text) are never overridden.
+    """
+    all_items = [(cat, i, it) for cat, items in categories.items() for i, it in enumerate(items)]
+    if len(all_items) < 5:
+        return categories
+
+    try:
+        client = _get_client()
+    except ImportError:
+        return categories
+
+    names = [it["name"] for _, _, it in all_items]
+    prompt = (
+        "You are given a list of restaurant menu item names (some may be in Georgian, English, or mixed).\n"
+        "Identify groups of DUPLICATE items — same dish with different spellings, transliterations, or language.\n"
+        "Return ONLY a JSON array of arrays. Each inner array contains the indices (0-based) of items that are the same dish.\n"
+        "Items that are unique (no duplicate) must still appear as single-element arrays.\n"
+        "IMPORTANT: only group items you are certain are the same dish. When in doubt, keep them separate.\n"
+        "Items:\n" + json.dumps(names, ensure_ascii=False)
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=config.OPENAI_MODEL_MINI,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4096,
+        )
+        groups = _parse_json_response(response.choices[0].message.content)
+    except Exception as e:
+        print("[AI] Dedup error: " + str(e))
+        return categories
+
+    # For each group, keep the first item (highest-priority source) and merge data
+    keep_indices = set()
+    for group in groups:
+        if not group:
+            continue
+        primary_idx = group[0]
+        keep_indices.add(primary_idx)
+        primary_item = all_items[primary_idx][2]
+        for dup_idx in group[1:]:
+            dup_item = all_items[dup_idx][2]
+            if not primary_item.get("price") and dup_item.get("price"):
+                primary_item["price"] = dup_item["price"]
+            if not primary_item.get("description") and dup_item.get("description"):
+                primary_item["description"] = dup_item["description"]
+            if not primary_item.get("image") and dup_item.get("image"):
+                primary_item["image"] = dup_item["image"]
+
+    removed = len(all_items) - len(keep_indices)
+    print(f"[AI] Dedup: {len(all_items)} → {len(keep_indices)} items ({removed} duplicates removed)")
+
+    # Rebuild categories keeping only non-duplicate items
+    result = {}
+    for flat_idx, (cat, item_idx, item) in enumerate(all_items):
+        if flat_idx in keep_indices:
+            result.setdefault(cat, []).append(item)
+
+    # Remove empty categories
+    return {k: v for k, v in result.items() if v}
+
+
+# ---------------------------------------------------------------------------
 # Photo: generate with DALL-E 3
 # ---------------------------------------------------------------------------
 

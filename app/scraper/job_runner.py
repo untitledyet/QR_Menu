@@ -183,9 +183,16 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
         # ── Merge ──────────────────────────────────────────────────────────
         final_menu = merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map)
 
-        # ── AI enrichment ──────────────────────────────────────────────────
+        # ── AI deduplication ───────────────────────────────────────────────
         all_items = [it for items in final_menu.values() for it in items]
+        text_count = sum(len(v) for v in google_text.values()) if google_text else 0
+        if len(all_items) > max(text_count * 1.3, 20):
+            from app.scraper.ai_analyzer import ai_deduplicate
+            print(f"[ScraperJob] Running AI dedup: {len(all_items)} items (text had {text_count})")
+            final_menu = ai_deduplicate(final_menu)
+            all_items = [it for items in final_menu.values() for it in items]
 
+        # ── AI enrichment ──────────────────────────────────────────────────
         missing_desc = sum(1 for it in all_items if not it.get('description'))
         if missing_desc:
             enrich_ingredients(all_items)

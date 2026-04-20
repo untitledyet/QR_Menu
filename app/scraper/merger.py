@@ -60,6 +60,7 @@ def merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map):
     # ------------------------------------------------------------------ #
     if google_text:
         final = {}
+        text_item_count = sum(len(v) for v in google_text.values())
 
         # 1a. Seed from Google text (highest priority)
         for cat, items in google_text.items():
@@ -73,8 +74,9 @@ def merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map):
                     "source": "google_text",
                 })
 
-        # 1b. Merge Google photo-AI items (fill missing prices / descriptions,
-        #     and add items that exist in photos but not in text menu)
+        # 1b. Merge Google photo-AI items — ENRICH ONLY (text menu price always wins)
+        #     When text has >= 15 items we consider it authoritative and don't add
+        #     photo-only items (which are usually duplicates with different spellings).
         if google_photos_ai:
             print("[Merger] Merging Google photo-AI data into text menu")
             # flat lookup: name_key -> item in final
@@ -83,6 +85,10 @@ def merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map):
                 for it in final[cat]:
                     final_flat[_key(it["name"])] = it
 
+            text_is_authoritative = text_item_count >= 15
+            enriched = 0
+            added = 0
+
             for cat, items in google_photos_ai.items():
                 for ai_it in items:
                     k = _key(ai_it.get("name", ""))
@@ -90,26 +96,19 @@ def merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map):
                         continue
                     if k in final_flat:
                         existing = final_flat[k]
-                        # Fill missing price (prefer higher price)
+                        # Text price ALWAYS wins — only fill if text had no price
                         ai_price = normalize_price(ai_it.get("price", ""))
-                        if ai_price:
-                            if not existing["price"]:
-                                existing["price"] = ai_price
-                                existing["source"] += "+photo_ai_price"
-                            else:
-                                # Keep the higher price
-                                try:
-                                    if float(ai_price) > float(existing["price"]):
-                                        existing["price"] = ai_price
-                                        existing["source"] += "+photo_ai_price_higher"
-                                except ValueError:
-                                    pass
+                        if ai_price and not existing["price"]:
+                            existing["price"] = ai_price
+                            existing["source"] += "+photo_ai_price"
+                            enriched += 1
                         # Fill missing description
                         if not existing["description"] and ai_it.get("description"):
                             existing["description"] = ai_it["description"]
                             existing["source"] += "+photo_ai_desc"
-                    else:
-                        # Item exists in photo but not in text menu — add it
+                            enriched += 1
+                    elif not text_is_authoritative:
+                        # Only add photo-only items when text menu is sparse
                         target_cat = ai_it.get("category") or cat
                         if target_cat not in final:
                             final[target_cat] = []
@@ -121,6 +120,10 @@ def merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map):
                             "source": "photo_ai",
                         })
                         final_flat[k] = final[target_cat][-1]
+                        added += 1
+
+            print(f"[Merger] Photo-AI: {enriched} enrichments, {added} new items added"
+                  + (" (text is authoritative — photo-only items skipped)" if text_is_authoritative else ""))
 
         # 1c. Attach Glovo photos (no prices from Glovo)
         if glovo_data or glovo_photo_map:
@@ -284,14 +287,10 @@ def _dedup_final(final: dict):
                 kept.append(item)
             else:
                 existing = seen[k]
-                # Keep higher price
-                try:
-                    new_p = float(item.get("price") or 0)
-                    old_p = float(existing.get("price") or 0)
-                    if new_p > old_p:
-                        existing["price"] = item["price"]
-                except ValueError:
-                    pass
+                # Price: keep whichever was set first (earlier source = higher priority)
+                # Only fill if existing has none
+                if not existing.get("price") and item.get("price"):
+                    existing["price"] = item["price"]
                 # Fill missing fields from duplicate
                 if not existing.get("description") and item.get("description"):
                     existing["description"] = item["description"]

@@ -22,31 +22,54 @@ def _dismiss_consent(page):
 
 
 def _search_glovo_in_page(page):
-    """Search all links + text nodes for a glovo URL. Returns URL or None."""
-    return page.evaluate(
+    """Search all links, attributes, and raw HTML for a glovo URL. Returns URL or None."""
+    # 1. Standard <a> href search
+    url = page.evaluate(
         "() => {"
-        "  var found = null;"
         "  var links = document.querySelectorAll('a');"
         "  for (var i = 0; i < links.length; i++) {"
         "    var href = links[i].href || '';"
-        "    if (href.indexOf('glovo') !== -1 || href.indexOf('glovoapp') !== -1) {"
-        "      found = href; break;"
-        "    }"
-        "    var txt = links[i].textContent || '';"
-        "    if (txt.toLowerCase().indexOf('glovo') !== -1) {"
-        "      found = href || links[i].textContent.trim(); break;"
-        "    }"
+        "    if (href.indexOf('glovo') !== -1) return href;"
+        "    if ((links[i].textContent||'').toLowerCase().indexOf('glovo') !== -1 && href) return href;"
         "  }"
-        "  if (!found) {"
-        "    var all = document.querySelectorAll('[data-value], [href], button, span, div');"
-        "    for (var j = 0; j < all.length; j++) {"
-        "      var dv = all[j].getAttribute('data-value') || '';"
-        "      if (dv.indexOf('glovo') !== -1) { found = dv; break; }"
-        "    }"
-        "  }"
-        "  return found;"
+        "  return null;"
         "}"
     )
+    if url:
+        return url
+
+    # 2. Search ALL element attributes for glovo
+    url = page.evaluate(
+        "() => {"
+        "  var all = document.querySelectorAll('*');"
+        "  for (var i = 0; i < all.length; i++) {"
+        "    var attrs = all[i].attributes;"
+        "    for (var j = 0; j < attrs.length; j++) {"
+        "      var v = attrs[j].value || '';"
+        "      if (v.indexOf('glovo') !== -1) return v;"
+        "    }"
+        "  }"
+        "  return null;"
+        "}"
+    )
+    if url:
+        return url
+
+    # 3. Extract glovo URL from raw page HTML using regex
+    import re
+    try:
+        html = page.content()
+        m = re.search(r'https?://[^"\'<>\s]*glovoapp[^"\'<>\s]*', html)
+        if m:
+            return m.group(0)
+        # Also match generic glovo.com
+        m2 = re.search(r'https?://[^"\'<>\s]*glovo[^"\'<>\s]*', html)
+        if m2:
+            return m2.group(0)
+    except Exception:
+        pass
+
+    return None
 
 
 def find_glovo_url(page, place_url):
@@ -85,13 +108,24 @@ def find_glovo_url(page, place_url):
         except Exception:
             pass
 
-    # Log all <a> hrefs for debugging
+    # Debug: log all external links and search raw HTML for "order"/"delivery" keywords
     try:
         all_hrefs = page.evaluate(
             "() => Array.from(document.querySelectorAll('a[href]'))"
             ".map(a => a.href).filter(h => h.startsWith('http')).slice(0, 30)"
         )
-        print("[Glovo] All external links found: " + str(all_hrefs))
+        print("[Glovo] All external links: " + str(all_hrefs))
+    except Exception:
+        pass
+
+    try:
+        html = page.content()
+        order_keywords = ['glovo', 'wolt', 'bolt food', 'delivery', 'order']
+        for kw in order_keywords:
+            idx = html.lower().find(kw)
+            if idx >= 0:
+                snippet = html[max(0, idx-80):idx+120].replace('\n', ' ')
+                print(f"[Glovo] HTML snippet around '{kw}': ...{snippet}...")
     except Exception:
         pass
 
