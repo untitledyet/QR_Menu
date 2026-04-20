@@ -7,11 +7,11 @@ import requests as _req
 
 logger = logging.getLogger(__name__)
 
-R2_ENDPOINT = os.environ.get('R2_ENDPOINT', '')
-R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID', '')
-R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY', '')
-R2_BUCKET = os.environ.get('R2_BUCKET', '')
-R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', '')
+R2_ENDPOINT = os.environ.get('R2_ENDPOINT', '').strip()
+R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID', '').strip()
+R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY', '').strip()
+R2_BUCKET = os.environ.get('R2_BUCKET', '').strip()
+R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', '').strip()
 
 
 def _get_client():

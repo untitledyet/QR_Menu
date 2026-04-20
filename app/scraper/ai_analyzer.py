@@ -7,7 +7,12 @@ from . import config
 
 def _get_client():
     from openai import OpenAI
-    return OpenAI(api_key=config.OPENAI_API_KEY)
+    import httpx
+    # Pass explicit httpx client to avoid Railway proxy injection issues
+    return OpenAI(
+        api_key=config.OPENAI_API_KEY,
+        http_client=httpx.Client(),
+    )
 
 
 def _parse_json_response(text: str):
