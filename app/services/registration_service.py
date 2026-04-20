@@ -15,12 +15,24 @@ from flask import current_app
 SMS_URL = "http://smsoffice.ge/api/v2/send"
 
 
-def send_sms_code(phone):
+def _sms_text(code, lang='ka', purpose='otp'):
+    """Return professional SMS text in the user's language."""
+    if lang == 'en':
+        if purpose == 'reset':
+            return f"Tably: Your password reset code is {code}. Valid for 5 minutes."
+        return f"Tably: Your verification code is {code}. Valid for 2 minutes."
+    # Georgian (default)
+    if purpose == 'reset':
+        return f"Tably: პაროლის აღდგენის კოდი: {code}. მოქმედებს 5 წუთი."
+    return f"Tably: დამადასტურებელი კოდი: {code}. მოქმედებს 2 წუთი."
+
+
+def send_sms_code(phone, lang='ka', purpose='otp'):
     """Generate 6-digit OTP and send via smsoffice.ge.
     Returns (code, error_message). error_message is None on success.
     """
     code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-    message = "Tably: " + code + " - verifikaciis kodi. moqmedebs 2 wuti."
+    message = _sms_text(code, lang=lang, purpose=purpose)
 
     api_key = os.environ.get('SMS_API_KEY', '')
     sender = os.environ.get('SMS_SENDER', 'Tably')
@@ -53,17 +65,46 @@ def generate_email_token():
     return secrets.token_urlsafe(32)
 
 
-def _build_email_html(title, body, btn_text, btn_url, footer):
+def _build_email_html(title, body_html, btn_text=None, btn_url=None, footer='', code=None):
+    """Professional Tably email template. Supports link button or OTP code display."""
+    btn_block = ''
+    if btn_url and btn_text:
+        btn_block = (
+            '<a href="' + btn_url + '" style="display:inline-block;margin:24px 0 8px;'
+            'padding:14px 32px;background:#FF6B35;color:#ffffff;border-radius:8px;'
+            'text-decoration:none;font-weight:600;font-size:15px;letter-spacing:.01em;">'
+            + btn_text + '</a>'
+        )
+    if code:
+        btn_block = (
+            '<div style="margin:28px 0 8px;text-align:center;">'
+            '<span style="display:inline-block;padding:16px 40px;background:#f5f5f5;'
+            'border-radius:10px;font-size:32px;font-weight:700;letter-spacing:.25em;'
+            'color:#111827;font-family:monospace;">' + code + '</span></div>'
+        )
     return (
-        '<div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;">'
-        '<h2 style="color:#FF6B35;">Tably</h2>'
-        '<h3>' + title + '</h3>'
-        '<p>' + body + '</p>'
-        '<a href="' + btn_url + '" style="display:inline-block;padding:12px 24px;'
-        'background:#FF6B35;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">'
-        + btn_text + '</a>'
-        '<p style="color:#888;font-size:12px;margin-top:24px;">' + footer + '</p>'
-        '</div>'
+        '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+        '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600&'
+        'family=Inter:wght@400;600&display=swap" rel="stylesheet"></head>'
+        '<body style="margin:0;padding:0;background:#f9f9f9;">'
+        '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9f9f9;padding:40px 16px;">'
+        '<tr><td align="center">'
+        '<table width="100%" style="max-width:500px;background:#ffffff;border-radius:12px;'
+        'box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;" cellpadding="0" cellspacing="0">'
+        '<tr><td style="background:#FF6B35;padding:20px 32px;">'
+        '<span style="font-family:Inter,sans-serif;font-size:22px;font-weight:700;color:#fff;'
+        'letter-spacing:-.02em;">tab<span style="opacity:.75;">ly</span></span></td></tr>'
+        '<tr><td style="padding:32px 32px 28px;font-family:\'Noto Sans Georgian\',Inter,Arial,sans-serif;'
+        'color:#111827;font-size:15px;line-height:1.6;">'
+        '<h2 style="margin:0 0 16px;font-size:20px;font-weight:600;color:#111827;">' + title + '</h2>'
+        '<div style="color:#374151;">' + body_html + '</div>'
+        + btn_block +
+        '</td></tr>'
+        '<tr><td style="padding:16px 32px 24px;border-top:1px solid #f0f0f0;'
+        'font-family:\'Noto Sans Georgian\',Inter,Arial,sans-serif;font-size:12px;color:#9ca3af;">'
+        + footer + '</td></tr>'
+        '</table></td></tr></table>'
+        '</body></html>'
     )
 
 
@@ -159,7 +200,7 @@ def _do_send_smtp(to, subject, html, fallback_label, fallback_url, app):
         app.logger.info("[EMAIL FALLBACK] " + fallback_label + ": " + fallback_url)
 
 
-def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
+def _send_email_smtp(to, subject, html, fallback_label='', fallback_url=None):
     """Fire-and-forget email send in a background thread. Returns True immediately.
     Uses Resend API if RESEND_API_KEY is set, otherwise falls back to SMTP."""
     import threading
@@ -182,43 +223,72 @@ def _send_email_smtp(to, subject, html, fallback_label, fallback_url):
     return True
 
 
-def send_verification_email(email, token, venue_name, base_url=None):
+def send_verification_email(email, token, venue_name, base_url=None, lang='ka'):
     """Send email verification link. Returns True on success."""
     if not base_url:
         base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
     url = base_url + "/verify-email/" + token
+    if lang == 'en':
+        subject = "Tably — Verify your email"
+        title = "Email Verification"
+        body = (f"Hello! Registration for <strong>{venue_name}</strong> is almost complete.<br>"
+                "Please verify your email address to activate your account.")
+        btn_text = "Verify Email"
+        footer = "This link expires in 24 hours. If you didn't register, please ignore this email."
+    else:
+        subject = "Tably — ელ. ფოსტის დადასტურება"
+        title = "ელ. ფოსტის დადასტურება"
+        body = (f"გამარჯობა! <strong>{venue_name}</strong>-ის რეგისტრაცია თითქმის დასრულდა.<br>"
+                "გთხოვთ, დაადასტუროთ ელ. ფოსტა ანგარიშის გასააქტიურებლად.")
+        btn_text = "ელ. ფოსტის დადასტურება"
+        footer = "ბმული მოქმედებს 24 საათი. თუ ეს მოთხოვნა არ გაგიგზავნიათ, უგულებელყავით."
     return _send_email_smtp(
-        to=email,
-        subject="Tably - el. fostis dadastureba",
-        html=_build_email_html(
-            title="el. fostis dadastureba",
-            body="gamarjoba! <strong>" + venue_name + "</strong>-is registracia titqmis dasrulda.<br>daadastureT el. fosta:",
-            btn_text="el. fostis dadastureba",
-            btn_url=url,
-            footer="linki moqmedebs 24 saaTi.",
-        ),
-        fallback_label="Verification link",
-        fallback_url=url,
+        to=email, subject=subject,
+        html=_build_email_html(title=title, body_html=body, btn_text=btn_text, btn_url=url, footer=footer),
+        fallback_label="Verification link", fallback_url=url,
     )
 
 
-def send_password_reset_email(email, token, base_url=None):
+def send_password_reset_email(email, token, base_url=None, lang='ka'):
     """Send password reset link. Returns True on success."""
     if not base_url:
         base_url = os.environ.get('BASE_URL', 'http://localhost:5001')
     url = base_url + "/reset-password/" + token
+    if lang == 'en':
+        subject = "Tably — Password Reset"
+        title = "Password Reset"
+        body = "A password reset was requested for your Tably account. Click the button below to set a new password."
+        btn_text = "Reset Password"
+        footer = "This link expires in 1 hour. If you did not request a reset, please ignore this email."
+    else:
+        subject = "Tably — პაროლის აღდგენა"
+        title = "პაროლის აღდგენა"
+        body = "მოთხოვნილია პაროლის აღდგენა თქვენი Tably ანგარიშისთვის. დააჭირეთ ღილაკს ახალი პაროლის დასაყენებლად."
+        btn_text = "პაროლის შეცვლა"
+        footer = "ბმული მოქმედებს 1 საათი. თუ ეს მოთხოვნა არ გაგიგზავნიათ, უგულებელყავით."
     return _send_email_smtp(
-        to=email,
-        subject="Tably - parolis agdgena",
-        html=_build_email_html(
-            title="parolis agdgena",
-            body="moTxovnilia parolis agdgena Tqveni Tably angarishisTvis.",
-            btn_text="parolis Secvla",
-            btn_url=url,
-            footer="linki moqmedebs 1 saaTi. Tu es moTxovna ar gagigzavniaT, ugulebelyaviT.",
-        ),
-        fallback_label="Password reset link",
-        fallback_url=url,
+        to=email, subject=subject,
+        html=_build_email_html(title=title, body_html=body, btn_text=btn_text, btn_url=url, footer=footer),
+        fallback_label="Password reset link", fallback_url=url,
+    )
+
+
+def send_2fa_email(email, code, lang='ka'):
+    """Send 2FA OTP code to email. Returns True on success."""
+    if lang == 'en':
+        subject = "Tably — Login Verification Code"
+        title = "Login Verification"
+        body = "Use the code below to complete your sign-in. It expires in 2 minutes."
+        footer = "If you did not attempt to sign in, please secure your account immediately."
+    else:
+        subject = "Tably — შესვლის დამადასტურებელი კოდი"
+        title = "შესვლის დადასტურება"
+        body = "გამოიყენეთ ქვემოთ მოცემული კოდი შესვლის დასასრულებლად. მოქმედებს 2 წუთი."
+        footer = "თუ შესვლა არ გაქვთ სცადებული, დაუყოვნებლივ უზრუნველყავით ანგარიშის დაცვა."
+    return _send_email_smtp(
+        to=email, subject=subject,
+        html=_build_email_html(title=title, body_html=body, code=code, footer=footer),
+        fallback_label="2FA code", fallback_url=None,
     )
 
 

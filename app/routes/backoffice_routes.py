@@ -8,7 +8,7 @@ from app import db
 from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcategory,
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
                          MAX_ITEMS_PER_VENUE)
-from app.services.registration_service import validate_password, send_sms_code
+from app.services.registration_service import validate_password, send_sms_code, send_2fa_email
 from app.services.translation_service import (
     translate_item_async, translate_category_async, needs_translation
 )
@@ -135,30 +135,42 @@ def login():
             return jsonify(error='angarishi ar aris gaaqtiurebuli'), 403
 
         admin.reset_failed_logins()
+        lang = getattr(admin, 'lang', 'ka') or 'ka'
 
-        # 4. SMS 2FA if phone configured and 2FA enabled
-        if admin.phone and admin.two_fa_enabled:
-            code, sms_error = send_sms_code(admin.phone)
+        # 4. 2FA by method
+        if admin.two_fa_method == 'sms' and admin.phone:
+            code, sms_error = send_sms_code(admin.phone, lang=lang)
             if sms_error:
                 current_app.logger.error(
                     'Backoffice 2FA SMS failed for admin id=' + str(admin.id) + ': ' + str(sms_error)
                 )
                 db.session.commit()
                 return jsonify(error='SMS gagzavna ver moxerxda. scadeT mogvianebiT'), 503
-
             admin.set_sms_code(code)
             admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
             db.session.commit()
-
             session['bo_pending_admin_id'] = admin.id
             phone_display = '*' * (len(admin.phone) - 4) + admin.phone[-4:]
             return jsonify(success=True, step='sms_2fa',
                            message='SMS kodi gaigzavna ' + phone_display + '-ze')
 
-        # No phone configured (initial super admin setup) — log warning and allow
-        current_app.logger.warning(
-            'Admin id=' + str(admin.id) + ' logged in without 2FA — no phone set'
-        )
+        if admin.two_fa_method == 'email' and admin.email:
+            import random as _rnd
+            code = ''.join([str(_rnd.randint(0, 9)) for _ in range(6)])
+            admin.set_sms_code(code)
+            admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
+            db.session.commit()
+            session['bo_pending_admin_id'] = admin.id
+            try:
+                send_2fa_email(admin.email, code, lang=lang)
+            except Exception as e:
+                current_app.logger.error('2FA email failed: ' + str(e))
+                return jsonify(error='Email gagzavna ver moxerxda. scadeT mogvianebiT'), 503
+            email_display = admin.email[:3] + '***@' + admin.email.split('@')[-1]
+            return jsonify(success=True, step='sms_2fa',
+                           message='kodi gaigzavna ' + email_display + '-ze')
+
+        # No 2FA configured
         db.session.commit()
         session['admin_id'] = admin.id
         return jsonify(success=True, redirect='/backoffice')
@@ -240,8 +252,13 @@ def logout():
 def profile():
     admin = get_current_admin()
     if request.method == 'POST':
-        two_fa = request.form.get('two_fa_enabled') == '1'
-        admin.two_fa_enabled = two_fa
+        method = request.form.get('two_fa_method')
+        if method in ('sms', 'email'):
+            admin.two_fa_method = method
+            admin.two_fa_enabled = True
+        else:
+            admin.two_fa_method = None
+            admin.two_fa_enabled = False
         db.session.commit()
         flash('პარამეტრები შენახულია')
         return redirect(url_for('bo_bp.profile'))

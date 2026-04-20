@@ -92,9 +92,23 @@ def run_migrations():
 
         if 'two_fa_enabled' not in admin_cols:
             with db.engine.connect() as conn:
-                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN two_fa_enabled BOOLEAN NOT NULL DEFAULT TRUE'))
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN two_fa_enabled BOOLEAN NOT NULL DEFAULT FALSE'))
                 conn.commit()
             print('Migration: added two_fa_enabled to AdminUsers')
+
+        if 'two_fa_method' not in admin_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "AdminUsers" ADD COLUMN two_fa_method VARCHAR(10)'))
+                # Migrate existing enabled users to 'sms'
+                conn.execute(text("UPDATE \"AdminUsers\" SET two_fa_method = 'sms' WHERE two_fa_enabled = TRUE"))
+                conn.commit()
+            print('Migration: added two_fa_method to AdminUsers')
+
+        if 'lang' not in admin_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE \"AdminUsers\" ADD COLUMN lang VARCHAR(5) NOT NULL DEFAULT 'ka'"))
+                conn.commit()
+            print('Migration: added lang to AdminUsers')
 
         # --- PhoneOtps table migrations ---
         if 'PhoneOtps' in table_names:

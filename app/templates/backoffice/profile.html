@@ -72,22 +72,34 @@
     <div class="bo-info-panel">
         <h3><i class="fas fa-shield-alt" style="color:var(--bo-primary);"></i>&nbsp; უსაფრთხოება</h3>
         <form method="POST">
-            <div class="bo-setting-card" style="margin-bottom:0;">
-                <div class="bo-setting-card__icon"><i class="fas fa-mobile-alt"></i></div>
-                <div class="bo-setting-card__body">
-                    <h3>SMS 2FA</h3>
-                    <p>ყოველ შესვლაზე 6-ნიშნა კოდი გაიგზავნება თქვენს ნომერზე</p>
-                </div>
-                <label class="bo-switch">
-                    <input type="checkbox" id="two-fa-toggle" name="two_fa_enabled" value="1"
-                           {% if admin.two_fa_enabled %}checked{% endif %}
-                           onchange="this.form.submit()">
-                    <span class="bo-switch__slider"></span>
+            <p style="font-size:.82rem;color:var(--bo-text-2);margin-bottom:12px;">
+                ორ-ფაქტორიანი ავთენტიფიკაცია (2FA) — ყოველ შესვლაზე ერთჯერადი კოდი გამოიგზავნება
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                {% for val, icon, label, sub in [
+                    ('off', 'fa-ban', 'გამორთული', '2FA გათიშულია'),
+                    ('sms', 'fa-mobile-alt', 'SMS კოდი', 'კოდი მოდის ტელეფონზე'),
+                    ('email', 'fa-envelope', 'ელ. ფოსტა', 'კოდი მოდის მეილზე')
+                ] %}
+                {% set is_checked = (val == 'off' and not admin.two_fa_method) or (admin.two_fa_method == val) %}
+                <label style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                    border-radius:8px;border:1.5px solid {{ 'var(--bo-primary)' if is_checked else 'var(--bo-border)' }};
+                    background:{{ 'rgba(var(--bo-primary-rgb),.06)' if is_checked else 'var(--bo-surface-2)' }};
+                    cursor:pointer;transition:border-color .15s;">
+                    <input type="radio" name="two_fa_method" value="{{ val }}"
+                           {% if is_checked %}checked{% endif %} onchange="this.form.submit()"
+                           style="accent-color:var(--bo-primary);">
+                    <i class="fas {{ icon }}" style="width:16px;color:var(--bo-primary);"></i>
+                    <div>
+                        <div style="font-size:.85rem;font-weight:600;">{{ label }}</div>
+                        <div style="font-size:.73rem;color:var(--bo-text-2);">{{ sub }}</div>
+                    </div>
                 </label>
+                {% endfor %}
             </div>
-            {% if not admin.two_fa_enabled %}
-            <p style="margin:10px 0 0;font-size:.78rem;color:#F59E0B;">
-                <i class="fas fa-exclamation-triangle"></i> 2FA გამორთულია — ანგარიში ნაკლებად დაცულია
+            {% if not admin.two_fa_method %}
+            <p style="font-size:.75rem;color:#F59E0B;">
+                <i class="fas fa-exclamation-triangle"></i> 2FA გამორთულია — ანგარიშის დაცვა გაძლიერეთ
             </p>
             {% endif %}
         </form>

@@ -271,6 +271,9 @@ document.addEventListener('click', function(e) {
 
 function openModal(tab) {
     document.getElementById('auth-modal').classList.add('active');
+    // Clear login fields to prevent browser autofill bleed-through
+    document.getElementById('login-identifier').value = '';
+    document.getElementById('login-password').value = '';
     switchTab(tab || 'login');
 }
 function closeModal() {
@@ -607,7 +610,7 @@ function doRegister() {
 
     fetch('/register', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({venue_name: name, address: addr, place_id: placeId, email: email, phone: phone, password: password})
+        body: JSON.stringify({venue_name: name, address: addr, place_id: placeId, email: email, phone: phone, password: password, lang: currentLang})
     }).then(function(r){return r.json();}).then(function(d){
         if (d.success && d.redirect) {
             btn.innerHTML = '<i class="fas fa-check" style="margin-right:6px;"></i>წარმატებით!';

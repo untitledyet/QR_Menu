@@ -121,8 +121,12 @@ class AdminUser(db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
 
-    # 2FA preference
-    two_fa_enabled = db.Column(db.Boolean, default=True, nullable=False)
+    # 2FA preference — method: None=disabled, 'sms', 'email'
+    two_fa_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    two_fa_method = db.Column(db.String(10), nullable=True)  # 'sms' | 'email' | None
+
+    # Language preference (used for notifications)
+    lang = db.Column(db.String(5), default='ka', nullable=False)
 
     venue = db.relationship('Venue', backref=db.backref('admins', lazy=True))
 

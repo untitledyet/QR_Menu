@@ -19,8 +19,8 @@ from app import db
 from app.models import AdminUser, Venue, _generate_venue_code, PhoneOtp, _hash_token
 from app.services.registration_service import (
     send_sms_code, generate_email_token, send_verification_email,
-    send_password_reset_email, search_google_place, generate_strong_password,
-    validate_password,
+    send_password_reset_email, send_2fa_email, search_google_place,
+    generate_strong_password, validate_password,
 )
 
 landing_bp = Blueprint('landing_bp', __name__)
@@ -253,6 +253,7 @@ def register_venue():
     email = data.get('email', '').strip().lower()
     raw_phone = data.get('phone', '').strip()
     password = data.get('password', '')
+    lang = data.get('lang', 'ka') if data.get('lang') in ('ka', 'en') else 'ka'
 
     if not venue_name or not address or not email or not raw_phone or not password:
         return jsonify(error='yvela veli savaldebuloa'), 400
@@ -325,6 +326,8 @@ def register_venue():
         email_verified=False,
         phone_verified=True,
         is_active=True,
+        two_fa_method=None,  # 2FA disabled by default
+        lang=lang,
         email_token=_hash_token(raw_email_token),
         email_token_expires=datetime.utcnow() + timedelta(hours=EMAIL_TOKEN_EXPIRY_HOURS),
     )
@@ -334,7 +337,8 @@ def register_venue():
 
     # Send verification email (non-critical)
     try:
-        send_verification_email(email, raw_email_token, venue_name, base_url=_request_base_url())
+        send_verification_email(email, raw_email_token, venue_name,
+                                base_url=_request_base_url(), lang=lang)
     except Exception as e:
         current_app.logger.warning('Email send failed (non-critical): ' + str(e))
 
@@ -465,29 +469,44 @@ def login_venue():
 
         # 4. Successful credentials — reset brute-force counter
         admin.reset_failed_logins()
+        lang = getattr(admin, 'lang', 'ka') or 'ka'
 
-        # 5. Skip 2FA if disabled by user
-        if not admin.two_fa_enabled:
+        # 5. Skip 2FA if disabled
+        if not admin.two_fa_method:
             db.session.commit()
             session['admin_id'] = admin.id
             return jsonify(success=True, redirect='/backoffice')
 
-        # 6. SMS 2FA — hard fail if SMS is down (no bypass)
-        code, sms_error = send_sms_code(admin.phone)
-        if sms_error:
-            current_app.logger.error('2FA SMS failed for id=' + str(admin.id) +
-                                     ' phone=' + str(admin.phone) + ': ' + str(sms_error))
+        # 6. 2FA — SMS or Email
+        code, sms_error = send_sms_code(admin.phone, lang=lang) if admin.two_fa_method == 'sms' else (None, None)
+
+        if admin.two_fa_method == 'sms':
+            if sms_error:
+                current_app.logger.error('2FA SMS failed for id=' + str(admin.id) +
+                                         ' phone=' + str(admin.phone) + ': ' + str(sms_error))
+                db.session.commit()
+                return jsonify(error='SMS gagzavna ver moxerxda. scadeT mogvianebiT'), 503
+            admin.set_sms_code(code)
+            admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
             db.session.commit()
-            return jsonify(error='SMS gagzavna ver moxerxda. scadeT mogvianebiT'), 503
-
-        admin.set_sms_code(code)
-        admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
-        db.session.commit()
-
-        session['login_admin_id'] = admin.id
-        phone_display = '*' * (len(admin.phone) - 4) + admin.phone[-4:]
-        return jsonify(success=True, step='sms_2fa',
-                       message='SMS kodi gaigzavna ' + phone_display + '-ze')
+            session['login_admin_id'] = admin.id
+            phone_display = '*' * (len(admin.phone) - 4) + admin.phone[-4:]
+            return jsonify(success=True, step='sms_2fa',
+                           message='SMS kodi gaigzavna ' + phone_display + '-ze')
+        else:  # email 2FA
+            code = ''.join([str(__import__('random').randint(0, 9)) for _ in range(6)])
+            admin.set_sms_code(code)  # reuse sms_code_hash for storage
+            admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
+            db.session.commit()
+            session['login_admin_id'] = admin.id
+            try:
+                send_2fa_email(admin.email, code, lang=lang)
+            except Exception as e:
+                current_app.logger.error('2FA email failed: ' + str(e))
+                return jsonify(error='Email gagzavna ver moxerxda. scadeT mogvianebiT'), 503
+            email_display = admin.email[:3] + '***@' + admin.email.split('@')[-1]
+            return jsonify(success=True, step='sms_2fa',
+                           message='kodi gaigzavna ' + email_display + '-ze')
 
     elif step == 'sms_2fa':
         code = data.get('code', '').strip()
@@ -551,6 +570,7 @@ def forgot_password():
     admin = _find_admin_by_identifier(identifier)
 
     if admin and admin.is_active:
+        lang = getattr(admin, 'lang', 'ka') or 'ka'
         if is_email_input:
             # Email-based reset: send link to email, verify email ownership
             try:
@@ -560,13 +580,14 @@ def forgot_password():
                 if not admin.email_verified:
                     admin.email_verified = True
                 db.session.commit()
-                send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                send_password_reset_email(admin.email, raw_token,
+                                          base_url=_request_base_url(), lang=lang)
             except Exception as e:
                 current_app.logger.error('Email reset failed: ' + str(e))
         else:
             # Phone-based reset: SMS OTP
             if admin.phone:
-                code, sms_error = send_sms_code(admin.phone)
+                code, sms_error = send_sms_code(admin.phone, lang=lang, purpose='reset')
                 if not sms_error:
                     admin.set_sms_code(code)
                     admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=5)
@@ -579,7 +600,8 @@ def forgot_password():
                         admin.reset_token = _hash_token(raw_token)
                         admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
                         db.session.commit()
-                        send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                        send_password_reset_email(admin.email, raw_token,
+                                                  base_url=_request_base_url(), lang=lang)
                     except Exception as e:
                         current_app.logger.error('Email reset fallback failed: ' + str(e))
 
