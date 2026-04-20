@@ -120,7 +120,7 @@
             <div id="login-step-1">
                 <div class="t-form-group">
                     <label data-i18n="loginIdLabel">ტელეფონი ან ელ. ფოსტა</label>
-                    <input type="text" class="t-input" id="login-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
+                    <input type="text" class="t-input" id="login-identifier" autocomplete="off">
                 </div>
                 <div class="t-form-group">
                     <label style="display:flex;justify-content:space-between;align-items:center;">
@@ -128,7 +128,7 @@
                         <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--t-primary);font-size:.75rem;cursor:pointer;font-family:inherit;" data-i18n="loginForgotLink">პაროლი დამავიწყდა</button>
                     </label>
                     <div style="position:relative;">
-                        <input type="password" class="t-input" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password" style="padding-right:44px;">
+                        <input type="password" class="t-input" id="login-password" autocomplete="off" style="padding-right:44px;">
                         <button type="button" onclick="togglePwd('login-password',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-text-3);cursor:pointer;">&#x1F441;</button>
                     </div>
                 </div>
@@ -140,7 +140,7 @@
                 <p style="color:var(--t-text-2);font-size:.88rem;margin-bottom:16px;" data-i18n="forgotHint">შეიყვანეთ ტელეფონი ან ელ. ფოსტა პაროლის აღდგენისთვის.</p>
                 <div class="t-form-group">
                     <label data-i18n="loginIdLabel">ტელეფონი ან ელ. ფოსტა</label>
-                    <input type="text" class="t-input" id="forgot-identifier" placeholder="555123456 ან your@email.com" autocomplete="username">
+                    <input type="text" class="t-input" id="forgot-identifier" autocomplete="off">
                 </div>
                 <button class="t-btn t-btn--primary" style="width:100%;margin-top:8px;" onclick="doForgotPassword()" data-i18n="forgotBtn">აღდგენა</button>
                 <button type="button" onclick="closeForgotPassword()" style="width:100%;margin-top:8px;background:none;border:none;color:var(--t-text-3);font-size:.85rem;cursor:pointer;font-family:inherit;" data-i18n="backBtn">&larr; უკან</button>

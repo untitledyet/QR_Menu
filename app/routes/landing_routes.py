@@ -546,46 +546,50 @@ def forgot_password():
     if not identifier:
         return jsonify(error='telefoni an el. fosta savaldebuloa'), 400
 
-    # Determine identifier type to give appropriate UX hint WITHOUT revealing account existence
-    is_phone_input = bool(_normalize_phone(identifier))
+    is_email_input = '@' in identifier
 
     admin = _find_admin_by_identifier(identifier)
 
     if admin and admin.is_active:
-        if admin.phone:
-            code, sms_error = send_sms_code(admin.phone)
-            if not sms_error:
-                admin.set_sms_code(code)
-                admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=5)
-                db.session.commit()
-                session['reset_admin_id'] = admin.id
-            elif admin.email:
-                # SMS failed — silent email fallback
-                try:
-                    raw_token = secrets.token_urlsafe(32)
-                    admin.reset_token = _hash_token(raw_token)
-                    admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
-                    db.session.commit()
-                    send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
-                except Exception as e:
-                    current_app.logger.error('Email reset fallback failed: ' + str(e))
-        elif admin.email:
+        if is_email_input:
+            # Email-based reset: send link to email, verify email ownership
             try:
                 raw_token = secrets.token_urlsafe(32)
                 admin.reset_token = _hash_token(raw_token)
                 admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+                if not admin.email_verified:
+                    admin.email_verified = True
                 db.session.commit()
                 send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
             except Exception as e:
                 current_app.logger.error('Email reset failed: ' + str(e))
+        else:
+            # Phone-based reset: SMS OTP
+            if admin.phone:
+                code, sms_error = send_sms_code(admin.phone)
+                if not sms_error:
+                    admin.set_sms_code(code)
+                    admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=5)
+                    db.session.commit()
+                    session['reset_admin_id'] = admin.id
+                elif admin.email:
+                    # SMS failed — silent email fallback
+                    try:
+                        raw_token = secrets.token_urlsafe(32)
+                        admin.reset_token = _hash_token(raw_token)
+                        admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+                        db.session.commit()
+                        send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                    except Exception as e:
+                        current_app.logger.error('Email reset fallback failed: ' + str(e))
 
-    # Always return same structure — no account existence reveal
-    if is_phone_input:
-        msg = 'Tu es nomeri registrirebulia, SMS kodi gaigzavna'
+    # Always same structure — no account existence reveal
+    if is_email_input:
+        return jsonify(success=True, method='email',
+                       message='Tu es el. fosta registrirebulia, agdgenis linki gaigzavna')
     else:
-        msg = 'Tu es el. fosta registrirebulia, agdgenis linki gaigzavna'
-
-    return jsonify(success=True, message=msg)
+        return jsonify(success=True, method='sms',
+                       message='Tu es nomeri registrirebulia, SMS kodi gaigzavna')
 
 
 @landing_bp.route('/verify-reset-sms', methods=['POST'])
@@ -689,6 +693,7 @@ def reset_password_submit(token):
     admin.set_password(password)
     admin.reset_token = None
     admin.reset_token_expires = None
+    admin.email_verified = True  # clicking the link proves email ownership
     admin.reset_failed_logins()
     db.session.commit()
 
