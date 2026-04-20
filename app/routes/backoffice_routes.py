@@ -319,184 +319,100 @@ def dashboard():
             stats['promotions'] = Promotion.query.filter_by(venue_id=venue.id).count()
             if features.get('reservations'):
                 stats['bookings'] = Booking.query.filter_by(venue_id=venue.id).count()
-        scraper_job = ScraperJob.query.filter_by(venue_id=venue.id).first() if venue else None
         return render_template('backoffice/dashboard.html', admin=admin, venue=venue,
-                               features=features, stats=stats, feature_list=FEATURE_LIST,
-                               scraper_job=scraper_job)
+                               features=features, stats=stats, feature_list=FEATURE_LIST)
 
 
 # ============================================================
-# Scraper
+# Super Admin — Scraper test panel
 # ============================================================
 
-@bo_bp.route('/scraper/status')
+@bo_bp.route('/super/scraper-test')
 @login_required
-def scraper_status():
+@super_required
+def super_scraper_panel():
     admin = get_current_admin()
-    if not admin.venue:
-        return jsonify(status='none')
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
-    if not job:
-        return jsonify(status='none')
-    resp = {'status': job.status}
-    if job.status == 'done' and job.result_json:
-        resp['stats'] = job.result_json.get('_stats', {})
-        resp['sources'] = job.sources_found or {}
-    return jsonify(resp)
+    venues = Venue.query.order_by(Venue.name).all()
+    venue_id = request.args.get('venue_id', type=int)
+    place_id_param = request.args.get('place_id', '')
+    selected_venue = Venue.query.get(venue_id) if venue_id else None
+    job = ScraperJob.query.filter_by(venue_id=selected_venue.id).first() if selected_venue else None
+    return render_template('backoffice/super_scraper.html', admin=admin,
+                           venues=venues, selected_venue=selected_venue,
+                           place_id_param=place_id_param, job=job)
 
 
-@bo_bp.route('/scraper/preview')
+@bo_bp.route('/super/scraper-test/trigger', methods=['POST'])
 @login_required
-def scraper_preview():
-    admin = get_current_admin()
-    if not admin.venue:
-        return redirect(url_for('bo_bp.dashboard'))
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
-    if not job or job.status != 'done' or not job.result_json:
-        return redirect(url_for('bo_bp.dashboard'))
-    categories = job.result_json.get('categories', {})
-    stats = job.result_json.get('_stats', {})
-    sources = job.sources_found or {}
-    return render_template('backoffice/scraper_preview.html',
-                           admin=admin, venue=admin.venue,
-                           categories=categories, stats=stats, sources=sources)
-
-
-@bo_bp.route('/scraper/import', methods=['POST'])
-@login_required
-def scraper_import():
-    admin = get_current_admin()
-    if not admin.venue:
-        return jsonify(error='no venue'), 400
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
-    if not job or job.status not in ('done',):
-        return jsonify(error='job not ready'), 400
-
+@super_required
+def super_scraper_trigger():
     data = request.get_json() or {}
-    categories_data = data.get('categories', {})
-    venue_id = admin.venue.id
-
-    imported_cats = 0
-    imported_items = 0
-
-    for cat_name, items in categories_data.items():
-        cat_name = (cat_name or '').strip()
-        if not cat_name or not items:
-            continue
-        cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
-        if not cat:
-            cat = Category(CategoryName=cat_name, venue_id=venue_id)
-            db.session.add(cat)
-            db.session.flush()
-            imported_cats += 1
-
-        for item_data in items:
-            if item_data.get('excluded'):
-                continue
-            name = (item_data.get('name') or '').strip()
-            if not name:
-                continue
-            if FoodItem.query.filter_by(CategoryID=cat.CategoryID, FoodName=name).first():
-                continue
-
-            try:
-                price = float(item_data.get('price') or 0)
-            except (ValueError, TypeError):
-                price = 0.0
-
-            photo_choice = item_data.get('photo_choice', 'scraped')
-            if photo_choice == 'library' and item_data.get('library_photo'):
-                image = item_data['library_photo']
-            else:
-                image = item_data.get('image') or ''
-
-            food = FoodItem(
-                FoodName=name,
-                Description=(item_data.get('description') or '').strip(),
-                Ingredients=(item_data.get('ingredients') or '').strip(),
-                Price=price,
-                ImageFilename=image or None,
-                CategoryID=cat.CategoryID,
-            )
-            db.session.add(food)
-            imported_items += 1
-
-    job.status = 'dismissed'
-    db.session.commit()
-    return jsonify(success=True, imported_items=imported_items, imported_categories=imported_cats)
-
-
-@bo_bp.route('/scraper/trigger', methods=['POST'])
-@login_required
-def scraper_trigger():
-    admin = get_current_admin()
-    if not admin.venue or not admin.venue.google_place_id:
-        return jsonify(error='place_id არ არის'), 400
+    venue_id = data.get('venue_id')
+    place_id = (data.get('place_id') or '').strip()
+    if not venue_id or not place_id:
+        return jsonify(error='venue_id and place_id required'), 400
+    venue = Venue.query.get_or_404(venue_id)
     try:
-        job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+        job = ScraperJob.query.filter_by(venue_id=venue.id).first()
         if not job:
-            job = ScraperJob(venue_id=admin.venue.id, status='pending')
+            job = ScraperJob(venue_id=venue.id, status='pending')
             db.session.add(job)
         else:
             job.status = 'pending'
             job.result_json = None
             job.error_message = None
+            job.sources_found = None
             job.finished_at = None
         db.session.commit()
         from app.scraper.job_runner import trigger_scraper_job
-        trigger_scraper_job(current_app._get_current_object(),
-                            admin.venue.id, admin.venue.google_place_id, admin.venue.name)
+        trigger_scraper_job(current_app._get_current_object(), venue.id, place_id, venue.name)
         return jsonify(success=True)
     except Exception as e:
         return jsonify(error=str(e)), 500
 
 
-@bo_bp.route('/scraper/dismiss', methods=['POST'])
+@bo_bp.route('/super/scraper-test/reset', methods=['POST'])
 @login_required
-def scraper_dismiss():
-    admin = get_current_admin()
-    if not admin.venue:
-        return jsonify(error='no venue'), 400
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
-    if job:
-        job.status = 'dismissed'
-        db.session.commit()
-    return jsonify(success=True)
-
-
-# ============================================================
-# DEV — Scraper test panel
-# ============================================================
-
-@bo_bp.route('/dev/scraper')
-@login_required
-def dev_scraper_panel():
-    admin = get_current_admin()
-    if not admin.venue:
-        return 'no venue', 400
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
-    return render_template('backoffice/dev_scraper.html', admin=admin, venue=admin.venue, job=job)
-
-
-@bo_bp.route('/dev/scraper/reset', methods=['POST'])
-@login_required
-def dev_scraper_reset():
-    admin = get_current_admin()
-    if not admin.venue:
-        return jsonify(error='no venue'), 400
-    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+@super_required
+def super_scraper_reset():
+    data = request.get_json() or {}
+    venue_id = data.get('venue_id')
+    if not venue_id:
+        return jsonify(error='venue_id required'), 400
+    job = ScraperJob.query.filter_by(venue_id=venue_id).first()
     if job:
         job.status = 'pending'
         job.result_json = None
         job.error_message = None
+        job.sources_found = None
         job.finished_at = None
         db.session.commit()
     return jsonify(success=True)
 
 
-@bo_bp.route('/dev/scraper/test-r2', methods=['POST'])
+@bo_bp.route('/super/scraper-test/status')
 @login_required
-def dev_test_r2():
+@super_required
+def super_scraper_status():
+    venue_id = request.args.get('venue_id', type=int)
+    if not venue_id:
+        return jsonify(status='none')
+    job = ScraperJob.query.filter_by(venue_id=venue_id).first()
+    if not job:
+        return jsonify(status='none')
+    resp = {'status': job.status, 'error': job.error_message}
+    if job.result_json:
+        resp['stats'] = job.result_json.get('_stats', {})
+        resp['sources'] = job.sources_found or {}
+        if job.status == 'done':
+            resp['categories'] = {k: len(v) for k, v in job.result_json.get('categories', {}).items()}
+    return jsonify(resp)
+
+
+@bo_bp.route('/super/scraper-test/test-r2', methods=['POST'])
+@login_required
+@super_required
+def super_test_r2():
     try:
         from app.services.r2_storage import _upload_bytes, R2_ENDPOINT, R2_BUCKET, R2_PUBLIC_URL
         pixel = (
@@ -505,24 +421,23 @@ def dev_test_r2():
             b'\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82'
         )
         url = _upload_bytes(pixel, 'dev/test_pixel.png', 'image/png')
-        return jsonify(
-            success=bool(url), url=url,
-            endpoint=R2_ENDPOINT, bucket=R2_BUCKET, public_url=R2_PUBLIC_URL
-        )
+        return jsonify(success=bool(url), url=url,
+                       endpoint=R2_ENDPOINT, bucket=R2_BUCKET, public_url=R2_PUBLIC_URL)
     except Exception as e:
         return jsonify(success=False, error=str(e))
 
 
-@bo_bp.route('/dev/scraper/test-openai', methods=['POST'])
+@bo_bp.route('/super/scraper-test/test-openai', methods=['POST'])
 @login_required
-def dev_test_openai():
+@super_required
+def super_test_openai():
     try:
         import httpx
         from openai import OpenAI
         from app.scraper import config as sc
         key = sc.OPENAI_API_KEY
         if not key:
-            return jsonify(success=False, error='OPENAI_API_KEY არ არის დაყენებული Railway-ზე')
+            return jsonify(success=False, error='OPENAI_API_KEY not set')
         client = OpenAI(api_key=key, http_client=httpx.Client(timeout=30.0))
         resp = client.chat.completions.create(
             model='gpt-4o-mini',

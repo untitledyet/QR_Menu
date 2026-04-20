@@ -30,41 +30,6 @@
     </p>
 </div>
 
-{# ── Scraper card ── #}
-{% if scraper_job %}
-{% if scraper_job.status == 'running' or scraper_job.status == 'pending' %}
-<div class="bo-scraper-card bo-scraper-card--running" id="scraper-card">
-    <div class="bo-scraper-card__icon"><i class="fas fa-spinner fa-spin"></i></div>
-    <div class="bo-scraper-card__body">
-        <div class="bo-scraper-card__title">მენიუს ძიება მიმდინარეობს...</div>
-        <div class="bo-scraper-card__sub">ვეძებთ {{ venue.name }}-ის მენიუს ღია წყაროებში. ეს შეიძლება რამდენიმე წუთი გაგრძელდეს.</div>
-    </div>
-</div>
-{% elif scraper_job.status == 'done' %}
-<div class="bo-scraper-card bo-scraper-card--done" id="scraper-card">
-    <div class="bo-scraper-card__icon"><i class="fas fa-magic"></i></div>
-    <div class="bo-scraper-card__body">
-        <div class="bo-scraper-card__title">მოვიძიეთ <strong>{{ venue.name }}</strong>-ის მენიუ!</div>
-        {% set st = scraper_job.result_json.get('_stats', {}) if scraper_job.result_json else {} %}
-        <div class="bo-scraper-card__sub">
-            ინტერნეტში ვიპოვეთ <strong>{{ st.get('total_items', 0) }} კერძი</strong>
-            {% if st.get('items_with_price', 0) %} · {{ st.get('items_with_price') }}-ს ფასი აქვს{% endif %}
-            {% if st.get('items_with_photo', 0) %} · {{ st.get('items_with_photo') }}-ს ფოტო აქვს{% endif %}.
-            გსურთ ავტომატურად შეავსოთ მენიუ?
-        </div>
-        <div class="bo-scraper-card__actions">
-            <a href="{{ url_for('bo_bp.scraper_preview') }}" class="bo-btn bo-btn--primary">
-                <i class="fas fa-eye"></i> პრევიუ და იმპორტი
-            </a>
-            <button class="bo-btn bo-btn--ghost" onclick="dismissScraper()">
-                <i class="fas fa-times"></i> გამოტოვება
-            </button>
-        </div>
-    </div>
-</div>
-{% endif %}
-{% endif %}
-
 {# ── Stats ── #}
 <div class="bo-stats">
     <div class="bo-stat-card">
@@ -194,16 +159,6 @@
     {% endfor %}
 </div>
 
-<style>
-.bo-scraper-card{display:flex;gap:16px;align-items:flex-start;background:var(--bo-surface);border:1.5px solid var(--bo-border);border-radius:12px;padding:18px 20px;margin-bottom:20px;}
-.bo-scraper-card--done{border-color:#6c63ff;background:linear-gradient(135deg,#f8f7ff 0%,#fff 100%);}
-.bo-scraper-card--running{border-color:var(--bo-border);}
-.bo-scraper-card__icon{font-size:1.6rem;color:#6c63ff;flex-shrink:0;padding-top:2px;}
-.bo-scraper-card--running .bo-scraper-card__icon{color:var(--bo-text-2);}
-.bo-scraper-card__title{font-weight:600;font-size:.95rem;margin-bottom:4px;}
-.bo-scraper-card__sub{font-size:.83rem;color:var(--bo-text-2);line-height:1.5;}
-.bo-scraper-card__actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
-</style>
 <script>
 function copyLink(btn, text){
     navigator.clipboard.writeText(text).then(() => {
@@ -212,26 +167,5 @@ function copyLink(btn, text){
         setTimeout(() => btn.innerHTML = orig, 1500);
     });
 }
-
-function dismissScraper(){
-    fetch('/backoffice/scraper/dismiss', {method:'POST', headers:{'Content-Type':'application/json'}})
-        .then(() => { document.getElementById('scraper-card').remove(); });
-}
-
-// Poll while running
-{% if scraper_job and scraper_job.status in ('pending', 'running') %}
-(function poll(){
-    setTimeout(function(){
-        fetch('/backoffice/scraper/status')
-            .then(r => r.json())
-            .then(d => {
-                if(d.status === 'done') { location.reload(); }
-                else if(d.status === 'failed') { document.getElementById('scraper-card').remove(); }
-                else { poll(); }
-            })
-            .catch(() => {});
-    }, 10000);
-})();
-{% endif %}
 </script>
 {% endblock %}
