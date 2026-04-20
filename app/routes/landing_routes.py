@@ -342,6 +342,19 @@ def register_venue():
     except Exception as e:
         current_app.logger.warning('Email send failed (non-critical): ' + str(e))
 
+    # Kick off background menu scraper (non-critical, fire-and-forget)
+    if place_id:
+        try:
+            from app.scraper.job_runner import trigger_scraper_job
+            from app.models import ScraperJob
+            job = ScraperJob(venue_id=venue.id, status='pending')
+            db.session.add(job)
+            db.session.commit()
+            trigger_scraper_job(current_app._get_current_object(),
+                                venue.id, place_id, venue_name)
+        except Exception as e:
+            current_app.logger.warning('Scraper job trigger failed: ' + str(e))
+
     # Clear session phone, log in
     session.pop('verified_phone', None)
     session['admin_id'] = admin.id

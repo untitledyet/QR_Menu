@@ -1,0 +1,176 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}მენიუს იმპორტი — {{ venue.name }}{% endblock %}
+{% block content %}
+
+<div class="bo-header">
+    <h1><i class="fas fa-magic" style="color:#6c63ff;margin-right:8px;"></i>მოძიებული მენიუ</h1>
+    <p class="bo-header__sub">
+        {{ venue.name }} ·
+        <strong>{{ stats.get('total_items', 0) }} კერძი</strong>
+        {% if stats.get('items_with_price', 0) %} · {{ stats.get('items_with_price') }}-ს ფასი{% endif %}
+        {% if stats.get('items_with_photo', 0) %} · {{ stats.get('items_with_photo') }}-ს ფოტო{% endif %}
+        &nbsp;
+        {% if sources.get('google_text') %}<span class="bo-badge" style="background:#e8f5e9;color:#2e7d32;">Google Text</span>{% endif %}
+        {% if sources.get('google_photos') %}<span class="bo-badge" style="background:#e3f2fd;color:#1565c0;">Google Photos</span>{% endif %}
+        {% if sources.get('glovo') %}<span class="bo-badge" style="background:#fff3e0;color:#e65100;">Glovo</span>{% endif %}
+    </p>
+</div>
+
+<div class="bo-info-panel" style="margin-bottom:16px;padding:14px 18px;">
+    <i class="fas fa-info-circle" style="color:#6c63ff;"></i>
+    შეგიძლიათ შეცვალოთ ნებისმიერი ველი გამოტანამდე. ფასები მხოლოდ Google-ის წყაროდანაა — არარეალური ფასი შეგიძლიათ გაასუფთავოთ.
+    სადაც ბიბლიოთეკის ფოტო არის ხელმისაწვდომი, შეგიძლიათ ის ამჯობინოთ.
+</div>
+
+<form id="import-form">
+{% for cat_name, items in categories.items() %}
+<div class="bo-card" style="margin-bottom:24px;" data-category="{{ cat_name }}">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <input class="bo-input cat-name-input" value="{{ cat_name }}" style="font-weight:600;font-size:1rem;max-width:260px;" data-orig="{{ cat_name }}">
+        <span style="font-size:.8rem;color:var(--bo-text-2);">{{ items|length }} კერძი</span>
+    </div>
+
+    <div class="scraper-items-grid">
+    {% for item in items %}
+    <div class="scraper-item" data-idx="{{ loop.index0 }}" data-cat="{{ cat_name }}">
+        <div style="display:flex;gap:4px;justify-content:flex-end;margin-bottom:6px;">
+            <label style="font-size:.75rem;color:var(--bo-text-2);display:flex;align-items:center;gap:4px;cursor:pointer;">
+                <input type="checkbox" class="item-exclude" onchange="toggleExclude(this)"> გამოტოვება
+            </label>
+        </div>
+
+        {# Photos #}
+        {% if item.get('image') or item.get('library_photo') %}
+        <div class="scraper-item__photos">
+            {% if item.get('image') %}
+            <label class="scraper-photo-opt {% if not item.get('library_photo') %}scraper-photo-opt--selected{% endif %}">
+                <input type="radio" name="photo_{{ cat_name }}_{{ loop.index0 }}" value="scraped" {% if not item.get('library_photo') %}checked{% endif %} onchange="setPhotoChoice(this,'scraped')">
+                <img src="{{ item.image }}" alt="scraped" onerror="this.parentElement.style.display='none'">
+                <span>ინტერნეტი</span>
+            </label>
+            {% endif %}
+            {% if item.get('library_photo') %}
+            <label class="scraper-photo-opt scraper-photo-opt--selected">
+                <input type="radio" name="photo_{{ cat_name }}_{{ loop.index0 }}" value="library" checked onchange="setPhotoChoice(this,'library')">
+                <img src="{{ url_for('static', filename='uploads/' + item.library_photo) }}" alt="library">
+                <span><i class="fas fa-star" style="color:#f59e0b;"></i> ბიბლიოთეკა</span>
+            </label>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="scraper-item__fields">
+            <div class="bo-form-group" style="margin-bottom:8px;">
+                <label class="bo-label">სახელი</label>
+                <input class="bo-input item-name" value="{{ item.get('name','') }}">
+            </div>
+            <div class="bo-form-group" style="margin-bottom:8px;">
+                <label class="bo-label">აღწერა</label>
+                <textarea class="bo-input item-desc" rows="2" style="resize:vertical;">{{ item.get('description','') }}</textarea>
+            </div>
+            <div class="bo-form-group" style="margin-bottom:8px;">
+                <label class="bo-label">ინგრედიენტები</label>
+                <input class="bo-input item-ing" value="{{ item.get('ingredients','') }}">
+            </div>
+            <div class="bo-form-group" style="margin-bottom:0;">
+                <label class="bo-label">ფასი (₾) <small style="color:var(--bo-text-2);">— თუ ცნობილია</small></label>
+                <input class="bo-input item-price" value="{{ item.get('price','') }}" placeholder="0.00" style="max-width:120px;">
+            </div>
+        </div>
+
+        {# Hidden data attributes for JS collection #}
+        <input type="hidden" class="item-library-photo" value="{{ item.get('library_photo','') }}">
+        <input type="hidden" class="item-scraped-image" value="{{ item.get('image','') }}">
+        <input type="hidden" class="item-photo-choice" value="{{ 'library' if item.get('library_photo') else 'scraped' }}">
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<div style="display:flex;gap:12px;margin-top:8px;padding-bottom:32px;">
+    <button type="button" class="bo-btn bo-btn--primary" onclick="doImport()" id="import-btn" style="font-size:1rem;padding:12px 28px;">
+        <i class="fas fa-download"></i> იმპორტი
+    </button>
+    <a href="{{ url_for('bo_bp.dashboard') }}" class="bo-btn bo-btn--ghost">გაუქმება</a>
+</div>
+</form>
+
+<style>
+.scraper-items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.scraper-item{background:var(--bo-surface-2);border:1px solid var(--bo-border);border-radius:10px;padding:14px;transition:opacity .2s;}
+.scraper-item--excluded{opacity:.35;}
+.scraper-item__photos{display:flex;gap:10px;margin-bottom:12px;}
+.scraper-photo-opt{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid var(--bo-border);border-radius:8px;padding:4px;font-size:.7rem;color:var(--bo-text-2);flex:1;max-width:120px;}
+.scraper-photo-opt input[type=radio]{display:none;}
+.scraper-photo-opt img{width:100%;height:72px;object-fit:cover;border-radius:5px;}
+.scraper-photo-opt--selected{border-color:#6c63ff;background:#f8f7ff;}
+</style>
+
+<script>
+function toggleExclude(cb){
+    const card = cb.closest('.scraper-item');
+    card.classList.toggle('scraper-item--excluded', cb.checked);
+}
+
+function setPhotoChoice(radio, choice){
+    const card = radio.closest('.scraper-item');
+    card.querySelector('.item-photo-choice').value = choice;
+    card.querySelectorAll('.scraper-photo-opt').forEach(o => o.classList.remove('scraper-photo-opt--selected'));
+    radio.closest('.scraper-photo-opt').classList.add('scraper-photo-opt--selected');
+}
+
+function doImport(){
+    const btn = document.getElementById('import-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> მუშავდება...';
+
+    const result = {};
+
+    document.querySelectorAll('.bo-card[data-category]').forEach(catCard => {
+        const catName = catCard.querySelector('.cat-name-input').value.trim();
+        if(!catName) return;
+        const items = [];
+        catCard.querySelectorAll('.scraper-item').forEach(itemEl => {
+            const excluded = itemEl.querySelector('.item-exclude').checked;
+            const name = itemEl.querySelector('.item-name').value.trim();
+            if(!name) return;
+            items.push({
+                excluded,
+                name,
+                description: itemEl.querySelector('.item-desc').value.trim(),
+                ingredients: itemEl.querySelector('.item-ing').value.trim(),
+                price: itemEl.querySelector('.item-price').value.trim(),
+                photo_choice: itemEl.querySelector('.item-photo-choice').value,
+                library_photo: itemEl.querySelector('.item-library-photo').value,
+                image: itemEl.querySelector('.item-scraped-image').value,
+            });
+        });
+        if(items.filter(i => !i.excluded).length) result[catName] = items;
+    });
+
+    fetch('/backoffice/scraper/import', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({categories: result})
+    })
+    .then(r => r.json())
+    .then(d => {
+        if(d.success){
+            const msg = `დაემატა ${d.imported_items} კერძი${d.imported_categories ? ', ' + d.imported_categories + ' კატეგორია' : ''}`;
+            alert(msg);
+            window.location.href = '/backoffice/menu';
+        } else {
+            alert(d.error || 'შეცდომა');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> იმპორტი';
+        }
+    })
+    .catch(() => {
+        alert('კავშირის შეცდომა');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> იმპორტი';
+    });
+}
+</script>
+{% endblock %}

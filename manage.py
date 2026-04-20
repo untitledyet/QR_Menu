@@ -233,6 +233,24 @@ def run_migrations():
                         conn.commit()
                     print(f'Migration: added {col} to GlobalItems')
 
+        # --- ScraperJobs table ---
+        if 'ScraperJobs' not in table_names:
+            with db.engine.connect() as conn:
+                conn.execute(text('''
+                    CREATE TABLE "ScraperJobs" (
+                        id SERIAL PRIMARY KEY,
+                        venue_id INTEGER NOT NULL UNIQUE REFERENCES "Venues"(id),
+                        status VARCHAR(20) NOT NULL DEFAULT \'pending\',
+                        result_json JSONB,
+                        sources_found JSONB,
+                        error_message TEXT,
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        finished_at TIMESTAMP
+                    )
+                '''))
+                conn.commit()
+            print('Migration: created ScraperJobs table')
+
         # Activate existing phone-verified users who are stuck
         with db.engine.connect() as conn:
             conn.execute(text(

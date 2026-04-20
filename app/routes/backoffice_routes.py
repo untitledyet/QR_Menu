@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app import db
 from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcategory,
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
-                         MAX_ITEMS_PER_VENUE)
+                         MAX_ITEMS_PER_VENUE, ScraperJob)
 from app.services.registration_service import validate_password, send_sms_code, send_2fa_email
 from app.services.translation_service import (
     translate_item_async, translate_category_async, needs_translation
@@ -319,8 +319,124 @@ def dashboard():
             stats['promotions'] = Promotion.query.filter_by(venue_id=venue.id).count()
             if features.get('reservations'):
                 stats['bookings'] = Booking.query.filter_by(venue_id=venue.id).count()
+        scraper_job = ScraperJob.query.filter_by(venue_id=venue.id).first() if venue else None
         return render_template('backoffice/dashboard.html', admin=admin, venue=venue,
-                               features=features, stats=stats, feature_list=FEATURE_LIST)
+                               features=features, stats=stats, feature_list=FEATURE_LIST,
+                               scraper_job=scraper_job)
+
+
+# ============================================================
+# Scraper
+# ============================================================
+
+@bo_bp.route('/scraper/status')
+@login_required
+def scraper_status():
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(status='none')
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    if not job:
+        return jsonify(status='none')
+    resp = {'status': job.status}
+    if job.status == 'done' and job.result_json:
+        resp['stats'] = job.result_json.get('_stats', {})
+        resp['sources'] = job.sources_found or {}
+    return jsonify(resp)
+
+
+@bo_bp.route('/scraper/preview')
+@login_required
+def scraper_preview():
+    admin = get_current_admin()
+    if not admin.venue:
+        return redirect(url_for('bo_bp.dashboard'))
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    if not job or job.status != 'done' or not job.result_json:
+        return redirect(url_for('bo_bp.dashboard'))
+    categories = job.result_json.get('categories', {})
+    stats = job.result_json.get('_stats', {})
+    sources = job.sources_found or {}
+    return render_template('backoffice/scraper_preview.html',
+                           admin=admin, venue=admin.venue,
+                           categories=categories, stats=stats, sources=sources)
+
+
+@bo_bp.route('/scraper/import', methods=['POST'])
+@login_required
+def scraper_import():
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(error='no venue'), 400
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    if not job or job.status not in ('done',):
+        return jsonify(error='job not ready'), 400
+
+    data = request.get_json() or {}
+    categories_data = data.get('categories', {})
+    venue_id = admin.venue.id
+
+    imported_cats = 0
+    imported_items = 0
+
+    for cat_name, items in categories_data.items():
+        cat_name = (cat_name or '').strip()
+        if not cat_name or not items:
+            continue
+        cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
+        if not cat:
+            cat = Category(CategoryName=cat_name, venue_id=venue_id)
+            db.session.add(cat)
+            db.session.flush()
+            imported_cats += 1
+
+        for item_data in items:
+            if item_data.get('excluded'):
+                continue
+            name = (item_data.get('name') or '').strip()
+            if not name:
+                continue
+            if FoodItem.query.filter_by(CategoryID=cat.CategoryID, FoodName=name).first():
+                continue
+
+            try:
+                price = float(item_data.get('price') or 0)
+            except (ValueError, TypeError):
+                price = 0.0
+
+            photo_choice = item_data.get('photo_choice', 'scraped')
+            if photo_choice == 'library' and item_data.get('library_photo'):
+                image = item_data['library_photo']
+            else:
+                image = item_data.get('image') or ''
+
+            food = FoodItem(
+                FoodName=name,
+                Description=(item_data.get('description') or '').strip(),
+                Ingredients=(item_data.get('ingredients') or '').strip(),
+                Price=price,
+                ImageFilename=image or None,
+                CategoryID=cat.CategoryID,
+            )
+            db.session.add(food)
+            imported_items += 1
+
+    job.status = 'dismissed'
+    db.session.commit()
+    return jsonify(success=True, imported_items=imported_items, imported_categories=imported_cats)
+
+
+@bo_bp.route('/scraper/dismiss', methods=['POST'])
+@login_required
+def scraper_dismiss():
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(error='no venue'), 400
+    job = ScraperJob.query.filter_by(venue_id=admin.venue.id).first()
+    if job:
+        job.status = 'dismissed'
+        db.session.commit()
+    return jsonify(success=True)
 
 
 # ============================================================

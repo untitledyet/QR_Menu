@@ -537,6 +537,23 @@ class PhoneOtp(db.Model):
 # Chain / Group — price overrides per branch
 # ============================================================
 
+class ScraperJob(db.Model):
+    """Background menu scraper job — one per venue."""
+    __tablename__ = 'ScraperJobs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, unique=True)
+    # pending / running / done / failed / dismissed
+    status = db.Column(db.String(20), nullable=False, default='pending')
+    result_json = db.Column(db.JSON, nullable=True)
+    sources_found = db.Column(db.JSON, nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    finished_at = db.Column(db.DateTime, nullable=True)
+
+    venue = db.relationship('Venue', backref=db.backref('scraper_job', uselist=False))
+
+
 class VenueItemPriceOverride(db.Model):
     """Branch-level price override for a group-shared menu item."""
     __tablename__ = 'VenueItemPriceOverrides'
