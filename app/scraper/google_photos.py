@@ -15,10 +15,16 @@ def extract_google_menu_photos(page, place_url, output_dir=None):
     page.reload()
     page.wait_for_timeout(5000)
 
-    menu_tab = page.get_by_role("tab", name="Menu")
-    try:
-        menu_tab.wait_for(timeout=8000)
-    except Exception:
+    menu_tab = None
+    for tab_name in ("Menu", "მენიუ"):
+        candidate = page.get_by_role("tab", name=tab_name)
+        try:
+            candidate.wait_for(timeout=5000)
+            menu_tab = candidate
+            break
+        except Exception:
+            pass
+    if menu_tab is None:
         print("[GooglePhotos] No Menu tab")
         return []
 

@@ -74,7 +74,7 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
     from app.scraper.merger import merge_menu
     from app.services.r2_storage import upload_from_url, upload_from_path
 
-    maps_url = f'https://www.google.com/maps/place/?q=place_id:{place_id}'
+    maps_url = f'https://www.google.com/maps/place/?q=place_id:{place_id}&hl=en'
     tmpdir = tempfile.mkdtemp(prefix=f'scraper_{venue_id}_')
 
     google_text = None
