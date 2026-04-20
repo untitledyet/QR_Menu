@@ -20,21 +20,44 @@ _MAX_VISION_PX = 1568  # OpenAI's internal tile limit — no benefit sending lar
 
 
 def _prepare_image_b64(image_path: str) -> str:
-    """Resize image to max _MAX_VISION_PX on the longest side and return base64 JPEG."""
+    """
+    Preprocess image before sending to vision API:
+    - Auto-rotate via EXIF
+    - Sharpen to improve text legibility
+    - Boost contrast slightly
+    - Resize to max 1568px (OpenAI tile limit)
+    Mimics the preprocessing ChatGPT web does internally.
+    """
     try:
-        from PIL import Image
+        from PIL import Image, ImageEnhance, ImageFilter
         import io
         with Image.open(image_path) as img:
+            # Auto-rotate based on EXIF orientation (phone photos often sideways)
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
+
             img = img.convert("RGB")
+
+            # Sharpen — improves small text legibility significantly
+            img = img.filter(ImageFilter.SHARPEN)
+            img = img.filter(ImageFilter.SHARPEN)  # second pass for dense menus
+
+            # Slight contrast boost — helps low-light or faded menu photos
+            img = ImageEnhance.Contrast(img).enhance(1.2)
+
+            # Resize to tile limit
             w, h = img.size
             if max(w, h) > _MAX_VISION_PX:
                 scale = _MAX_VISION_PX / max(w, h)
                 img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
             buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=92, optimize=True)
+            img.save(buf, format="JPEG", quality=95, optimize=True)
             return base64.b64encode(buf.getvalue()).decode("utf-8")
     except Exception:
-        # Pillow unavailable or unreadable — fall back to raw file
         with open(image_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
 
