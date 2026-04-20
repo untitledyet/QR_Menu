@@ -90,7 +90,7 @@ table.sc-table tr:hover td{background:var(--bo-surface-2);}
             <span><i class="fas fa-terminal"></i> Pipeline ლოგი</span>
             <span id="log-status-badge" style="font-size:.8rem;"></span>
         </h3>
-        <div id="log-stats" style="display:flex;gap:16px;font-size:.82rem;color:var(--bo-text-2);margin:8px 0 12px;flex-wrap:wrap;"></div>
+        <div id="log-stats" style="display:flex;gap:16px;font-size:.82rem;color:var(--bo-text-2);margin:8px 0 12px;flex-wrap:wrap;border-bottom:1px solid var(--bo-border);padding-bottom:10px;"></div>
         <ul class="sc-log" id="log-list"></ul>
     </div>
 
@@ -108,6 +108,7 @@ table.sc-table tr:hover td{background:var(--bo-surface-2);}
                     <th>კატეგორია</th>
                     <th>სახელი</th>
                     <th>ფასი</th>
+                    <th>ინგრედიენტები</th>
                     <th>აღწერა</th>
                     <th>წყარო</th>
                     <th>ფოტო</th>
@@ -195,6 +196,7 @@ function renderDetail(d) {
     document.getElementById('log-stats').innerHTML =
         '<span><b>' + (st.total_items||0) + '</b> კერძი</span>' +
         '<span><b>' + (st.items_with_price||0) + '</b> ფასით</span>' +
+        '<span><b>' + (st.items_with_ingredients||0) + '</b> ინგრედიენტებით</span>' +
         '<span><b>' + (st.items_with_desc||0) + '</b> აღწერით</span>' +
         '<span><b>' + (st.items_with_photo||0) + '</b> ფოტოთი</span>' +
         '<span style="margin-left:8px;">' + srcHtml + '</span>';
@@ -241,7 +243,8 @@ function renderDetail(d) {
             '<td>' + escHtml(it.category||'') + '</td>' +
             '<td><strong>' + escHtml(it.name||'') + '</strong></td>' +
             '<td style="white-space:nowrap;">' + escHtml(it.price||'—') + '</td>' +
-            '<td style="max-width:250px;font-size:.75rem;color:var(--bo-text-2);">' + escHtml((it.description||'').slice(0,120)) + '</td>' +
+            '<td style="max-width:200px;font-size:.75rem;color:var(--bo-text-2);">' + escHtml((it.ingredients||'').slice(0,100)) + '</td>' +
+            '<td style="max-width:200px;font-size:.75rem;color:var(--bo-text-2);">' + escHtml((it.description||'').slice(0,100)) + '</td>' +
             '<td><span class="sc-src-badge ' + srcClass + '">' + escHtml((it.source||'').split('+')[0]) + '</span></td>' +
             '<td>' + imgHtml + '</td>';
         tbody.appendChild(tr);

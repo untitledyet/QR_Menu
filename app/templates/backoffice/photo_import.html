@@ -1,0 +1,323 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}ფოტოდან იმპორტი{% endblock %}
+{% block content %}
+<div class="bo-header">
+    <h1><i class="fas fa-camera" style="color:#6c63ff;"></i> ფოტოდან მენიუს იმპორტი</h1>
+    <p class="bo-header__sub">ატვირთეთ მენიუს ფოტოები — AI ამოიღებს კერძებს, კატეგორიებს და ინგრედიენტებს</p>
+</div>
+
+<style>
+.pi-upload{border:2px dashed var(--bo-border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--bo-surface);}
+.pi-upload:hover,.pi-upload.drag-over{border-color:#6c63ff;background:#f8f7ff;}
+.pi-upload__icon{font-size:2.5rem;color:var(--bo-text-2);margin-bottom:12px;}
+.pi-thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.pi-thumb{position:relative;width:90px;height:90px;border-radius:8px;overflow:hidden;border:1px solid var(--bo-border);}
+.pi-thumb img{width:100%;height:100%;object-fit:cover;}
+.pi-thumb__rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.pi-section{margin-bottom:24px;}
+.pi-cat-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bo-surface-2);border-radius:8px;margin-bottom:8px;font-weight:600;}
+.pi-subcat-header{padding:6px 14px 4px;font-size:.82rem;color:var(--bo-text-2);font-weight:600;border-bottom:1px solid var(--bo-border);margin-bottom:6px;}
+.pi-item{display:grid;grid-template-columns:28px 1fr 120px 160px 50px 50px;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid var(--bo-border);}
+.pi-item:last-child{border:none;}
+.pi-item input[type="text"]{width:100%;padding:5px 8px;border:1px solid var(--bo-border);border-radius:5px;background:var(--bo-surface-2);color:var(--bo-text);font-size:.82rem;}
+.pi-item input[type="text"]:focus{outline:none;border-color:#6c63ff;}
+.pi-photo-prev{width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid var(--bo-border);}
+.pi-no-photo{width:44px;height:44px;border-radius:6px;background:var(--bo-surface-2);border:1px dashed var(--bo-border);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--bo-text-2);}
+.pi-excluded .pi-item-name,.pi-excluded .pi-item-ing,.pi-excluded .pi-item-price{opacity:.35;text-decoration:line-through;}
+.pi-badge{font-size:.68rem;padding:2px 7px;border-radius:10px;background:var(--bo-surface-2);border:1px solid var(--bo-border);}
+.pi-loader{display:none;flex-direction:column;align-items:center;gap:16px;padding:60px 0;}
+.pi-loader__spinner{width:48px;height:48px;border:4px solid var(--bo-border);border-top-color:#6c63ff;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+
+{# ── Upload Zone ── #}
+<div class="bo-info-panel" id="upload-panel" style="max-width:780px;">
+    <div class="pi-upload" id="drop-zone" onclick="document.getElementById('photo-input').click()">
+        <div class="pi-upload__icon"><i class="fas fa-cloud-upload-alt"></i></div>
+        <div style="font-weight:600;margin-bottom:4px;">ჩააგდეთ ფოტოები აქ ან დააჭირეთ</div>
+        <div style="font-size:.82rem;color:var(--bo-text-2);">JPG, PNG, WEBP · მაქსიმუმ 15 ფოტო</div>
+    </div>
+    <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="onFilesSelected(this.files)">
+    <div class="pi-thumbs" id="thumb-grid"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;" id="analyze-bar" style="display:none;">
+        <button class="bo-btn bo-btn--primary" id="analyze-btn" onclick="analyzePhotos()" disabled>
+            <i class="fas fa-magic"></i> AI-ით ანალიზი
+        </button>
+        <button class="bo-btn bo-btn--ghost" onclick="clearFiles()">
+            <i class="fas fa-times"></i> გასუფთავება
+        </button>
+        <span id="file-count" style="font-size:.82rem;color:var(--bo-text-2);align-self:center;"></span>
+    </div>
+</div>
+
+{# ── Loader ── #}
+<div class="pi-loader" id="loader">
+    <div class="pi-loader__spinner"></div>
+    <div style="font-size:.9rem;color:var(--bo-text-2);" id="loader-msg">AI ამუშავებს ფოტოებს...</div>
+</div>
+
+{# ── Results ── #}
+<div id="results-panel" style="display:none;max-width:960px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div>
+            <strong id="result-summary"></strong>
+            <span style="font-size:.82rem;color:var(--bo-text-2);margin-left:10px;">შეგიძლიათ ჩაასწოროთ ველები პირდაპირ ცხრილში</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button class="bo-btn bo-btn--primary" onclick="importItems()">
+                <i class="fas fa-file-import"></i> მენიუში დამატება
+            </button>
+            <button class="bo-btn bo-btn--ghost" onclick="resetAll()">
+                <i class="fas fa-redo"></i> თავიდან
+            </button>
+        </div>
+    </div>
+    <div id="results-body"></div>
+    <div style="margin-top:20px;">
+        <button class="bo-btn bo-btn--primary" onclick="importItems()">
+            <i class="fas fa-file-import"></i> მენიუში დამატება
+        </button>
+    </div>
+</div>
+
+{# ── Success ── #}
+<div id="success-panel" style="display:none;max-width:600px;">
+    <div class="bo-info-panel" style="text-align:center;padding:40px;">
+        <i class="fas fa-check-circle" style="font-size:3rem;color:var(--bo-green);margin-bottom:16px;display:block;"></i>
+        <div id="success-msg" style="font-size:1.1rem;font-weight:600;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+            <a href="{{ url_for('bo_bp.menu_list') }}" class="bo-btn bo-btn--primary">
+                <i class="fas fa-book-open"></i> მენიუს ნახვა
+            </a>
+            <button class="bo-btn bo-btn--ghost" onclick="resetAll()">
+                <i class="fas fa-plus"></i> კიდევ ფოტოები
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+var selectedFiles = [];
+var analysedData = null; // {categories: {cat: {sub: [items]}}, cat_icons: {}}
+
+// ── File handling ──────────────────────────────────────────────────────────
+
+var dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', function(e){
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    onFilesSelected(e.dataTransfer.files);
+});
+
+function onFilesSelected(files) {
+    for (var i = 0; i < files.length; i++) {
+        if (selectedFiles.length >= 15) break;
+        if (!files[i].type.startsWith('image/')) continue;
+        selectedFiles.push(files[i]);
+    }
+    renderThumbs();
+}
+
+function renderThumbs() {
+    var grid = document.getElementById('thumb-grid');
+    grid.innerHTML = '';
+    selectedFiles.forEach(function(f, i) {
+        var url = URL.createObjectURL(f);
+        var div = document.createElement('div');
+        div.className = 'pi-thumb';
+        div.innerHTML = '<img src="' + url + '"><button class="pi-thumb__rm" onclick="removeFile(' + i + ')"><i class="fas fa-times"></i></button>';
+        grid.appendChild(div);
+    });
+    document.getElementById('file-count').textContent = selectedFiles.length + ' ფოტო';
+    document.getElementById('analyze-btn').disabled = selectedFiles.length === 0;
+    document.getElementById('analyze-bar').style.display = selectedFiles.length > 0 ? 'flex' : 'none';
+}
+
+function removeFile(i) {
+    selectedFiles.splice(i, 1);
+    renderThumbs();
+}
+
+function clearFiles() {
+    selectedFiles = [];
+    renderThumbs();
+}
+
+// ── Analysis ───────────────────────────────────────────────────────────────
+
+function analyzePhotos() {
+    if (selectedFiles.length === 0) return;
+    document.getElementById('upload-panel').style.display = 'none';
+    document.getElementById('loader').style.display = 'flex';
+
+    var form = new FormData();
+    selectedFiles.forEach(function(f) { form.append('photos', f); });
+
+    var msgs = ['AI ამუშავებს ფოტოებს...', 'კერძებს ამოიღებს...', 'ინგრედიენტებს ავსებს...', 'ბიბლიოთეკის ფოტოებს ათანხმებს...'];
+    var mi = 0;
+    var interval = setInterval(function() {
+        mi = (mi + 1) % msgs.length;
+        document.getElementById('loader-msg').textContent = msgs[mi];
+    }, 4000);
+
+    fetch('/backoffice/menu/analyze-photos', {method: 'POST', body: form})
+        .then(function(r){ return r.json(); })
+        .then(function(d) {
+            clearInterval(interval);
+            document.getElementById('loader').style.display = 'none';
+            if (!d.success) {
+                document.getElementById('upload-panel').style.display = '';
+                alert('შეცდომა: ' + (d.error || 'უცნობი'));
+                return;
+            }
+            analysedData = d;
+            renderResults(d);
+        })
+        .catch(function(e) {
+            clearInterval(interval);
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('upload-panel').style.display = '';
+            alert('შეცდომა: ' + e);
+        });
+}
+
+// ── Render results ─────────────────────────────────────────────────────────
+
+function renderResults(d) {
+    document.getElementById('result-summary').textContent =
+        'ნაპოვნია ' + d.total + ' კერძი ' + Object.keys(d.categories).length + ' კატეგორიაში';
+
+    var body = document.getElementById('results-body');
+    body.innerHTML = '';
+    var catKeys = Object.keys(d.categories).sort();
+
+    catKeys.forEach(function(cat) {
+        var subcats = d.categories[cat];
+        var icon = (d.cat_icons && d.cat_icons[cat]) ? d.cat_icons[cat] : 'fas fa-utensils';
+
+        var section = document.createElement('div');
+        section.className = 'bo-info-panel pi-section';
+
+        var catHeader = document.createElement('div');
+        catHeader.className = 'pi-cat-header';
+        catHeader.innerHTML = '<i class="' + escHtml(icon) + '" style="color:#6c63ff;"></i><span>' + escHtml(cat) + '</span>';
+        section.appendChild(catHeader);
+
+        // Column headers
+        var colHdr = document.createElement('div');
+        colHdr.style.cssText = 'display:grid;grid-template-columns:28px 1fr 120px 160px 50px 50px;gap:8px;padding:4px 0 8px;font-size:.72rem;color:var(--bo-text-2);font-weight:600;border-bottom:2px solid var(--bo-border);margin-bottom:4px;';
+        colHdr.innerHTML = '<span></span><span>კერძი / ინგრედიენტები</span><span>ფასი (₾)</span><span>ბიბლ. ფოტო</span><span>გამოტ.</span><span></span>';
+        section.appendChild(colHdr);
+
+        var subKeys = Object.keys(subcats).sort(function(a,b){ return a === '' ? -1 : b === '' ? 1 : a.localeCompare(b); });
+        subKeys.forEach(function(sub) {
+            if (sub) {
+                var subHdr = document.createElement('div');
+                subHdr.className = 'pi-subcat-header';
+                subHdr.textContent = sub;
+                section.appendChild(subHdr);
+            }
+            subcats[sub].forEach(function(item, idx) {
+                section.appendChild(buildItemRow(cat, sub, idx, item));
+            });
+        });
+
+        body.appendChild(section);
+    });
+
+    document.getElementById('results-panel').style.display = '';
+}
+
+function buildItemRow(cat, sub, idx, item) {
+    var row = document.createElement('div');
+    row.className = 'pi-item';
+    row.dataset.cat = cat;
+    row.dataset.sub = sub;
+    row.dataset.idx = idx;
+
+    var photoHtml = item.library_photo
+        ? '<img class="pi-photo-prev" src="' + escHtml(item.library_photo) + '" title="ბიბლიოთეკის ფოტო">'
+        : '<div class="pi-no-photo"><i class="fas fa-image"></i></div>';
+
+    row.innerHTML =
+        '<span style="font-size:.8rem;color:var(--bo-text-2);padding-top:6px;">' + (idx+1) + '</span>' +
+        '<div>' +
+            '<input type="text" class="pi-item-name" value="' + escHtml(item.name) + '" placeholder="სახელი" style="margin-bottom:4px;">' +
+            '<input type="text" class="pi-item-ing" value="' + escHtml(item.ingredients||'') + '" placeholder="ინგრედიენტები" style="font-size:.75rem;color:var(--bo-text-2);">' +
+        '</div>' +
+        '<input type="text" class="pi-item-price" value="' + escHtml(item.price||'') + '" placeholder="0.00">' +
+        '<div style="padding-top:3px;">' + photoHtml + '</div>' +
+        '<div style="text-align:center;padding-top:8px;"><input type="checkbox" class="pi-item-exclude" title="გამოტოვება" onchange="toggleExclude(this)"></div>' +
+        '<div></div>';
+
+    return row;
+}
+
+function toggleExclude(cb) {
+    cb.closest('.pi-item').classList.toggle('pi-excluded', cb.checked);
+}
+
+// ── Import ─────────────────────────────────────────────────────────────────
+
+function importItems() {
+    if (!analysedData) return;
+
+    // Collect current state from DOM
+    var result = {};
+    document.querySelectorAll('.pi-item').forEach(function(row) {
+        if (row.querySelector('.pi-item-exclude').checked) return;
+        var cat = row.dataset.cat;
+        var sub = row.dataset.sub;
+        var idx = parseInt(row.dataset.idx);
+        var original = analysedData.categories[cat][sub][idx];
+        var name = row.querySelector('.pi-item-name').value.trim();
+        var ing = row.querySelector('.pi-item-ing').value.trim();
+        var price = row.querySelector('.pi-item-price').value.trim();
+        if (!name) return;
+
+        if (!result[cat]) result[cat] = {};
+        if (!result[cat][sub]) result[cat][sub] = [];
+        result[cat][sub].push({
+            name: name,
+            ingredients: ing,
+            price: price,
+            description: original.description || '',
+            library_photo: original.library_photo || null,
+        });
+    });
+
+    fetch('/backoffice/menu/import-analyzed', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({categories: result}),
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+        if (!d.success) { alert('შეცდომა: ' + (d.error||'unknown')); return; }
+        document.getElementById('results-panel').style.display = 'none';
+        document.getElementById('success-msg').textContent =
+            '✓ ' + d.imported_items + ' კერძი დაემატა — '
+            + d.imported_categories + ' კატეგ., '
+            + d.imported_subcategories + ' ქვეკატეგ.';
+        document.getElementById('success-panel').style.display = '';
+    })
+    .catch(function(e){ alert('შეცდომა: ' + e); });
+}
+
+function resetAll() {
+    selectedFiles = []; analysedData = null;
+    document.getElementById('thumb-grid').innerHTML = '';
+    document.getElementById('file-count').textContent = '';
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('analyze-bar').style.display = 'none';
+    document.getElementById('results-panel').style.display = 'none';
+    document.getElementById('success-panel').style.display = 'none';
+    document.getElementById('upload-panel').style.display = '';
+}
+
+function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

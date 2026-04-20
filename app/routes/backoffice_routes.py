@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app import db
 from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcategory,
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
-                         MAX_ITEMS_PER_VENUE, ScraperJob)
+                         MAX_ITEMS_PER_VENUE, ScraperJob, GlobalItem, GlobalCategory)
 from app.services.registration_service import validate_password, send_sms_code, send_2fa_email
 from app.services.translation_service import (
     translate_item_async, translate_category_async, needs_translation
@@ -469,6 +469,7 @@ def super_scraper_detail():
                 'name': it.get('name', ''),
                 'price': it.get('price', ''),
                 'description': it.get('description', ''),
+                'ingredients': it.get('ingredients', ''),
                 'source': it.get('source', ''),
                 'image': it.get('image', ''),
                 'library_photo': it.get('library_photo', ''),
@@ -706,6 +707,189 @@ def menu_list():
     return render_template('backoffice/menu.html', admin=admin, categories=categories,
                            items=items, selected_cat=cat_id, features=features,
                            item_counts=item_counts, subs_by_cat=subs_by_cat)
+
+
+@bo_bp.route('/menu/import-photos', methods=['GET'])
+@login_required
+@email_verified_required
+def photo_import_page():
+    admin = get_current_admin()
+    return render_template('backoffice/photo_import.html', admin=admin, venue=admin.venue)
+
+
+@bo_bp.route('/menu/analyze-photos', methods=['POST'])
+@login_required
+@email_verified_required
+def analyze_photos():
+    import tempfile, os, shutil
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(error='no venue'), 400
+
+    files = request.files.getlist('photos')
+    if not files or len(files) == 0:
+        return jsonify(error='ფოტოები არ არის'), 400
+    if len(files) > 15:
+        return jsonify(error='მაქსიმუმ 15 ფოტო'), 400
+
+    tmpdir = tempfile.mkdtemp(prefix='photo_import_')
+    try:
+        from app.scraper.ai_analyzer import analyze_menu_photo_structured, enrich_missing_ingredients
+        from app.models import GlobalItem, GlobalCategory
+        from sqlalchemy import func
+
+        all_items = []
+        for f in files:
+            if not f or not f.filename:
+                continue
+            ext = f.filename.rsplit('.', 1)[-1].lower()
+            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+                continue
+            path = os.path.join(tmpdir, secure_filename(f.filename))
+            f.save(path)
+            items = analyze_menu_photo_structured(path)
+            all_items.extend(items)
+
+        if not all_items:
+            return jsonify(error='AI-მ კერძები ვერ ამოიღო. სცადეთ სხვა ფოტო.')
+
+        # Deduplicate by name (case-insensitive)
+        seen = {}
+        deduped = []
+        for it in all_items:
+            k = it['name'].lower().strip()
+            if k not in seen:
+                seen[k] = it
+                deduped.append(it)
+            else:
+                existing = seen[k]
+                if not existing.get('price') and it.get('price'):
+                    existing['price'] = it['price']
+                if not existing.get('ingredients') and it.get('ingredients'):
+                    existing['ingredients'] = it['ingredients']
+                if not existing.get('subcategory') and it.get('subcategory'):
+                    existing['subcategory'] = it['subcategory']
+
+        # Enrich missing ingredients
+        enrich_missing_ingredients(deduped)
+
+        # Match library photos & category icons
+        for it in deduped:
+            name = it['name'].strip()
+            lib = (GlobalItem.query
+                   .filter(func.lower(GlobalItem.name) == name.lower())
+                   .filter(GlobalItem.image_filename.isnot(None))
+                   .first())
+            if not lib:
+                lib = (GlobalItem.query
+                       .filter(GlobalItem.name.ilike(f'%{name}%'))
+                       .filter(GlobalItem.image_filename.isnot(None))
+                       .first())
+            it['library_photo'] = lib.image_filename if lib else None
+
+        # Category icon from GlobalCategory
+        cat_icons = {}
+        for it in deduped:
+            cat_name = it.get('category', '')
+            if cat_name and cat_name not in cat_icons:
+                gc = (GlobalCategory.query
+                      .filter(func.lower(GlobalCategory.name) == cat_name.lower())
+                      .first())
+                if not gc:
+                    gc = GlobalCategory.query.filter(
+                        GlobalCategory.name.ilike(f'%{cat_name.split()[0]}%')
+                    ).first()
+                cat_icons[cat_name] = gc.icon if gc else None
+
+        # Organise: {category: {subcategory: [items]}}
+        organised = {}
+        for it in deduped:
+            cat = it.get('category') or 'სხვა'
+            sub = it.get('subcategory') or ''
+            organised.setdefault(cat, {}).setdefault(sub, []).append(it)
+
+        return jsonify(
+            success=True,
+            total=len(deduped),
+            categories=organised,
+            cat_icons=cat_icons,
+        )
+    except Exception as e:
+        current_app.logger.exception('analyze_photos error')
+        return jsonify(error=str(e)), 500
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@bo_bp.route('/menu/import-analyzed', methods=['POST'])
+@login_required
+@email_verified_required
+def import_analyzed():
+    admin = get_current_admin()
+    if not admin.venue:
+        return jsonify(error='no venue'), 400
+    venue_id = admin.venue.id
+    data = request.get_json() or {}
+    categories_data = data.get('categories', {})
+
+    imported_cats = 0
+    imported_subs = 0
+    imported_items = 0
+
+    for cat_name, subcats in categories_data.items():
+        cat_name = (cat_name or '').strip()
+        if not cat_name:
+            continue
+        cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
+        if not cat:
+            cat = Category(CategoryName=cat_name, venue_id=venue_id)
+            db.session.add(cat)
+            db.session.flush()
+            imported_cats += 1
+
+        for sub_name, items in subcats.items():
+            sub_name = (sub_name or '').strip()
+            sub = None
+            if sub_name:
+                sub = Subcategory.query.filter_by(CategoryID=cat.CategoryID, SubcategoryName=sub_name).first()
+                if not sub:
+                    sub = Subcategory(SubcategoryName=sub_name, CategoryID=cat.CategoryID)
+                    db.session.add(sub)
+                    db.session.flush()
+                    imported_subs += 1
+
+            for item_data in items:
+                if item_data.get('excluded'):
+                    continue
+                name = (item_data.get('name') or '').strip()
+                if not name:
+                    continue
+                if FoodItem.query.filter_by(CategoryID=cat.CategoryID, FoodName=name).first():
+                    continue
+                try:
+                    price = float(item_data.get('price') or 0)
+                except (ValueError, TypeError):
+                    price = 0.0
+                photo = item_data.get('library_photo') or None
+                food = FoodItem(
+                    FoodName=name,
+                    Description=(item_data.get('description') or '').strip(),
+                    Ingredients=(item_data.get('ingredients') or '').strip(),
+                    Price=price,
+                    ImageFilename=photo,
+                    CategoryID=cat.CategoryID,
+                    SubcategoryID=sub.SubcategoryID if sub else None,
+                )
+                db.session.add(food)
+                imported_items += 1
+
+    db.session.commit()
+    return jsonify(
+        success=True,
+        imported_items=imported_items,
+        imported_categories=imported_cats,
+        imported_subcategories=imported_subs,
+    )
 
 
 @bo_bp.route('/menu/toggle-customization/<int:item_id>', methods=['POST'])

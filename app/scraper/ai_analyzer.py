@@ -94,6 +94,113 @@ def analyze_menu_photo(image_path: str) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Full structured extraction (user photo import)
+# ---------------------------------------------------------------------------
+
+def analyze_menu_photo_structured(image_path: str) -> list:
+    """
+    Extract structured menu items from a photo with category, subcategory,
+    ingredients and price. Used for the user-facing photo import feature.
+    Returns list of {name, category, subcategory, ingredients, price}.
+    """
+    try:
+        client = _get_client()
+    except ImportError:
+        return []
+
+    with open(image_path, "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+    prompt = (
+        "This is a restaurant menu photo. Extract ALL menu items visible.\n"
+        "Return ONLY a valid JSON array. Each element:\n"
+        '{"name":"კერძის სახელი","category":"კატეგორია","subcategory":"ქვეკატეგორია_ან_ცარიელი","ingredients":"ინგრედიენტები_ან_ცარიელი","price":"15.00_ან_ცარიელი"}\n'
+        "RULES:\n"
+        "- name: actual dish or drink name (NOT a price, NOT a number, NOT a header)\n"
+        "- category: the section this item belongs to (e.g. სალათები, ცხელი კერძები, სასმელი)\n"
+        "- subcategory: sub-section if present (e.g. ვეგეტარიანური, ცხარე), else empty string\n"
+        "- ingredients: ingredients or short description visible on menu, else empty string\n"
+        "- price: number only (e.g. '12.50'), empty string if not visible\n"
+        "- SKIP category/section headers — only include actual dishes and drinks\n"
+        "- SKIP entries where name is just a number or price\n"
+        "Return empty array [] if nothing readable."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=config.OPENAI_MODEL,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{img_b64}",
+                        "detail": "high",
+                    }},
+                ],
+            }],
+            max_tokens=4096,
+        )
+        items = _parse_json_response(response.choices[0].message.content)
+        filtered = []
+        for it in items:
+            name = it.get("name", "").strip()
+            if not name or len(name) < 2:
+                continue
+            if name.replace(".", "").replace(",", "").isdigit():
+                continue
+            filtered.append({
+                "name": name,
+                "category": (it.get("category") or "").strip(),
+                "subcategory": (it.get("subcategory") or "").strip(),
+                "ingredients": (it.get("ingredients") or "").strip(),
+                "price": (it.get("price") or "").strip(),
+            })
+        print(f"[AI] Structured extract: {len(filtered)} items from {os.path.basename(image_path)}")
+        return filtered
+    except Exception as e:
+        print(f"[AI] Structured extract error: {e}")
+        return []
+
+
+def enrich_missing_ingredients(items: list) -> list:
+    """Fill ingredients for items that have none (used after photo import merge)."""
+    missing = [it for it in items if not it.get("ingredients")]
+    if not missing:
+        return items
+    try:
+        client = _get_client()
+    except ImportError:
+        return items
+
+    BATCH = 50
+    for i in range(0, len(missing), BATCH):
+        batch = missing[i:i + BATCH]
+        names = [it["name"] for it in batch]
+        prompt = (
+            "For each Georgian restaurant dish, give typical ingredients in Georgian (3-6 words, comma-separated). "
+            "For drinks return empty string. "
+            "Return ONLY JSON: {\"dish_name\": \"ingredients\"}.\n"
+            "Dishes: " + json.dumps(names, ensure_ascii=False)
+        )
+        try:
+            response = client.chat.completions.create(
+                model=config.OPENAI_MODEL_MINI,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2048,
+            )
+            ing_map = _parse_json_response(response.choices[0].message.content)
+            for it in batch:
+                val = ing_map.get(it["name"], "")
+                if val:
+                    it["ingredients"] = val
+        except Exception as e:
+            print(f"[AI] enrich_missing_ingredients error: {e}")
+
+    return items
+
+
+# ---------------------------------------------------------------------------
 # Categorization
 # ---------------------------------------------------------------------------
 
@@ -138,11 +245,13 @@ def categorize_items(items: list) -> dict:
 
 def enrich_ingredients(items: list) -> list:
     """
-    Use GPT-4o-mini to add standard ingredients for items missing descriptions.
+    Use GPT-4o-mini to fill the 'ingredients' field for all items that lack it.
+    Uses batching (50 items per call) to stay within token limits.
     Modifies items in-place and returns them.
     """
-    missing = [it for it in items if not it.get("description")]
-    if not missing:
+    # Always fill 'ingredients' — separate from 'description' (which comes from the source)
+    to_enrich = [it for it in items if not it.get("ingredients")]
+    if not to_enrich:
         return items
 
     try:
@@ -150,27 +259,36 @@ def enrich_ingredients(items: list) -> list:
     except ImportError:
         return items
 
-    names = [it["name"] for it in missing]
-    prompt = (
-        "For each Georgian dish, provide typical ingredients in Georgian language. "
-        "Return ONLY valid JSON object: {\"dish_name\": \"ingredients\"}.\n"
-        "Dishes: " + json.dumps(names, ensure_ascii=False)
-    )
+    BATCH = 50
+    total_filled = 0
 
-    try:
-        response = client.chat.completions.create(
-            model=config.OPENAI_MODEL_MINI,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=2048,
+    for i in range(0, len(to_enrich), BATCH):
+        batch = to_enrich[i:i + BATCH]
+        names = [it["name"] for it in batch]
+        prompt = (
+            "You are a Georgian restaurant assistant. "
+            "For each dish name below, provide its typical ingredients in Georgian language (3-6 words). "
+            "Return ONLY valid JSON: {\"dish_name\": \"ingredients as comma-separated string\"}.\n"
+            "If a dish is a drink or you don't know it, return an empty string for that key.\n"
+            "Dishes: " + json.dumps(names, ensure_ascii=False)
         )
-        ingredients_map = _parse_json_response(response.choices[0].message.content)
-        for it in items:
-            if not it.get("description") and it["name"] in ingredients_map:
-                it["description"] = ingredients_map[it["name"]]
-        print("[AI] Enriched " + str(len(ingredients_map)) + " items with ingredients")
-    except Exception as e:
-        print("[AI] Enrichment error: " + str(e))
 
+        try:
+            response = client.chat.completions.create(
+                model=config.OPENAI_MODEL_MINI,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2048,
+            )
+            ing_map = _parse_json_response(response.choices[0].message.content)
+            for it in batch:
+                val = ing_map.get(it["name"], "")
+                if val:
+                    it["ingredients"] = val
+                    total_filled += 1
+        except Exception as e:
+            print("[AI] Enrichment batch error: " + str(e))
+
+    print("[AI] Enriched " + str(total_filled) + "/" + str(len(to_enrich)) + " items with ingredients")
     return items
 
 

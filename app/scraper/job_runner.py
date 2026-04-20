@@ -307,21 +307,21 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
             all_items = [it for items in final_menu.values() for it in items]
             plog.step('დედუბლიკაცია', f'{total_after_merge} → {len(all_items)} კერძი')
 
-        # Step 8 — Ingredient enrichment
-        missing_desc = sum(1 for it in all_items if not it.get('description'))
-        if missing_desc:
+        # Step 8 — Ingredient enrichment (always runs — fills 'ingredients' field)
+        missing_ing = sum(1 for it in all_items if not it.get('ingredients'))
+        if missing_ing:
             plog.ai_call(
                 model='gpt-4o-mini',
-                purpose=f'ინგრედიენტების გამდიდრება ({missing_desc} კერძი)',
+                purpose=f'ინგრედიენტების გამდიდრება ({missing_ing} კერძი)',
                 prompt_preview=(
-                    'For each Georgian dish, provide typical ingredients in Georgian language. '
-                    'Return JSON {"dish_name": "ingredients"}.'
+                    'For each dish, provide typical ingredients in Georgian (3-6 words). '
+                    'Return JSON {"dish_name": "ingredients"}. Drinks → empty string.'
                 ),
-                result_preview=f'{missing_desc} კერძს ემატება ინგრედიენტები',
+                result_preview=f'{missing_ing} კერძს ემატება ინგრედიენტები',
             )
             enrich_ingredients(all_items)
-            filled = sum(1 for it in all_items if it.get('description'))
-            plog.step('ინგრედიენტები', f'{filled}/{len(all_items)} კერძს აქვს აღწერა')
+            filled = sum(1 for it in all_items if it.get('ingredients'))
+            plog.step('ინგრედიენტები', f'{filled}/{len(all_items)} კერძს აქვს ინგრედიენტები')
 
         if len(final_menu) <= 1 and len(all_items) > 5:
             plog.ai_call(
@@ -343,6 +343,7 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
             'items_with_price': sum(1 for it in all_items if it.get('price')),
             'items_with_photo': sum(1 for it in all_items if it.get('image')),
             'items_with_desc': sum(1 for it in all_items if it.get('description')),
+            'items_with_ingredients': sum(1 for it in all_items if it.get('ingredients')),
         }
 
         plog.step(
