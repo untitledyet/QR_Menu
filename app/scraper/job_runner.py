@@ -13,6 +13,39 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Pipeline logger — accumulates steps into result_json['_log']
+# ---------------------------------------------------------------------------
+
+class PipelineLog:
+    def __init__(self):
+        self.entries = []
+
+    def step(self, title: str, detail: str = '', status: str = 'ok', data=None):
+        entry = {
+            'ts': datetime.utcnow().strftime('%H:%M:%S'),
+            'title': title,
+            'detail': detail,
+            'status': status,  # ok | warn | error | ai
+        }
+        if data:
+            entry['data'] = data
+        self.entries.append(entry)
+        icon = {'ok': '✓', 'warn': '⚠', 'error': '✗', 'ai': '🤖'}.get(status, '·')
+        print(f"[Pipeline] {icon} {title}" + (f" — {detail}" if detail else ""))
+
+    def ai_call(self, model: str, purpose: str, prompt_preview: str, result_preview: str):
+        self.step(
+            title=f'AI: {purpose}',
+            detail=f'model={model}',
+            status='ai',
+            data={'prompt': prompt_preview[:300], 'result': result_preview[:300]},
+        )
+
+
+_pipeline_log: PipelineLog = None
+
+
 def trigger_scraper_job(app, venue_id: int, place_id: str, venue_name: str):
     """Fire-and-forget: starts the scraper pipeline in a background thread."""
     if not place_id:
@@ -74,6 +107,7 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
     from app.scraper.merger import merge_menu
     from app.services.r2_storage import upload_from_url, upload_from_path
 
+    plog = PipelineLog()
     maps_url = f'https://www.google.com/maps/place/?q=place_id:{place_id}&hl=en'
     tmpdir = tempfile.mkdtemp(prefix=f'scraper_{venue_id}_')
 
@@ -82,6 +116,8 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
     google_photos_ai = None
     glovo_data = None
     glovo_photo_map = {}
+
+    plog.step('პაიფლაინი დაიწყო', f'place_id={place_id}, venue_id={venue_id}')
 
     try:
         # ── Browser phase ──────────────────────────────────────────────────
@@ -101,9 +137,23 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
             )
             page = ctx.new_page()
 
+            # Step 1 — Google Maps text menu
+            plog.step('Google Maps გახსნა', maps_url)
             try:
                 google_text = extract_google_text_menu(page, maps_url)
+                if google_text:
+                    total_t = sum(len(v) for v in google_text.values())
+                    cats = list(google_text.keys())
+                    plog.step(
+                        'Google Maps ტექსტური მენიუ',
+                        f'{total_t} კერძი, {len(cats)} კატეგორია',
+                        'ok',
+                        data={'categories': {k: len(v) for k, v in google_text.items()}},
+                    )
+                else:
+                    plog.step('Google Maps ტექსტური მენიუ', 'Menu tab ვერ მოიძებნა', 'warn')
             except Exception as e:
+                plog.step('Google Maps ტექსტური მენიუ', str(e), 'error')
                 logger.warning(f'[ScraperJob] Google text error: {e}')
 
             # Screenshot for debugging
@@ -111,27 +161,46 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                 shot_path = os.path.join(tmpdir, 'debug_after_google_text.png')
                 page.screenshot(path=shot_path, full_page=False)
                 shot_url = upload_from_path(shot_path, prefix=f'debug/{venue_id}')
+                if shot_url:
+                    plog.step('Debug screenshot', shot_url, 'ok', data={'url': shot_url})
                 logger.info(f'[ScraperJob] Screenshot after google_text: {shot_url}')
             except Exception:
                 pass
 
+            # Step 2 — Google menu photos
             try:
                 google_photo_urls = extract_google_menu_photos(page, maps_url, tmpdir)
+                plog.step(
+                    'Google Maps ფოტოები',
+                    f'{len(google_photo_urls)} ფოტო მოძიებულია' if google_photo_urls else 'ფოტოები ვერ მოიძებნა',
+                    'ok' if google_photo_urls else 'warn',
+                )
             except Exception as e:
+                plog.step('Google Maps ფოტოები', str(e), 'error')
                 logger.warning(f'[ScraperJob] Google photos error: {e}')
 
+            # Step 3 — Glovo
             try:
                 glovo_url = find_glovo_url(page, maps_url)
                 if glovo_url:
+                    plog.step('Glovo ბმული', glovo_url, 'ok')
                     gp = ctx.new_page()
                     glovo_data = extract_glovo_menu(gp, glovo_url)
                     gp.close()
+                    if glovo_data:
+                        total_g = sum(len(v) for v in glovo_data.values())
+                        plog.step('Glovo მენიუ', f'{total_g} კერძი {len(glovo_data)} კატეგორიაში', 'ok')
+                    else:
+                        plog.step('Glovo მენიუ', 'კერძები ვერ ამოიღო', 'warn')
+                else:
+                    plog.step('Glovo', 'ბმული ვერ მოიძებნა (გეო-შეზღუდვა — Railway US IP)', 'warn')
             except Exception as e:
+                plog.step('Glovo', str(e), 'error')
                 logger.warning(f'[ScraperJob] Glovo error: {e}')
 
             browser.close()
 
-        # ── Download Google photos locally for AI analysis ─────────────────
+        # Step 4 — Download photos
         import requests as req_lib
         local_photo_paths = []
         for i, base_url in enumerate(google_photo_urls):
@@ -144,9 +213,11 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                     local_photo_paths.append(dest)
             except Exception:
                 pass
+        plog.step('ფოტოები ჩამოიტვირთა', f'{len(local_photo_paths)}/{len(google_photo_urls)} წარმატებით')
 
         # ── Glovo photos → R2 ─────────────────────────────────────────────
         if glovo_data:
+            uploaded = 0
             for cat, items in glovo_data.items():
                 for it in items:
                     raw_url = it.get('image', '')
@@ -156,15 +227,29 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                             name_key = it.get('name', '').lower().strip()
                             glovo_photo_map[name_key] = r2_url
                             it['image'] = r2_url
+                            uploaded += 1
+            plog.step('Glovo ფოტოები R2-ზე', f'{uploaded} ფოტო ატვირთული')
 
-        # ── AI photo analysis ──────────────────────────────────────────────
+        # Step 5 — AI photo analysis
         if local_photo_paths:
             all_ai_items = []
             for path in local_photo_paths:
                 try:
-                    all_ai_items.extend(analyze_menu_photo(path))
+                    items_from_photo = analyze_menu_photo(path)
+                    all_ai_items.extend(items_from_photo)
                 except Exception as e:
                     logger.warning(f'[ScraperJob] AI photo error {path}: {e}')
+
+            plog.ai_call(
+                model='gpt-4o (vision)',
+                purpose=f'ფოტო ანალიზი ({len(local_photo_paths)} ფოტო)',
+                prompt_preview=(
+                    'Extract ALL menu items visible. Return JSON array: '
+                    '[{name, description, price, category}]. '
+                    'SKIP category headers, prices only, single letters.'
+                ),
+                result_preview=f'{len(all_ai_items)} კერძი ამოღებული {len(local_photo_paths)} ფოტოდან',
+            )
 
             if all_ai_items:
                 has_cats = any(it.get('category') for it in all_ai_items)
@@ -173,31 +258,72 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
                     for it in all_ai_items:
                         cat = it.get('category') or 'მენიუ'
                         google_photos_ai.setdefault(cat, []).append(it)
+                    plog.step('ფოტო AI კატეგორიები', f'{len(google_photos_ai)} კატეგორია (GPT-დან)')
                 else:
+                    plog.ai_call(
+                        model='gpt-4o-mini',
+                        purpose='კატეგორიზაცია',
+                        prompt_preview='Categorize Georgian restaurant menu items into logical categories. Return JSON {category: [item_names]}.',
+                        result_preview=f'{len(all_ai_items)} კერძი კატეგორიებში',
+                    )
                     google_photos_ai = categorize_items(all_ai_items)
 
-            # Upload Google menu photos to R2 (for reference; analysis already done)
+            # Upload Google menu photos to R2
             for path in local_photo_paths:
                 upload_from_path(path, prefix=f'venues/{venue_id}/menu_photos')
 
-        # ── Merge ──────────────────────────────────────────────────────────
+        # Step 6 — Merge
+        plog.step('მერჯი', 'ყველა წყაროს გაერთიანება...')
         final_menu = merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map)
+        total_after_merge = sum(len(v) for v in final_menu.values())
+        plog.step(
+            'მერჯი დასრულდა',
+            f'{total_after_merge} კერძი — '
+            + ('ტექსტი ავტორიტეტული, ფოტო AI მხოლოდ ავსებს' if google_text and sum(len(v) for v in google_text.values()) >= 15 else 'ყველა წყარო შეუწყდა'),
+            'ok',
+        )
 
-        # ── AI deduplication ───────────────────────────────────────────────
+        # Step 7 — AI deduplication
         all_items = [it for items in final_menu.values() for it in items]
         text_count = sum(len(v) for v in google_text.values()) if google_text else 0
         if len(all_items) > max(text_count * 1.3, 20):
             from app.scraper.ai_analyzer import ai_deduplicate
-            print(f"[ScraperJob] Running AI dedup: {len(all_items)} items (text had {text_count})")
+            plog.ai_call(
+                model='gpt-4o-mini',
+                purpose=f'დედუბლიკაცია ({len(all_items)} კერძი)',
+                prompt_preview=(
+                    'Identify groups of DUPLICATE items — same dish with different spellings/language. '
+                    'Return array of arrays of indices. Only group when certain.'
+                ),
+                result_preview='...',
+            )
             final_menu = ai_deduplicate(final_menu)
             all_items = [it for items in final_menu.values() for it in items]
+            plog.step('დედუბლიკაცია', f'{total_after_merge} → {len(all_items)} კერძი')
 
-        # ── AI enrichment ──────────────────────────────────────────────────
+        # Step 8 — Ingredient enrichment
         missing_desc = sum(1 for it in all_items if not it.get('description'))
         if missing_desc:
+            plog.ai_call(
+                model='gpt-4o-mini',
+                purpose=f'ინგრედიენტების გამდიდრება ({missing_desc} კერძი)',
+                prompt_preview=(
+                    'For each Georgian dish, provide typical ingredients in Georgian language. '
+                    'Return JSON {"dish_name": "ingredients"}.'
+                ),
+                result_preview=f'{missing_desc} კერძს ემატება ინგრედიენტები',
+            )
             enrich_ingredients(all_items)
+            filled = sum(1 for it in all_items if it.get('description'))
+            plog.step('ინგრედიენტები', f'{filled}/{len(all_items)} კერძს აქვს აღწერა')
 
         if len(final_menu) <= 1 and len(all_items) > 5:
+            plog.ai_call(
+                model='gpt-4o-mini',
+                purpose='კატეგორიზაცია (მეორე პასი)',
+                prompt_preview='Categorize Georgian restaurant menu items. Return {category: [item_names]}.',
+                result_preview='...',
+            )
             final_menu = categorize_items(all_items)
             all_items = [it for items in final_menu.values() for it in items]
 
@@ -210,9 +336,17 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
             'total_items': len(all_items),
             'items_with_price': sum(1 for it in all_items if it.get('price')),
             'items_with_photo': sum(1 for it in all_items if it.get('image')),
+            'items_with_desc': sum(1 for it in all_items if it.get('description')),
         }
 
-        return {'_sources': sources, '_stats': stats, 'categories': final_menu}
+        plog.step(
+            'პაიფლაინი დასრულდა ✓',
+            f"{stats['total_items']} კერძი | {stats['items_with_price']} ფასით | "
+            f"{stats['items_with_desc']} აღწერით | {stats['items_with_photo']} ფოტოთი",
+            'ok',
+        )
+
+        return {'_sources': sources, '_stats': stats, 'categories': final_menu, '_log': plog.entries}
 
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)

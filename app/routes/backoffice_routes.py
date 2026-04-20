@@ -450,6 +450,38 @@ def super_test_openai():
         return jsonify(success=False, error=str(e))
 
 
+@bo_bp.route('/super/scraper-test/detail')
+@login_required
+@super_required
+def super_scraper_detail():
+    venue_id = request.args.get('venue_id', type=int)
+    if not venue_id:
+        return jsonify(error='venue_id required'), 400
+    job = ScraperJob.query.filter_by(venue_id=venue_id).first()
+    if not job or not job.result_json:
+        return jsonify(status='none')
+    categories = job.result_json.get('categories', {})
+    flat = []
+    for cat, items in categories.items():
+        for it in items:
+            flat.append({
+                'category': cat,
+                'name': it.get('name', ''),
+                'price': it.get('price', ''),
+                'description': it.get('description', ''),
+                'source': it.get('source', ''),
+                'image': it.get('image', ''),
+                'library_photo': it.get('library_photo', ''),
+            })
+    return jsonify(
+        status=job.status,
+        log=job.result_json.get('_log', []),
+        stats=job.result_json.get('_stats', {}),
+        sources=job.sources_found or {},
+        items=flat,
+    )
+
+
 # ============================================================
 # Super Admin — Venue Management
 # ============================================================
