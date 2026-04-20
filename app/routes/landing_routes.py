@@ -550,6 +550,8 @@ def forgot_password():
 
     admin = _find_admin_by_identifier(identifier)
 
+    used_method = 'sms' if is_phone_input else 'email'
+
     if admin and admin.is_active:
         if is_email_input:
             # Email-based reset: send link to email, verify email ownership
@@ -561,6 +563,7 @@ def forgot_password():
                     admin.email_verified = True
                 db.session.commit()
                 send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                used_method = 'email'
             except Exception as e:
                 current_app.logger.error('Email reset failed: ' + str(e))
         else:
