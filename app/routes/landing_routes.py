@@ -551,6 +551,8 @@ def forgot_password():
 
     admin = _find_admin_by_identifier(identifier)
 
+    used_method = 'sms' if is_phone_input else 'email'
+
     if admin and admin.is_active:
         if admin.phone:
             code, sms_error = send_sms_code(admin.phone)
@@ -559,6 +561,7 @@ def forgot_password():
                 admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=5)
                 db.session.commit()
                 session['reset_admin_id'] = admin.id
+                used_method = 'sms'
             elif admin.email:
                 # SMS failed — silent email fallback
                 try:
@@ -567,6 +570,7 @@ def forgot_password():
                     admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
                     db.session.commit()
                     send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                    used_method = 'email'
                 except Exception as e:
                     current_app.logger.error('Email reset fallback failed: ' + str(e))
         elif admin.email:
@@ -576,16 +580,17 @@ def forgot_password():
                 admin.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
                 db.session.commit()
                 send_password_reset_email(admin.email, raw_token, base_url=_request_base_url())
+                used_method = 'email'
             except Exception as e:
                 current_app.logger.error('Email reset failed: ' + str(e))
 
     # Always return same structure — no account existence reveal
-    if is_phone_input:
+    if used_method == 'sms':
         msg = 'Tu es nomeri registrirebulia, SMS kodi gaigzavna'
     else:
         msg = 'Tu es el. fosta registrirebulia, agdgenis linki gaigzavna'
 
-    return jsonify(success=True, message=msg)
+    return jsonify(success=True, method=used_method, message=msg)
 
 
 @landing_bp.route('/verify-reset-sms', methods=['POST'])
