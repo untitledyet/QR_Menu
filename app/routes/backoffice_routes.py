@@ -1,7 +1,12 @@
 import os
 import json
+import threading
+import uuid
 from datetime import datetime, timedelta
 from functools import wraps
+
+# In-memory store for photo import jobs {job_id → {status, venue_id, result, error}}
+_photo_jobs: dict = {}
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
@@ -717,11 +722,113 @@ def photo_import_page():
     return render_template('backoffice/photo_import.html', admin=admin, venue=admin.venue)
 
 
+def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
+    """Background thread: run full photo analysis pipeline and store result in _photo_jobs."""
+    import shutil
+    from sqlalchemy import func
+    from app.scraper.ai_analyzer import (
+        analyze_menu_photo_structured, enrich_missing_ingredients,
+        assign_global_categories, translate_items_bilingual
+    )
+    try:
+        with app.app_context():
+            from app.models import GlobalItem, GlobalCategory, GlobalSubcategory
+
+            all_items = []
+            for path in file_paths:
+                items = analyze_menu_photo_structured(path)
+                all_items.extend(items)
+
+            if not all_items:
+                _photo_jobs[job_id] = {'status': 'failed', 'venue_id': venue_id,
+                                       'error': 'AI-მ კერძები ვერ ამოიღო. სცადეთ სხვა ფოტო.'}
+                return
+
+            # Deduplicate
+            seen = {}
+            deduped = []
+            for it in all_items:
+                k = it['name'].lower().strip()
+                if k not in seen:
+                    seen[k] = it
+                    deduped.append(it)
+                else:
+                    ex = seen[k]
+                    if not ex.get('price') and it.get('price'):
+                        ex['price'] = it['price']
+                    if not ex.get('ingredients') and it.get('ingredients'):
+                        ex['ingredients'] = it['ingredients']
+                    if not ex.get('subcategory') and it.get('subcategory'):
+                        ex['subcategory'] = it['subcategory']
+
+            # Step 1: Assign global categories
+            global_cats = [{'id': c.id, 'name': c.name}
+                           for c in GlobalCategory.query.filter_by(is_active=True).all()]
+            global_subcats = [{'id': s.id, 'name': s.name, 'category_id': s.category_id}
+                              for s in GlobalSubcategory.query.filter_by(is_active=True).all()]
+            if global_cats:
+                assign_global_categories(deduped, global_cats, global_subcats)
+
+            # Step 2: Enrich missing ingredients
+            enrich_missing_ingredients(deduped)
+
+            # Step 3: Bilingual translation
+            translate_items_bilingual(deduped)
+
+            # Step 4: Library photo matching
+            for it in deduped:
+                name = it['name'].strip()
+                lib = (GlobalItem.query
+                       .filter(func.lower(GlobalItem.name) == name.lower())
+                       .filter(GlobalItem.image_filename.isnot(None))
+                       .first())
+                if not lib:
+                    lib = (GlobalItem.query
+                           .filter(GlobalItem.name.ilike(f'%{name}%'))
+                           .filter(GlobalItem.image_filename.isnot(None))
+                           .first())
+                it['library_photo'] = lib.image_filename if lib else None
+
+            # Category icons
+            cat_icons = {}
+            for c in global_cats:
+                gc = GlobalCategory.query.get(c['id'])
+                if gc:
+                    cat_icons[gc.name] = gc.icon
+
+            # Organise
+            organised = {}
+            cats_en = {}
+            for it in deduped:
+                cat = it.get('category') or 'სხვა'
+                sub = it.get('subcategory') or ''
+                organised.setdefault(cat, {}).setdefault(sub, []).append(it)
+                if cat not in cats_en and it.get('category_en'):
+                    cats_en[cat] = it['category_en']
+
+            _photo_jobs[job_id] = {
+                'status': 'done',
+                'venue_id': venue_id,
+                'result': {
+                    'success': True,
+                    'total': len(deduped),
+                    'categories': organised,
+                    'cat_icons': cat_icons,
+                    'cats_en': cats_en,
+                }
+            }
+    except Exception as e:
+        app.logger.exception('photo analysis pipeline error')
+        _photo_jobs[job_id] = {'status': 'failed', 'venue_id': venue_id, 'error': str(e)}
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
 @bo_bp.route('/menu/analyze-photos', methods=['POST'])
 @login_required
 @email_verified_required
 def analyze_photos():
-    import tempfile, os, shutil
+    import tempfile
     admin = get_current_admin()
     if not admin.venue:
         return jsonify(error='no venue'), 400
@@ -733,102 +840,52 @@ def analyze_photos():
         return jsonify(error='მაქსიმუმ 15 ფოტო'), 400
 
     tmpdir = tempfile.mkdtemp(prefix='photo_import_')
-    try:
-        from app.scraper.ai_analyzer import (
-            analyze_menu_photo_structured, enrich_missing_ingredients,
-            assign_global_categories, translate_items_bilingual
-        )
-        from app.models import GlobalItem, GlobalCategory, GlobalSubcategory
-        from sqlalchemy import func
+    file_paths = []
+    for f in files:
+        if not f or not f.filename:
+            continue
+        ext = f.filename.rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            continue
+        path = os.path.join(tmpdir, secure_filename(f.filename))
+        f.save(path)
+        file_paths.append(path)
 
-        all_items = []
-        for f in files:
-            if not f or not f.filename:
-                continue
-            ext = f.filename.rsplit('.', 1)[-1].lower()
-            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-                continue
-            path = os.path.join(tmpdir, secure_filename(f.filename))
-            f.save(path)
-            items = analyze_menu_photo_structured(path)
-            all_items.extend(items)
-
-        if not all_items:
-            return jsonify(error='AI-მ კერძები ვერ ამოიღო. სცადეთ სხვა ფოტო.')
-
-        # Deduplicate by name (case-insensitive)
-        seen = {}
-        deduped = []
-        for it in all_items:
-            k = it['name'].lower().strip()
-            if k not in seen:
-                seen[k] = it
-                deduped.append(it)
-            else:
-                existing = seen[k]
-                if not existing.get('price') and it.get('price'):
-                    existing['price'] = it['price']
-                if not existing.get('ingredients') and it.get('ingredients'):
-                    existing['ingredients'] = it['ingredients']
-                if not existing.get('subcategory') and it.get('subcategory'):
-                    existing['subcategory'] = it['subcategory']
-
-        # Step 1: Assign categories/subcategories from GlobalLibrary
-        global_cats = [{'id': c.id, 'name': c.name} for c in GlobalCategory.query.filter_by(is_active=True).all()]
-        global_subcats = [{'id': s.id, 'name': s.name, 'category_id': s.category_id}
-                          for s in GlobalSubcategory.query.filter_by(is_active=True).all()]
-        if global_cats:
-            assign_global_categories(deduped, global_cats, global_subcats)
-
-        # Step 2: Enrich missing ingredients via AI
-        enrich_missing_ingredients(deduped)
-
-        # Step 3: Translate to both Georgian and English
-        translate_items_bilingual(deduped)
-
-        # Step 4: Match library photos by item name
-        for it in deduped:
-            name = it['name'].strip()
-            lib = (GlobalItem.query
-                   .filter(func.lower(GlobalItem.name) == name.lower())
-                   .filter(GlobalItem.image_filename.isnot(None))
-                   .first())
-            if not lib:
-                lib = (GlobalItem.query
-                       .filter(GlobalItem.name.ilike(f'%{name}%'))
-                       .filter(GlobalItem.image_filename.isnot(None))
-                       .first())
-            it['library_photo'] = lib.image_filename if lib else None
-
-        # Category icon from GlobalCategory (already matched above)
-        cat_icons = {}
-        for c in global_cats:
-            gc = GlobalCategory.query.get(c['id'])
-            if gc:
-                cat_icons[gc.name] = gc.icon
-
-        # Organise: {category: {subcategory: [items]}}
-        organised = {}
-        cats_en = {}
-        for it in deduped:
-            cat = it.get('category') or 'სხვა'
-            sub = it.get('subcategory') or ''
-            organised.setdefault(cat, {}).setdefault(sub, []).append(it)
-            if cat not in cats_en and it.get('category_en'):
-                cats_en[cat] = it['category_en']
-
-        return jsonify(
-            success=True,
-            total=len(deduped),
-            categories=organised,
-            cat_icons=cat_icons,
-            cats_en=cats_en,
-        )
-    except Exception as e:
-        current_app.logger.exception('analyze_photos error')
-        return jsonify(error=str(e)), 500
-    finally:
+    if not file_paths:
+        import shutil
         shutil.rmtree(tmpdir, ignore_errors=True)
+        return jsonify(error='მხარდაჭერილი ფორმატი: JPG, PNG, WEBP'), 400
+
+    job_id = str(uuid.uuid4())
+    _photo_jobs[job_id] = {'status': 'processing', 'venue_id': admin.venue.id}
+
+    t = threading.Thread(
+        target=_run_photo_analysis,
+        args=(current_app._get_current_object(), job_id, admin.venue.id, file_paths, tmpdir),
+        daemon=True,
+    )
+    t.start()
+    return jsonify(job_id=job_id)
+
+
+@bo_bp.route('/menu/analyze-status/<job_id>')
+@login_required
+def analyze_photos_status(job_id):
+    admin = get_current_admin()
+    job = _photo_jobs.get(job_id)
+    if not job:
+        return jsonify(status='not_found'), 404
+    if admin.venue and job.get('venue_id') != admin.venue.id:
+        return jsonify(status='not_found'), 404
+    if job['status'] == 'done':
+        result = job.pop('result')
+        _photo_jobs.pop(job_id, None)
+        return jsonify(status='done', **result)
+    if job['status'] == 'failed':
+        error = job.get('error', 'უცნობი შეცდომა')
+        _photo_jobs.pop(job_id, None)
+        return jsonify(status='failed', error=error)
+    return jsonify(status='processing')
 
 
 @bo_bp.route('/menu/import-analyzed', methods=['POST'])

@@ -373,37 +373,39 @@ function removeFile(i) { selectedFiles.splice(i, 1); renderThumbs(); }
 function clearFiles() { selectedFiles = []; renderThumbs(); }
 
 // ── Analysis ──────────────────────────────────────────────────────────────────
+var _pollTimer = null;
+
 function startAnalysis() {
     if (selectedFiles.length === 0) return;
     document.getElementById('panel-upload').style.display = 'none';
     document.getElementById('panel-loading').style.display = '';
     setStep(2);
 
-    // Animate loader steps over ~20s
+    // Animate loader steps: advance every ~18s to cover typical pipeline duration
     var steps = ['ls-extract','ls-cats','ls-ing','ls-trans','ls-photos'];
     var si = 0;
     setLoaderStep(steps[0]);
     loaderTimer = setInterval(function() {
         si = Math.min(si + 1, steps.length - 1);
         setLoaderStep(steps[si]);
-    }, 5000);
+    }, 18000);
 
     var form = new FormData();
     selectedFiles.forEach(function(f) { form.append('photos', f); });
 
+    // POST files — returns immediately with job_id
     fetch('/backoffice/menu/analyze-photos', {method:'POST', body:form})
         .then(function(r){ return r.json(); })
         .then(function(d) {
-            clearInterval(loaderTimer);
-            document.getElementById('panel-loading').style.display = 'none';
-            if (!d.success) {
+            if (!d.job_id) {
+                clearInterval(loaderTimer);
+                document.getElementById('panel-loading').style.display = 'none';
                 document.getElementById('panel-upload').style.display = '';
                 setStep(1);
-                showError(d.error || 'AI-მ ვერ დაამუშავა ფოტოები. სცადეთ ხელახლა.');
+                showError(d.error || 'შეცდომა. სცადეთ ხელახლა.');
                 return;
             }
-            analysedData = d;
-            renderReview(d);
+            pollStatus(d.job_id);
         })
         .catch(function(e) {
             clearInterval(loaderTimer);
@@ -412,6 +414,32 @@ function startAnalysis() {
             setStep(1);
             showError('შეცდომა: ' + e);
         });
+}
+
+function pollStatus(jobId) {
+    _pollTimer = setTimeout(function() {
+        fetch('/backoffice/menu/analyze-status/' + jobId)
+            .then(function(r){ return r.json(); })
+            .then(function(d) {
+                if (d.status === 'processing') {
+                    pollStatus(jobId); // check again in 3s
+                    return;
+                }
+                clearInterval(loaderTimer);
+                document.getElementById('panel-loading').style.display = 'none';
+                if (d.status === 'done') {
+                    analysedData = d;
+                    renderReview(d);
+                } else {
+                    document.getElementById('panel-upload').style.display = '';
+                    setStep(1);
+                    showError(d.error || 'AI-მ ვერ დაამუშავა ფოტოები. სცადეთ ხელახლა.');
+                }
+            })
+            .catch(function() {
+                pollStatus(jobId); // retry on network glitch
+            });
+    }, 3000);
 }
 
 // ── Render Review ─────────────────────────────────────────────────────────────
@@ -605,6 +633,7 @@ function importItems() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function resetAll() {
     clearInterval(loaderTimer);
+    clearTimeout(_pollTimer);
     selectedFiles = []; analysedData = null;
     document.getElementById('thumb-grid').innerHTML = '';
     document.getElementById('file-count').textContent = '';
