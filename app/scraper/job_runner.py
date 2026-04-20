@@ -89,13 +89,31 @@ def _run_pipeline(place_id: str, venue_id: int) -> dict:
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True, slow_mo=0)
-            ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
+            ctx = browser.new_context(
+                viewport={'width': 1280, 'height': 900},
+                locale='en-US',
+                timezone_id='America/New_York',
+                user_agent=(
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/124.0.0.0 Safari/537.36'
+                ),
+            )
             page = ctx.new_page()
 
             try:
                 google_text = extract_google_text_menu(page, maps_url)
             except Exception as e:
                 logger.warning(f'[ScraperJob] Google text error: {e}')
+
+            # Screenshot for debugging
+            try:
+                shot_path = os.path.join(tmpdir, 'debug_after_google_text.png')
+                page.screenshot(path=shot_path, full_page=False)
+                shot_url = upload_from_path(shot_path, prefix=f'debug/{venue_id}')
+                logger.info(f'[ScraperJob] Screenshot after google_text: {shot_url}')
+            except Exception:
+                pass
 
             try:
                 google_photo_urls = extract_google_menu_photos(page, maps_url, tmpdir)
