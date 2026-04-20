@@ -124,39 +124,35 @@ def analyze_menu_photo(image_path: str) -> list:
 
 def analyze_menu_photo_structured(image_path: str) -> list:
     """
-    Extract structured menu items from a photo with category, subcategory,
-    ingredients and price. Used for the user-facing photo import feature.
-    Returns list of {name, category, subcategory, ingredients, price}.
+    Two-step extraction from a menu photo:
+      1. Vision call (GPT-4o): read all visible text as faithfully as possible.
+      2. Text-only call (GPT-4o-mini): parse that raw text into structured items.
+    Separating OCR from parsing improves accuracy for both steps.
     """
     try:
         client = _get_client()
     except ImportError:
         return []
 
+    # ── Step 1: OCR — read everything off the image ──────────────────────────
     img_b64 = _prepare_image_b64(image_path)
-
-    prompt = (
-        "This is a restaurant menu photo. Extract ALL menu items visible.\n"
-        "Return ONLY a valid JSON array. Each element:\n"
-        '{"name":"კერძის სახელი","category":"კატეგორია","subcategory":"ქვეკატეგორია_ან_ცარიელი","ingredients":"ინგრედიენტები_ან_ცარიელი","price":"15.00_ან_ცარიელი"}\n'
-        "RULES:\n"
-        "- name: actual dish or drink name (NOT a price, NOT a number, NOT a header)\n"
-        "- category: the section this item belongs to (e.g. სალათები, ცხელი კერძები, სასმელი)\n"
-        "- subcategory: sub-section if present (e.g. ვეგეტარიანური, ცხარე), else empty string\n"
-        "- ingredients: ingredients or short description visible on menu, else empty string\n"
-        "- price: number only (e.g. '12.50'), empty string if not visible\n"
-        "- SKIP category/section headers — only include actual dishes and drinks\n"
-        "- SKIP entries where name is just a number or price\n"
-        "Return empty array [] if nothing readable."
+    ocr_prompt = (
+        "You are an OCR engine. This is a photo of a restaurant menu.\n"
+        "Read and transcribe ALL visible text EXACTLY as it appears — every dish name, "
+        "price, section header, description, and ingredient list.\n"
+        "Preserve the visual layout: keep section headers on their own lines, "
+        "keep prices next to the item they belong to.\n"
+        "Do NOT interpret, translate, or restructure anything. Just read the text.\n"
+        "If text is partially cut off, include what is readable with '...'.\n"
+        "Return ONLY the raw transcribed text, nothing else."
     )
-
     try:
-        response = client.chat.completions.create(
+        ocr_resp = client.chat.completions.create(
             model=config.OPENAI_MODEL,
             messages=[{
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": prompt},
+                    {"type": "text", "text": ocr_prompt},
                     {"type": "image_url", "image_url": {
                         "url": f"data:image/jpeg;base64,{img_b64}",
                         "detail": "high",
@@ -165,7 +161,39 @@ def analyze_menu_photo_structured(image_path: str) -> list:
             }],
             max_tokens=4096,
         )
-        items = _parse_json_response(response.choices[0].message.content)
+        raw_text = ocr_resp.choices[0].message.content.strip()
+        print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
+    except Exception as e:
+        print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
+        return []
+
+    if not raw_text or len(raw_text) < 10:
+        return []
+
+    # ── Step 2: Parse — structure the raw text into menu items ───────────────
+    parse_prompt = (
+        "You are a restaurant menu parser. Below is raw OCR text from a restaurant menu.\n"
+        "Parse it into a structured list of menu items. Return ONLY a valid JSON array:\n"
+        '[{"name":"...","category":"...","subcategory":"...","ingredients":"...","price":"..."}]\n\n'
+        "RULES:\n"
+        "- name: the dish or drink name (required — skip if unclear)\n"
+        "- category: the menu section this item belongs to (e.g. სალათები, ცხელი კერძები, სასმელი, Salads, Hot Dishes)\n"
+        "- subcategory: sub-section if present, else empty string\n"
+        "- ingredients: description or ingredients visible in the text, else empty string\n"
+        "- price: numeric value only (e.g. '12.50'), empty string if not found\n"
+        "- SKIP section headers, decorative text, restaurant name, address, phone numbers\n"
+        "- SKIP entries where the name is a number, a price, or fewer than 2 characters\n"
+        "- If a price appears on the same line or directly after an item name, assign it to that item\n"
+        "Return [] if no valid items found.\n\n"
+        "RAW MENU TEXT:\n" + raw_text
+    )
+    try:
+        parse_resp = client.chat.completions.create(
+            model=config.OPENAI_MODEL_MINI,
+            messages=[{"role": "user", "content": parse_prompt}],
+            max_tokens=4096,
+        )
+        items = _parse_json_response(parse_resp.choices[0].message.content)
         filtered = []
         for it in items:
             name = it.get("name", "").strip()
@@ -180,10 +208,10 @@ def analyze_menu_photo_structured(image_path: str) -> list:
                 "ingredients": (it.get("ingredients") or "").strip(),
                 "price": (it.get("price") or "").strip(),
             })
-        print(f"[AI] Structured extract: {len(filtered)} items from {os.path.basename(image_path)}")
+        print(f"[AI] Parsed {len(filtered)} items from {os.path.basename(image_path)}")
         return filtered
     except Exception as e:
-        print(f"[AI] Structured extract error: {e}")
+        print(f"[AI] Parse error for {os.path.basename(image_path)}: {e}")
         return []
 
 
