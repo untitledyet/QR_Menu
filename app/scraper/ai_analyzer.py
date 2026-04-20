@@ -163,6 +163,115 @@ def analyze_menu_photo_structured(image_path: str) -> list:
         return []
 
 
+def assign_global_categories(items: list, global_cats: list, global_subcats: list) -> list:
+    """
+    Map each item's extracted category/subcategory to the closest GlobalLibrary entry.
+
+    global_cats   — list of {id, name} from GlobalCategory
+    global_subcats — list of {id, name, category_id} from GlobalSubcategory
+
+    Sets item['category_id'], item['category'] (canonical name),
+         item['subcategory_id'], item['subcategory'] (canonical name).
+    Items with no category get one assigned by GPT based on the dish name.
+    """
+    if not items:
+        return items
+
+    try:
+        client = _get_client()
+    except ImportError:
+        return items
+
+    cat_names = [c["name"] for c in global_cats]
+    sub_names = [s["name"] for s in global_subcats]
+
+    # Build lookup dicts: lower name → entry
+    cat_by_name = {c["name"].lower(): c for c in global_cats}
+    sub_by_name = {s["name"].lower(): s for s in global_subcats}
+
+    # Collect unique extracted values
+    unique_cats = list({it.get("category", "").strip() for it in items if it.get("category")})
+    unique_subs = list({it.get("subcategory", "").strip() for it in items if it.get("subcategory")})
+    items_no_cat = [it["name"] for it in items if not it.get("category")]
+
+    cat_mapping = {}   # extracted_name_lower → GlobalCategory entry
+    sub_mapping = {}   # extracted_name_lower → GlobalSubcategory entry
+
+    # Step 1: map extracted categories → GlobalCategory
+    if unique_cats or items_no_cat:
+        to_map = unique_cats + items_no_cat
+        prompt = (
+            "You are a restaurant menu classifier. For each dish/category name below, "
+            "pick the SINGLE closest matching category from the provided GlobalLibrary list.\n"
+            "Return ONLY valid JSON: {\"input_name\": \"matched_global_category_name\"}.\n"
+            "If nothing fits well, use the most general applicable category.\n\n"
+            "GlobalLibrary categories:\n" + json.dumps(cat_names, ensure_ascii=False) + "\n\n"
+            "Items to classify:\n" + json.dumps(to_map, ensure_ascii=False)
+        )
+        try:
+            resp = client.chat.completions.create(
+                model=config.OPENAI_MODEL_MINI,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2048,
+            )
+            raw = _parse_json_response(resp.choices[0].message.content)
+            for k, v in raw.items():
+                matched = cat_by_name.get(v.lower())
+                if matched:
+                    cat_mapping[k.lower()] = matched
+            print(f"[AI] Category mapping: {len(cat_mapping)} matched")
+        except Exception as e:
+            print(f"[AI] Category mapping error: {e}")
+
+    # Step 2: map extracted subcategories → GlobalSubcategory
+    if unique_subs:
+        prompt = (
+            "For each subcategory name below, pick the closest match from the GlobalLibrary subcategory list.\n"
+            "Return ONLY valid JSON: {\"input_name\": \"matched_global_subcategory_name\"}.\n"
+            "If nothing fits, use the closest. Never return empty.\n\n"
+            "GlobalLibrary subcategories:\n" + json.dumps(sub_names, ensure_ascii=False) + "\n\n"
+            "Subcategories to classify:\n" + json.dumps(unique_subs, ensure_ascii=False)
+        )
+        try:
+            resp = client.chat.completions.create(
+                model=config.OPENAI_MODEL_MINI,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1024,
+            )
+            raw = _parse_json_response(resp.choices[0].message.content)
+            for k, v in raw.items():
+                matched = sub_by_name.get(v.lower())
+                if matched:
+                    sub_mapping[k.lower()] = matched
+            print(f"[AI] Subcategory mapping: {len(sub_mapping)} matched")
+        except Exception as e:
+            print(f"[AI] Subcategory mapping error: {e}")
+
+    # Step 3: Apply mappings to every item
+    for it in items:
+        raw_cat = it.get("category", "").strip()
+        cat_entry = cat_mapping.get(raw_cat.lower()) or cat_mapping.get(it["name"].lower())
+        if cat_entry:
+            it["category"] = cat_entry["name"]
+            it["category_id"] = cat_entry["id"]
+        else:
+            it.setdefault("category", raw_cat or "სხვა")
+            it["category_id"] = None
+
+        raw_sub = it.get("subcategory", "").strip()
+        if raw_sub:
+            sub_entry = sub_mapping.get(raw_sub.lower())
+            if sub_entry:
+                it["subcategory"] = sub_entry["name"]
+                it["subcategory_id"] = sub_entry["id"]
+            else:
+                it["subcategory_id"] = None
+        else:
+            it["subcategory_id"] = None
+
+    return items
+
+
 def enrich_missing_ingredients(items: list) -> list:
     """Fill ingredients for items that have none (used after photo import merge)."""
     missing = [it for it in items if not it.get("ingredients")]

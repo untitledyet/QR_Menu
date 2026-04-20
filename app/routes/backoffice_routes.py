@@ -734,8 +734,10 @@ def analyze_photos():
 
     tmpdir = tempfile.mkdtemp(prefix='photo_import_')
     try:
-        from app.scraper.ai_analyzer import analyze_menu_photo_structured, enrich_missing_ingredients
-        from app.models import GlobalItem, GlobalCategory
+        from app.scraper.ai_analyzer import (
+            analyze_menu_photo_structured, enrich_missing_ingredients, assign_global_categories
+        )
+        from app.models import GlobalItem, GlobalCategory, GlobalSubcategory
         from sqlalchemy import func
 
         all_items = []
@@ -770,10 +772,17 @@ def analyze_photos():
                 if not existing.get('subcategory') and it.get('subcategory'):
                     existing['subcategory'] = it['subcategory']
 
-        # Enrich missing ingredients
+        # Step 1: Assign categories/subcategories from GlobalLibrary
+        global_cats = [{'id': c.id, 'name': c.name} for c in GlobalCategory.query.filter_by(is_active=True).all()]
+        global_subcats = [{'id': s.id, 'name': s.name, 'category_id': s.category_id}
+                          for s in GlobalSubcategory.query.filter_by(is_active=True).all()]
+        if global_cats:
+            assign_global_categories(deduped, global_cats, global_subcats)
+
+        # Step 2: Enrich missing ingredients via AI
         enrich_missing_ingredients(deduped)
 
-        # Match library photos & category icons
+        # Step 3: Match library photos by item name
         for it in deduped:
             name = it['name'].strip()
             lib = (GlobalItem.query
@@ -787,19 +796,12 @@ def analyze_photos():
                        .first())
             it['library_photo'] = lib.image_filename if lib else None
 
-        # Category icon from GlobalCategory
+        # Category icon from GlobalCategory (already matched above)
         cat_icons = {}
-        for it in deduped:
-            cat_name = it.get('category', '')
-            if cat_name and cat_name not in cat_icons:
-                gc = (GlobalCategory.query
-                      .filter(func.lower(GlobalCategory.name) == cat_name.lower())
-                      .first())
-                if not gc:
-                    gc = GlobalCategory.query.filter(
-                        GlobalCategory.name.ilike(f'%{cat_name.split()[0]}%')
-                    ).first()
-                cat_icons[cat_name] = gc.icon if gc else None
+        for c in global_cats:
+            gc = GlobalCategory.query.get(c['id'])
+            if gc:
+                cat_icons[gc.name] = gc.icon
 
         # Organise: {category: {subcategory: [items]}}
         organised = {}
@@ -870,10 +872,11 @@ def import_analyzed():
                     price = float(item_data.get('price') or 0)
                 except (ValueError, TypeError):
                     price = 0.0
+                # Photo: prefer library photo (GlobalItem match)
                 photo = item_data.get('library_photo') or None
                 food = FoodItem(
                     FoodName=name,
-                    Description=(item_data.get('description') or '').strip(),
+                    Description='',
                     Ingredients=(item_data.get('ingredients') or '').strip(),
                     Price=price,
                     ImageFilename=photo,
