@@ -10,7 +10,9 @@ def _get_client():
     import httpx
     return OpenAI(
         api_key=config.OPENAI_API_KEY,
-        http_client=httpx.Client(timeout=60.0),
+        http_client=httpx.Client(
+            timeout=httpx.Timeout(connect=10.0, read=240.0, write=60.0, pool=10.0)
+        ),
     )
 
 
