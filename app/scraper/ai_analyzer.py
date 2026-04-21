@@ -176,13 +176,19 @@ def analyze_menu_photo_structured(image_path: str) -> list:
         '[{"name":"...","category":"...","subcategory":"...","ingredients":"...","price":"..."}]\n\n'
         "RULES:\n"
         "- name: the dish or drink name (required — skip if unclear)\n"
-        "- category: the menu section this item belongs to (e.g. სალათები, ცხელი კერძები, სასმელი, Salads, Hot Dishes)\n"
-        "- subcategory: sub-section if present, else empty string\n"
+        "- category + subcategory: split section headers intelligently.\n"
+        "  If a section header is 'TYPE METHOD' (two parts), use TYPE as category and METHOD as subcategory.\n"
+        "  Examples: 'არაყი ბოთლის' → category='არაყი', subcategory='ბოთლის'\n"
+        "            'არაყი ჩამოსასხმელი' → category='არაყი', subcategory='ჩამოსასხმელი'\n"
+        "            'ჭაჭა ბოთლის' → category='ჭაჭა', subcategory='ბოთლის'\n"
+        "            'ჭაჭა ჩამოსასხმელი' → category='ჭაჭა', subcategory='ჩამოსასხმელი'\n"
+        "            'ცხელი სასმელები' → category='ცხელი სასმელები', subcategory=''\n"
+        "  Use judgement: if the second word is a serving method or variant, it's a subcategory.\n"
         "- ingredients: description or ingredients visible in the text, else empty string\n"
         "- price: numeric value only (e.g. '12.50'), empty string if not found\n"
-        "- SKIP section headers, decorative text, restaurant name, address, phone numbers\n"
+        "- SKIP restaurant name, address, phone numbers, service charge lines\n"
         "- SKIP entries where the name is a number, a price, or fewer than 2 characters\n"
-        "- If a price appears on the same line or directly after an item name, assign it to that item\n"
+        "- Assign the price that appears on the same line or directly after an item\n"
         "Return [] if no valid items found.\n\n"
         "RAW MENU TEXT:\n" + raw_text
     )
