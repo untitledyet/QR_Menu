@@ -722,6 +722,13 @@ def photo_import_page():
     return render_template('backoffice/photo_import.html', admin=admin, venue=admin.venue)
 
 
+def _emit(job_id: str, event_type: str, **data):
+    """Append an event to the job's event stream (thread-safe via GIL)."""
+    job = _photo_jobs.get(job_id)
+    if job is not None:
+        job.setdefault('events', []).append({'type': event_type, **data})
+
+
 def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
     """Background thread: run full photo analysis pipeline and store result in _photo_jobs."""
     import shutil
@@ -730,21 +737,43 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
         analyze_menu_photo_structured, enrich_missing_ingredients,
         assign_global_categories, translate_items_bilingual
     )
+
+    def emit(event_type, **data):
+        _emit(job_id, event_type, **data)
+
+    def fail(msg):
+        job = _photo_jobs.get(job_id)
+        if job:
+            job['status'] = 'failed'
+            job['error'] = msg
+            emit('error', message=msg)
+
     try:
         with app.app_context():
             from app.models import GlobalItem, GlobalCategory, GlobalSubcategory
 
             all_items = []
-            for path in file_paths:
-                items = analyze_menu_photo_structured(path)
+            total_photos = len(file_paths)
+
+            for photo_idx, path in enumerate(file_paths):
+                filename = os.path.basename(path)
+                emit('photo_start', photo_index=photo_idx + 1, total=total_photos, filename=filename)
+
+                def _make_cb(idx):
+                    def _cb(evt_type, **kw):
+                        _emit(job_id, evt_type, photo_index=idx + 1, **kw)
+                    return _cb
+
+                items = analyze_menu_photo_structured(path, event_cb=_make_cb(photo_idx))
+                emit('photo_done', photo_index=photo_idx + 1, filename=filename, count=len(items))
                 all_items.extend(items)
 
             if not all_items:
-                _photo_jobs[job_id] = {'status': 'failed', 'venue_id': venue_id,
-                                       'error': 'AI-მ კერძები ვერ ამოიღო. სცადეთ სხვა ფოტო.'}
+                fail('AI-მ კერძები ვერ ამოიღო. სცადეთ სხვა ფოტო.')
                 return
 
             # Deduplicate
+            emit('step_start', step='dedup', message='დუბლიკატების გამორიცხვა...')
             seen = {}
             deduped = []
             for it in all_items:
@@ -754,28 +783,37 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                     deduped.append(it)
                 else:
                     ex = seen[k]
-                    if not ex.get('price') and it.get('price'):
-                        ex['price'] = it['price']
-                    if not ex.get('ingredients') and it.get('ingredients'):
-                        ex['ingredients'] = it['ingredients']
-                    if not ex.get('subcategory') and it.get('subcategory'):
-                        ex['subcategory'] = it['subcategory']
+                    for field in ('price', 'ingredients', 'subcategory'):
+                        if not ex.get(field) and it.get(field):
+                            ex[field] = it[field]
+            emit('step_done', step='dedup', count=len(deduped))
 
-            # Step 1: Assign global categories
+            # Assign global categories
+            emit('step_start', step='cats', message='კატეგორიებში განლაგება...')
             global_cats = [{'id': c.id, 'name': c.name}
                            for c in GlobalCategory.query.filter_by(is_active=True).all()]
             global_subcats = [{'id': s.id, 'name': s.name, 'category_id': s.category_id}
                               for s in GlobalSubcategory.query.filter_by(is_active=True).all()]
             if global_cats:
                 assign_global_categories(deduped, global_cats, global_subcats)
+            emit('step_done', step='cats')
 
-            # Step 2: Enrich missing ingredients
+            # Enrich ingredients
+            emit('step_start', step='enrich', message='ინგრედიენტების შევსება...')
             enrich_missing_ingredients(deduped)
+            emit('step_done', step='enrich')
 
-            # Step 3: Bilingual translation
+            # Bilingual translation
+            emit('step_start', step='translate', message='ქართულ–ინგლისური თარგმანი...')
             translate_items_bilingual(deduped)
+            emit('step_done', step='translate', items=[
+                {'name_ka': it.get('name_ka', ''), 'name_en': it.get('name_en', ''),
+                 'category': it.get('category', '')}
+                for it in deduped[:50]
+            ])
 
-            # Step 4: Library photo matching
+            # Library photo matching
+            emit('step_start', step='library', message='ბიბლიოთეკის ფოტოების შეჯვარება...')
             for it in deduped:
                 name = it['name'].strip()
                 lib = (GlobalItem.query
@@ -788,6 +826,7 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                            .filter(GlobalItem.image_filename.isnot(None))
                            .first())
                 it['library_photo'] = lib.image_filename if lib else None
+            emit('step_done', step='library')
 
             # Category icons
             cat_icons = {}
@@ -806,20 +845,20 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                 if cat not in cats_en and it.get('category_en'):
                     cats_en[cat] = it['category_en']
 
-            _photo_jobs[job_id] = {
-                'status': 'done',
-                'venue_id': venue_id,
-                'result': {
-                    'success': True,
-                    'total': len(deduped),
-                    'categories': organised,
-                    'cat_icons': cat_icons,
-                    'cats_en': cats_en,
-                }
+            emit('complete', total=len(deduped))
+
+            job = _photo_jobs.get(job_id, {})
+            job['status'] = 'done'
+            job['result'] = {
+                'success': True,
+                'total': len(deduped),
+                'categories': organised,
+                'cat_icons': cat_icons,
+                'cats_en': cats_en,
             }
     except Exception as e:
         app.logger.exception('photo analysis pipeline error')
-        _photo_jobs[job_id] = {'status': 'failed', 'venue_id': venue_id, 'error': str(e)}
+        fail(str(e))
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
@@ -857,7 +896,7 @@ def analyze_photos():
         return jsonify(error='მხარდაჭერილი ფორმატი: JPG, PNG, WEBP'), 400
 
     job_id = str(uuid.uuid4())
-    _photo_jobs[job_id] = {'status': 'processing', 'venue_id': admin.venue.id}
+    _photo_jobs[job_id] = {'status': 'processing', 'venue_id': admin.venue.id, 'events': []}
 
     t = threading.Thread(
         target=_run_photo_analysis,
@@ -878,7 +917,7 @@ def analyze_photos_status(job_id):
     if admin.venue and job.get('venue_id') != admin.venue.id:
         return jsonify(status='not_found'), 404
     if job['status'] == 'done':
-        result = job.pop('result')
+        result = job.get('result', {})
         _photo_jobs.pop(job_id, None)
         return jsonify(status='done', **result)
     if job['status'] == 'failed':
@@ -886,6 +925,35 @@ def analyze_photos_status(job_id):
         _photo_jobs.pop(job_id, None)
         return jsonify(status='failed', error=error)
     return jsonify(status='processing')
+
+
+@bo_bp.route('/menu/analyze-events/<job_id>')
+@login_required
+def analyze_events(job_id):
+    """Return new events since cursor. Includes final result when done."""
+    admin = get_current_admin()
+    job = _photo_jobs.get(job_id)
+    if not job:
+        return jsonify(status='not_found', events=[], cursor=0), 404
+    if admin.venue and job.get('venue_id') != admin.venue.id:
+        return jsonify(status='not_found', events=[], cursor=0), 404
+
+    cursor = int(request.args.get('cursor', 0))
+    events = job.get('events', [])
+    new_events = events[cursor:]
+    new_cursor = len(events)
+    status = job.get('status', 'processing')
+
+    result = None
+    error = None
+    if status == 'done':
+        result = job.get('result')
+        _photo_jobs.pop(job_id, None)
+    elif status == 'failed':
+        error = job.get('error', 'უცნობი შეცდომა')
+        _photo_jobs.pop(job_id, None)
+
+    return jsonify(status=status, events=new_events, cursor=new_cursor, result=result, error=error)
 
 
 @bo_bp.route('/menu/import-analyzed', methods=['POST'])

@@ -45,17 +45,95 @@
                 cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .pi-thumb__rm:hover { background:rgba(220,38,38,.9); }
 
-/* ── Loader ── */
-.pi-loader { display:flex; flex-direction:column; align-items:center; gap:0; padding:70px 0; }
-.pi-loader__ring { width:56px; height:56px; border:5px solid var(--bo-border);
-                   border-top-color:#6c63ff; border-radius:50%; animation:pi-spin .75s linear infinite; }
+/* ── Live analysis panel ── */
+.pi-live-wrap { border-radius:12px; overflow:hidden; border:1px solid var(--bo-border); }
+
+/* Header */
+.pi-live-hdr { display:flex; align-items:center; gap:12px; padding:14px 20px;
+               background:var(--bo-surface-2); border-bottom:1px solid var(--bo-border); }
+.pi-live-hdr-spinner { width:22px; height:22px; border:3px solid var(--bo-border);
+                       border-top-color:#6c63ff; border-radius:50%; animation:pi-spin .75s linear infinite; flex-shrink:0; }
+.pi-live-hdr-spinner--done { border-color:#22c55e; border-top-color:#22c55e; animation:none; }
+.pi-live-hdr-title { font-weight:700; font-size:.95rem; flex:1; }
+.pi-live-hdr-badge { font-size:.75rem; padding:3px 10px; border-radius:10px;
+                     background:#ede9ff; color:#6c63ff; font-weight:700; }
 @keyframes pi-spin { to { transform:rotate(360deg); } }
-.pi-loader__steps { margin-top:28px; display:flex; flex-direction:column; gap:10px; width:320px; }
-.pi-loader__step { display:flex; align-items:center; gap:10px; padding:8px 14px;
-                   border-radius:8px; background:var(--bo-surface-2); font-size:.82rem; color:var(--bo-text-2); }
-.pi-loader__step--active { background:#f5f4ff; color:#6c63ff; font-weight:600; }
-.pi-loader__step--done { color:var(--bo-green); }
-.pi-loader__step i { width:14px; text-align:center; }
+
+/* Progress bar */
+.pi-prog-bar { height:3px; background:var(--bo-border); }
+.pi-prog-fill { height:100%; background:linear-gradient(90deg,#6c63ff,#a78bfa);
+                transition:width .6s ease; border-radius:0 2px 2px 0; }
+
+/* Pipeline steps row */
+.pi-pipeline { display:flex; align-items:center; gap:0; padding:12px 20px;
+               border-bottom:1px solid var(--bo-border); overflow-x:auto; }
+.pi-ps { display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:20px;
+         font-size:.75rem; color:var(--bo-text-2); font-weight:600; white-space:nowrap;
+         transition:all .3s; }
+.pi-ps-icon { font-size:.72rem; }
+.pi-ps--waiting { opacity:.45; }
+.pi-ps--active { background:#ede9ff; color:#6c63ff; }
+.pi-ps--active .pi-ps-icon { animation:pi-spin .9s linear infinite; }
+.pi-ps--done { background:#dcfce7; color:#166534; }
+.pi-ps-sep { color:var(--bo-border); font-size:.65rem; margin:0 2px; flex-shrink:0; }
+
+/* Body: feed + sidebar */
+.pi-live-body { display:grid; grid-template-columns:1fr 340px; min-height:340px; max-height:520px; }
+@media(max-width:780px){ .pi-live-body{ grid-template-columns:1fr; max-height:none; } }
+
+/* Event feed */
+.pi-feed { padding:16px; overflow-y:auto; border-right:1px solid var(--bo-border);
+           display:flex; flex-direction:column; gap:10px; }
+@media(max-width:780px){ .pi-feed{ border-right:none; border-bottom:1px solid var(--bo-border); max-height:300px; } }
+
+/* Photo section in feed */
+.pi-feed-photo { border:1px solid var(--bo-border); border-radius:10px; overflow:hidden; }
+.pi-feed-photo-hdr { display:flex; align-items:center; gap:8px; padding:8px 12px;
+                     background:var(--bo-surface-2); font-size:.8rem; font-weight:700; }
+.pi-feed-photo-hdr i { color:#6c63ff; }
+.pi-feed-photo-badge { margin-left:auto; font-size:.68rem; padding:2px 8px; border-radius:8px;
+                       background:var(--bo-surface); border:1px solid var(--bo-border); color:var(--bo-text-2); }
+.pi-feed-photo-badge--done { background:#dcfce7; color:#166534; border-color:#86efac; }
+
+.pi-ocr-box { margin:10px 12px; padding:8px 10px; background:#0f172a; border-radius:7px;
+              font-family:'Courier New',monospace; font-size:.72rem; color:#94a3b8;
+              max-height:90px; overflow-y:auto; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.pi-ocr-label { padding:0 12px; font-size:.68rem; color:var(--bo-text-2); font-weight:700;
+                text-transform:uppercase; letter-spacing:.05em; }
+
+.pi-feed-count { display:flex; align-items:center; gap:6px; padding:8px 12px;
+                 font-size:.78rem; color:var(--bo-text-2); }
+.pi-feed-count strong { color:var(--bo-text); }
+
+/* Step rows in feed */
+.pi-feed-step { display:flex; align-items:center; gap:8px; padding:6px 10px;
+                border-radius:8px; font-size:.8rem; background:var(--bo-surface-2); color:var(--bo-text-2); }
+.pi-feed-step i { width:14px; text-align:center; color:#6c63ff; }
+.pi-feed-step--done { background:#dcfce7; color:#166534; }
+.pi-feed-step--done i { color:#22c55e; }
+
+/* Category sidebar */
+.pi-cat-side { overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.pi-cat-side-title { font-size:.72rem; font-weight:800; text-transform:uppercase;
+                     letter-spacing:.06em; color:var(--bo-text-2); padding:0 2px 4px; }
+.pi-bucket { border:1px solid var(--bo-border); border-radius:8px; overflow:hidden; }
+.pi-bucket-hdr { padding:6px 10px; background:var(--bo-surface-2); font-size:.75rem;
+                 font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+.pi-bucket-hdr-count { font-size:.68rem; color:var(--bo-text-2); }
+.pi-bucket-chips { display:flex; flex-wrap:wrap; gap:5px; padding:7px 10px; }
+.pi-chip { font-size:.7rem; padding:3px 8px; border-radius:12px; background:#ede9ff;
+           color:#4c3d99; font-weight:600; animation:pi-pop 0.35s cubic-bezier(.34,1.56,.64,1) both;
+           max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pi-chip--translated { background:#dbeafe; color:#1e3a8a; }
+@keyframes pi-pop {
+    0%   { transform:scale(0) translateY(6px); opacity:0; }
+    60%  { transform:scale(1.12) translateY(-2px); }
+    100% { transform:scale(1) translateY(0); opacity:1; }
+}
+
+/* Empty state */
+.pi-cat-empty { text-align:center; padding:32px 16px; color:var(--bo-text-2); font-size:.8rem; }
+.pi-cat-empty i { font-size:1.8rem; opacity:.3; display:block; margin-bottom:8px; }
 
 /* ── Results ── */
 .pi-summary-bar { display:flex; justify-content:space-between; align-items:center;
@@ -237,30 +315,68 @@
     </div>
 </div>
 
-{# ════════════════ PANEL 2: Loading ════════════════ #}
+{# ════════════════ PANEL 2: Live Analysis ════════════════ #}
 <div id="panel-loading" style="display:none">
-    <div class="bo-info-panel">
-        <div class="pi-loader">
-            <div class="pi-loader__ring"></div>
-            <div class="pi-loader__steps">
-                <div class="pi-loader__step" id="ls-extract">
-                    <i class="fas fa-image"></i> ფოტოებიდან კერძების ამოღება
-                </div>
-                <div class="pi-loader__step" id="ls-cats">
-                    <i class="fas fa-tags"></i> კატეგორიებში განლაგება
-                </div>
-                <div class="pi-loader__step" id="ls-ing">
-                    <i class="fas fa-seedling"></i> ინგრედიენტების შევსება
-                </div>
-                <div class="pi-loader__step" id="ls-trans">
-                    <i class="fas fa-language"></i> ქართულ–ინგლისური თარგმანი
-                </div>
-                <div class="pi-loader__step" id="ls-photos">
-                    <i class="fas fa-photo-video"></i> ბიბლიოთეკის ფოტოების შეჯვარება
+<div class="pi-live-wrap">
+
+    {# Header #}
+    <div class="pi-live-hdr">
+        <div class="pi-live-hdr-spinner" id="live-hdr-spinner"></div>
+        <div class="pi-live-hdr-title" id="live-hdr-title">ანალიზი მიმდინარეობს...</div>
+        <div class="pi-live-hdr-badge" id="live-hdr-badge" style="display:none">0/0</div>
+    </div>
+
+    {# Progress bar #}
+    <div class="pi-prog-bar"><div class="pi-prog-fill" id="live-prog" style="width:5%"></div></div>
+
+    {# Pipeline steps #}
+    <div class="pi-pipeline">
+        <div class="pi-ps pi-ps--waiting" id="lps-extract">
+            <span class="pi-ps-icon"><i class="fas fa-camera-retro"></i></span> ამოღება
+        </div>
+        <span class="pi-ps-sep"><i class="fas fa-chevron-right"></i></span>
+        <div class="pi-ps pi-ps--waiting" id="lps-cats">
+            <span class="pi-ps-icon"><i class="fas fa-tags"></i></span> კატეგ.
+        </div>
+        <span class="pi-ps-sep"><i class="fas fa-chevron-right"></i></span>
+        <div class="pi-ps pi-ps--waiting" id="lps-enrich">
+            <span class="pi-ps-icon"><i class="fas fa-seedling"></i></span> ინგრ.
+        </div>
+        <span class="pi-ps-sep"><i class="fas fa-chevron-right"></i></span>
+        <div class="pi-ps pi-ps--waiting" id="lps-translate">
+            <span class="pi-ps-icon"><i class="fas fa-language"></i></span> თარგ.
+        </div>
+        <span class="pi-ps-sep"><i class="fas fa-chevron-right"></i></span>
+        <div class="pi-ps pi-ps--waiting" id="lps-library">
+            <span class="pi-ps-icon"><i class="fas fa-photo-video"></i></span> ბიბლ.
+        </div>
+    </div>
+
+    {# Body #}
+    <div class="pi-live-body">
+
+        {# Left: event feed #}
+        <div class="pi-feed" id="live-feed">
+            <div style="color:var(--bo-text-2);font-size:.82rem;padding:8px 0;">
+                <i class="fas fa-clock" style="color:#6c63ff;"></i> ანალიზი დაიწყო...
+            </div>
+        </div>
+
+        {# Right: category buckets #}
+        <div class="pi-cat-side" id="cat-side">
+            <div class="pi-cat-side-title">
+                <i class="fas fa-layer-group"></i> ნაპოვნი კატეგორიები
+            </div>
+            <div id="cat-buckets">
+                <div class="pi-cat-empty">
+                    <i class="fas fa-utensils"></i>
+                    კერძები გამოჩნდება<br>ამოღების შემდეგ
                 </div>
             </div>
         </div>
+
     </div>
+</div>
 </div>
 
 {# ════════════════ PANEL 3: Review ════════════════ #}
@@ -315,7 +431,9 @@
 <script>
 var selectedFiles = [];
 var analysedData = null;
-var loaderTimer = null;
+var _pollTimer = null;
+var _currentPhotoEl = null;
+var _catBuckets = {};  // cat name → {el, count}
 
 // ── Steps helper ─────────────────────────────────────────────────────────────
 function setStep(n) {
@@ -326,15 +444,209 @@ function setStep(n) {
         else if (i === n) el.classList.add('pi-step--active');
     }
 }
-function setLoaderStep(id) {
-    ['ls-extract','ls-cats','ls-ing','ls-trans','ls-photos'].forEach(function(sid) {
-        var el = document.getElementById(sid);
-        el.classList.remove('pi-loader__step--active','pi-loader__step--done');
+
+// ── Pipeline steps ────────────────────────────────────────────────────────────
+var _psMap = {dedup:'lps-extract', cats:'lps-cats', enrich:'lps-enrich', translate:'lps-translate', library:'lps-library'};
+function setPipelineStep(step, state) {  // state: 'active' | 'done'
+    var id = _psMap[step];
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('pi-ps--waiting', 'pi-ps--active', 'pi-ps--done');
+    el.classList.add('pi-ps--' + state);
+}
+
+// ── Progress bar ──────────────────────────────────────────────────────────────
+var _progressPct = 5;
+var _STEP_WEIGHTS = {photo_done:40, dedup:5, cats:15, enrich:15, translate:20, library:5};
+function advanceProgress(key) {
+    _progressPct = Math.min(98, _progressPct + (_STEP_WEIGHTS[key] || 3));
+    document.getElementById('live-prog').style.width = _progressPct + '%';
+}
+
+// ── Feed helpers ──────────────────────────────────────────────────────────────
+function feedAppend(el) {
+    var feed = document.getElementById('live-feed');
+    feed.appendChild(el);
+    feed.scrollTop = feed.scrollHeight;
+}
+function feedText(html, cls) {
+    var d = document.createElement('div');
+    d.className = 'pi-feed-step' + (cls ? ' ' + cls : '');
+    d.innerHTML = html;
+    feedAppend(d);
+    return d;
+}
+
+// ── Event handlers ────────────────────────────────────────────────────────────
+function handleEvent(ev) {
+    switch (ev.type) {
+
+    case 'photo_start': {
+        var wrap = document.createElement('div');
+        wrap.className = 'pi-feed-photo';
+        wrap.id = 'photo-section-' + ev.photo_index;
+        wrap.innerHTML =
+            '<div class="pi-feed-photo-hdr">' +
+              '<i class="fas fa-image"></i>' +
+              ' ფოტო ' + ev.photo_index + '/' + ev.total + ': ' +
+              '<span style="font-weight:400;color:var(--bo-text-2);">' + escHtml(ev.filename) + '</span>' +
+              '<span class="pi-feed-photo-badge" id="photo-badge-' + ev.photo_index + '">' +
+                '<i class="fas fa-circle-notch fa-spin"></i> მუშავდება' +
+              '</span>' +
+            '</div>';
+        feedAppend(wrap);
+        _currentPhotoEl = wrap;
+        document.getElementById('live-hdr-badge').style.display = '';
+        document.getElementById('live-hdr-badge').textContent = ev.photo_index + '/' + ev.total;
+        setPipelineStep('dedup', 'active');
+        break;
+    }
+
+    case 'ocr_done': {
+        var section = document.getElementById('photo-section-' + ev.photo_index);
+        if (section) {
+            var lbl = document.createElement('div');
+            lbl.className = 'pi-ocr-label';
+            lbl.innerHTML = '<i class="fas fa-font"></i> OCR ტექსტი';
+            section.appendChild(lbl);
+            var box = document.createElement('div');
+            box.className = 'pi-ocr-box';
+            box.textContent = ev.text || '';
+            section.appendChild(box);
+        }
+        break;
+    }
+
+    case 'parse_done': {
+        var section = document.getElementById('photo-section-' + ev.photo_index);
+        if (section) {
+            var row = document.createElement('div');
+            row.className = 'pi-feed-count';
+            row.innerHTML = '<i class="fas fa-check" style="color:#22c55e;"></i> ამოღებულია: <strong>' + (ev.count || 0) + ' კერძი</strong>';
+            section.appendChild(row);
+        }
+        // Add chips to category buckets
+        (ev.items || []).forEach(function(item) {
+            addChip(item.category || 'სხვა', item.name, false);
+        });
+        advanceProgress('photo_done');
+        break;
+    }
+
+    case 'photo_done': {
+        var badge = document.getElementById('photo-badge-' + ev.photo_index);
+        if (badge) {
+            badge.innerHTML = '<i class="fas fa-check"></i> ' + (ev.count || 0) + ' კერძი';
+            badge.className = 'pi-feed-photo-badge pi-feed-photo-badge--done';
+        }
+        break;
+    }
+
+    case 'step_start': {
+        var msgs = {
+            dedup: '<i class="fas fa-filter"></i> დუბლიკატების გამორიცხვა...',
+            cats:  '<i class="fas fa-tags"></i> კატეგორიებში განლაგება...',
+            enrich:'<i class="fas fa-seedling"></i> ინგრედიენტების შევსება...',
+            translate:'<i class="fas fa-language"></i> ქართულ–ინგლისური თარგმანი...',
+            library:'<i class="fas fa-photo-video"></i> ბიბლიოთეკის ფოტოების შეჯვარება...'
+        };
+        var stepEl = feedText(msgs[ev.step] || ev.message || ev.step);
+        stepEl.id = 'feed-step-' + ev.step;
+        var psKey = ev.step === 'dedup' ? 'dedup' : ev.step;
+        setPipelineStep(psKey, 'active');
+        break;
+    }
+
+    case 'step_done': {
+        var el = document.getElementById('feed-step-' + ev.step);
+        if (el) el.classList.add('pi-feed-step--done');
+        var labels = {
+            dedup:     '<i class="fas fa-check-circle"></i> გამორიცხულია დუბლიკატები — ' + (ev.count || '') + ' უნიკალური',
+            cats:      '<i class="fas fa-check-circle"></i> კატეგორიები განაწილდა',
+            enrich:    '<i class="fas fa-check-circle"></i> ინგრედიენტები შეივსო',
+            translate: '<i class="fas fa-check-circle"></i> თარგმანი დასრულდა',
+            library:   '<i class="fas fa-check-circle"></i> ბიბლიოთეკის ფოტოები შეჯვარდა'
+        };
+        if (el) el.innerHTML = labels[ev.step] || el.innerHTML;
+        setPipelineStep(ev.step, 'done');
+        advanceProgress(ev.step);
+
+        // After translation: update chips to show translated names
+        if (ev.step === 'translate' && ev.items) {
+            updateChipsTranslated(ev.items);
+        }
+        break;
+    }
+
+    case 'complete': {
+        document.getElementById('live-prog').style.width = '100%';
+        var hdrSpin = document.getElementById('live-hdr-spinner');
+        hdrSpin.classList.add('pi-live-hdr-spinner--done');
+        document.getElementById('live-hdr-title').textContent = 'ანალიზი დასრულდა — ' + (ev.total || 0) + ' კერძი';
+        feedText('<i class="fas fa-party-horn" style="color:#6c63ff;"></i> <strong>მზადაა!</strong> ' + (ev.total || 0) + ' კერძი ამოღებულია');
+        break;
+    }
+
+    case 'error': {
+        feedText('<i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> შეცდომა: ' + escHtml(ev.message || ''));
+        break;
+    }
+    }
+}
+
+// ── Category bucket helpers ───────────────────────────────────────────────────
+function addChip(cat, name, translated) {
+    var buckets = document.getElementById('cat-buckets');
+    // Remove empty state
+    var empty = buckets.querySelector('.pi-cat-empty');
+    if (empty) empty.remove();
+
+    if (!_catBuckets[cat]) {
+        var bucket = document.createElement('div');
+        bucket.className = 'pi-bucket';
+        bucket.innerHTML =
+            '<div class="pi-bucket-hdr">' +
+              escHtml(cat) +
+              '<span class="pi-bucket-hdr-count" id="bucket-count-' + escAttr(cat) + '">0</span>' +
+            '</div>' +
+            '<div class="pi-bucket-chips" id="bucket-chips-' + escAttr(cat) + '"></div>';
+        buckets.appendChild(bucket);
+        _catBuckets[cat] = {count: 0};
+    }
+
+    _catBuckets[cat].count++;
+    var cntEl = document.getElementById('bucket-count-' + escAttr(cat));
+    if (cntEl) cntEl.textContent = _catBuckets[cat].count;
+
+    var chipsEl = document.getElementById('bucket-chips-' + escAttr(cat));
+    if (chipsEl) {
+        var chip = document.createElement('span');
+        chip.className = 'pi-chip' + (translated ? ' pi-chip--translated' : '');
+        chip.textContent = name;
+        chip.title = name;
+        chip.dataset.origName = name.toLowerCase();
+        chipsEl.appendChild(chip);
+        // Scroll sidebar to bottom
+        var side = document.getElementById('cat-side');
+        if (side) side.scrollTop = side.scrollHeight;
+    }
+}
+
+function updateChipsTranslated(items) {
+    // Build lookup: name lower → {name_ka, name_en}
+    var map = {};
+    items.forEach(function(it) { map[it.name_ka.toLowerCase()] = it; map[(it.name_en||'').toLowerCase()] = it; });
+
+    document.querySelectorAll('.pi-chip').forEach(function(chip) {
+        var orig = chip.dataset.origName || '';
+        var match = map[orig];
+        if (match) {
+            chip.textContent = match.name_ka || match.name_en || chip.textContent;
+            chip.title = (match.name_ka || '') + ' / ' + (match.name_en || '');
+            chip.classList.add('pi-chip--translated');
+        }
     });
-    var order = ['ls-extract','ls-cats','ls-ing','ls-trans','ls-photos'];
-    var idx = order.indexOf(id);
-    for (var i = 0; i < idx; i++) document.getElementById(order[i]).classList.add('pi-loader__step--done');
-    if (idx >= 0) document.getElementById(id).classList.add('pi-loader__step--active');
 }
 
 // ── File handling ─────────────────────────────────────────────────────────────
@@ -373,42 +685,44 @@ function removeFile(i) { selectedFiles.splice(i, 1); renderThumbs(); }
 function clearFiles() { selectedFiles = []; renderThumbs(); }
 
 // ── Analysis ──────────────────────────────────────────────────────────────────
-var _pollTimer = null;
-
 function startAnalysis() {
     if (selectedFiles.length === 0) return;
+    // Reset live state
+    _catBuckets = {};
+    _progressPct = 5;
+    document.getElementById('live-feed').innerHTML =
+        '<div style="color:var(--bo-text-2);font-size:.82rem;padding:8px 0;"><i class="fas fa-clock" style="color:#6c63ff;"></i> ანალიზი დაიწყო...</div>';
+    document.getElementById('cat-buckets').innerHTML =
+        '<div class="pi-cat-empty"><i class="fas fa-utensils"></i>კერძები გამოჩნდება<br>ამოღების შემდეგ</div>';
+    document.getElementById('live-prog').style.width = '5%';
+    document.getElementById('live-hdr-title').textContent = 'ანალიზი მიმდინარეობს...';
+    document.getElementById('live-hdr-badge').style.display = 'none';
+    document.getElementById('live-hdr-spinner').className = 'pi-live-hdr-spinner';
+    ['lps-extract','lps-cats','lps-enrich','lps-translate','lps-library'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) { el.className = 'pi-ps pi-ps--waiting'; }
+    });
+
     document.getElementById('panel-upload').style.display = 'none';
     document.getElementById('panel-loading').style.display = '';
     setStep(2);
 
-    // Animate loader steps: advance every ~18s to cover typical pipeline duration
-    var steps = ['ls-extract','ls-cats','ls-ing','ls-trans','ls-photos'];
-    var si = 0;
-    setLoaderStep(steps[0]);
-    loaderTimer = setInterval(function() {
-        si = Math.min(si + 1, steps.length - 1);
-        setLoaderStep(steps[si]);
-    }, 18000);
-
     var form = new FormData();
     selectedFiles.forEach(function(f) { form.append('photos', f); });
 
-    // POST files — returns immediately with job_id
     fetch('/backoffice/menu/analyze-photos', {method:'POST', body:form})
         .then(function(r){ return r.json(); })
         .then(function(d) {
             if (!d.job_id) {
-                clearInterval(loaderTimer);
                 document.getElementById('panel-loading').style.display = 'none';
                 document.getElementById('panel-upload').style.display = '';
                 setStep(1);
                 showError(d.error || 'შეცდომა. სცადეთ ხელახლა.');
                 return;
             }
-            pollStatus(d.job_id);
+            pollEvents(d.job_id, 0);
         })
         .catch(function(e) {
-            clearInterval(loaderTimer);
             document.getElementById('panel-loading').style.display = 'none';
             document.getElementById('panel-upload').style.display = '';
             setStep(1);
@@ -416,30 +730,35 @@ function startAnalysis() {
         });
 }
 
-function pollStatus(jobId) {
+function pollEvents(jobId, cursor) {
     _pollTimer = setTimeout(function() {
-        fetch('/backoffice/menu/analyze-status/' + jobId)
+        fetch('/backoffice/menu/analyze-events/' + jobId + '?cursor=' + cursor)
             .then(function(r){ return r.json(); })
             .then(function(d) {
+                // Process new events
+                (d.events || []).forEach(handleEvent);
+
                 if (d.status === 'processing') {
-                    pollStatus(jobId); // check again in 3s
+                    pollEvents(jobId, d.cursor || cursor);
                     return;
                 }
-                clearInterval(loaderTimer);
-                document.getElementById('panel-loading').style.display = 'none';
-                if (d.status === 'done') {
-                    analysedData = d;
-                    renderReview(d);
-                } else {
-                    document.getElementById('panel-upload').style.display = '';
-                    setStep(1);
-                    showError(d.error || 'AI-მ ვერ დაამუშავა ფოტოები. სცადეთ ხელახლა.');
-                }
+                // Done or failed
+                setTimeout(function() {
+                    document.getElementById('panel-loading').style.display = 'none';
+                    if (d.status === 'done' && d.result) {
+                        analysedData = d.result;
+                        renderReview(d.result);
+                    } else {
+                        document.getElementById('panel-upload').style.display = '';
+                        setStep(1);
+                        showError(d.error || 'AI-მ ვერ დაამუშავა ფოტოები. სცადეთ ხელახლა.');
+                    }
+                }, d.status === 'done' ? 1200 : 0);
             })
             .catch(function() {
-                pollStatus(jobId); // retry on network glitch
+                pollEvents(jobId, cursor); // retry on network glitch
             });
-    }, 3000);
+    }, 1500);
 }
 
 // ── Render Review ─────────────────────────────────────────────────────────────
@@ -632,9 +951,8 @@ function importItems() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function resetAll() {
-    clearInterval(loaderTimer);
     clearTimeout(_pollTimer);
-    selectedFiles = []; analysedData = null;
+    selectedFiles = []; analysedData = null; _catBuckets = {}; _progressPct = 5;
     document.getElementById('thumb-grid').innerHTML = '';
     document.getElementById('file-count').textContent = '';
     document.getElementById('analyze-btn').disabled = true;
@@ -657,6 +975,9 @@ function showError(msg) {
 
 function escHtml(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+    return String(s||'').replace(/[^a-z0-9]/gi, '_');
 }
 </script>
 {% endblock %}

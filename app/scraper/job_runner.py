@@ -364,27 +364,64 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
 # ---------------------------------------------------------------------------
 
 def _match_library_photos(result: dict, GlobalItem, db):
-    """Annotate each item with library_photo suggestion from GlobalItems."""
-    from sqlalchemy import func
+    """Annotate each item with library_photo suggestion using AI semantic matching."""
+    from app.scraper.ai_analyzer import match_library_photos_ai
+    from app.scraper import config as scraper_config
+
     categories = result.get('categories', {})
-    for items in categories.values():
+
+    # Collect all items with flat index for mapping back
+    flat_items = []
+    item_refs = []
+    for cat_name, items in categories.items():
         for item in items:
             name = (item.get('name') or '').strip()
             if not name:
                 continue
-            match = (
-                GlobalItem.query
-                .filter(func.lower(GlobalItem.name) == name.lower())
-                .filter(GlobalItem.image_filename.isnot(None))
-                .first()
-            )
-            if not match:
-                match = (
-                    GlobalItem.query
-                    .filter(GlobalItem.name.ilike(f'%{name}%'))
-                    .filter(GlobalItem.image_filename.isnot(None))
-                    .first()
-                )
-            if match:
-                item['library_photo'] = match.image_filename
-                item['library_photo_id'] = match.id
+            idx = len(flat_items)
+            flat_items.append({
+                "i": idx,
+                "name": name,
+                "name_ka": item.get('name_ka', ''),
+                "name_en": item.get('name_en', ''),
+                "category": cat_name,
+            })
+            item_refs.append(item)
+
+    if not flat_items:
+        return
+
+    # Build library from GlobalItems that have a photo
+    lib_entries = GlobalItem.query.filter(GlobalItem.image_filename.isnot(None)).all()
+    if not lib_entries:
+        return
+
+    r2_public = scraper_config.__dict__.get('R2_PUBLIC_URL') or ''
+    try:
+        import os
+        r2_public = os.environ.get('R2_PUBLIC_URL', '')
+    except Exception:
+        pass
+
+    library = []
+    for g in lib_entries:
+        image_url = f"{r2_public}/{g.image_filename}" if r2_public and g.image_filename else g.image_filename
+        library.append({
+            "id": g.id,
+            "name": {"ka": g.name or '', "en": g.name_en or ''},
+            "aliases": [],
+            "image_url": image_url or '',
+        })
+
+    # AI matching in batches of 60 items
+    BATCH = 60
+    for i in range(0, len(flat_items), BATCH):
+        batch_items = flat_items[i:i + BATCH]
+        matches = match_library_photos_ai(batch_items, library)
+        match_map = {m['i']: m for m in matches}
+        for entry in batch_items:
+            m = match_map.get(entry['i'], {})
+            if m.get('match_confidence') == 'high' and m.get('matched_dish_id') is not None:
+                ref = item_refs[entry['i']]
+                ref['library_photo'] = m.get('matched_image_url') or ''
+                ref['library_photo_id'] = m.get('matched_dish_id')

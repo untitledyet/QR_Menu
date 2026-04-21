@@ -130,12 +130,12 @@ def analyze_menu_photo(image_path: str) -> list:
 # Full structured extraction (user photo import)
 # ---------------------------------------------------------------------------
 
-def analyze_menu_photo_structured(image_path: str) -> list:
+def analyze_menu_photo_structured(image_path: str, event_cb=None) -> list:
     """
     Two-step extraction from a menu photo:
       1. Vision call (GPT-4o): read all visible text as faithfully as possible.
       2. Text-only call (GPT-4o-mini): parse that raw text into structured items.
-    Separating OCR from parsing improves accuracy for both steps.
+    event_cb(type, **kwargs) is called with 'ocr_done' and 'parse_done' events.
     """
     try:
         client = _get_client()
@@ -148,6 +148,12 @@ def analyze_menu_photo_structured(image_path: str) -> list:
     try:
         raw_text = _vision_call(client, img_b64, mime, ocr_prompt)
         print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
+        if event_cb:
+            try:
+                display = raw_text[:700] + ('\u2026' if len(raw_text) > 700 else '')
+                event_cb('ocr_done', text=display)
+            except Exception:
+                pass
     except Exception as e:
         print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
         return []
@@ -316,6 +322,13 @@ INPUT TEXT:
                 _add_items(sub.get("items", []), sub_name)
 
         print(f"[AI] Parsed {len(flat)} items from {os.path.basename(image_path)}")
+        if event_cb:
+            try:
+                event_cb('parse_done',
+                         items=[{'name': it['name'], 'category': it.get('category', '')} for it in flat],
+                         count=len(flat))
+            except Exception:
+                pass
         return flat
     except Exception as e:
         print(f"[AI] Parse error for {os.path.basename(image_path)}: {e}")
@@ -444,12 +457,29 @@ def enrich_missing_ingredients(items: list) -> list:
     BATCH = 50
     for i in range(0, len(missing), BATCH):
         batch = missing[i:i + BATCH]
-        names = [it["name"] for it in batch]
+        payload = [
+            {"i": j, "name": it.get("name", ""), "description": it.get("description", "")}
+            for j, it in enumerate(batch)
+        ]
         prompt = (
-            "For each Georgian restaurant dish, give typical ingredients in Georgian (3-6 words, comma-separated). "
-            "For drinks return empty string. "
-            "Return ONLY JSON: {\"dish_name\": \"ingredients\"}.\n"
-            "Dishes: " + json.dumps(names, ensure_ascii=False)
+            "You are an AI system that enriches structured restaurant menu data with ingredient information.\n\n"
+            "INPUT: a JSON array of menu items. Each item may or may not include a description.\n\n"
+            "YOUR TASK: For each item:\n"
+            "- If ingredients are explicitly mentioned in the description → extract them\n"
+            "- If not mentioned → infer typical ingredients based on the dish name and culinary knowledge\n\n"
+            "DISTINGUISH:\n"
+            "- 'extracted': ingredients explicitly stated in the description\n"
+            "- 'inferred': ingredients you infer from culinary knowledge\n\n"
+            "RULES:\n"
+            "- Use authentic culinary terminology for the dish's cuisine of origin\n"
+            "- For drinks (juices, sodas, alcoholic beverages): return empty arrays for both extracted and inferred\n"
+            "- List individual ingredients, not vague descriptions\n"
+            "- Do not hallucinate exotic ingredients not typical for the dish\n"
+            "- Confidence: 'high' if dish is well-known, 'medium' if somewhat uncertain, 'low' if very unclear\n\n"
+            "OUTPUT FORMAT (STRICT):\n"
+            "Return ONLY valid JSON array, same order and count as input:\n"
+            '[{"i":0,"extracted":["ing1","ing2"],"inferred":["ing3","ing4"],"confidence":"high"}]\n\n'
+            "Items:\n" + json.dumps(payload, ensure_ascii=False)
         )
         try:
             response = client.chat.completions.create(
@@ -457,11 +487,13 @@ def enrich_missing_ingredients(items: list) -> list:
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=2048,
             )
-            ing_map = _parse_json_response(response.choices[0].message.content)
-            for it in batch:
-                val = ing_map.get(it["name"], "")
-                if val:
-                    it["ingredients"] = val
+            results = _parse_json_response(response.choices[0].message.content)
+            result_map = {r["i"]: r for r in results if isinstance(r, dict)}
+            for j, it in enumerate(batch):
+                r = result_map.get(j, {})
+                all_ings = (r.get("extracted") or []) + (r.get("inferred") or [])
+                if all_ings:
+                    it["ingredients"] = ", ".join(str(x) for x in all_ings if x)
         except Exception as e:
             print(f"[AI] enrich_missing_ingredients error: {e}")
 
@@ -495,32 +527,62 @@ def translate_items_bilingual(items: list) -> list:
                 "i": j,
                 "name": it.get("name", ""),
                 "category": it.get("category", ""),
+                "description": it.get("description", ""),
                 "ingredients": it.get("ingredients", ""),
             }
             for j, it in enumerate(batch)
         ]
+        menu_json = json.dumps(payload, ensure_ascii=False, indent=2)
         prompt = (
-            "You are a professional restaurant menu translator specializing in Georgian and international cuisine.\n"
-            "TASK: For each menu item provide BOTH Georgian (ka) and English (en) versions of the name, "
-            "category, and ingredients.\n\n"
-            "CRITICAL RULES:\n"
-            "- This is a RESTAURANT MENU. Use precise culinary terminology as it appears on upscale menus — "
-            "NOT generic dictionary translations.\n"
-            "- For traditional Georgian dishes (ხინკალი, ლობიანი, მწვადი, ჩაქაფული, etc.): "
-            "keep the authentic Georgian name in 'name_ka'; use the standard English culinary term or "
-            "transliteration in 'name_en' (e.g. 'Khinkali', 'Lobiani', 'Mtsvadi').\n"
-            "- For international dishes (pizza, pasta, steak, etc.): translate/transliterate into Georgian "
-            "script for 'name_ka' using the accepted Georgian form.\n"
-            "- 'category_en': translate the category name to English (e.g. სალათები→Salads, ცხელი კერძები→Main Courses).\n"
-            "- Ingredients: comma-separated list of 3-6 typical ingredients in the target language. "
-            "If the input has ingredients, translate them accurately. If empty, generate typical ingredients "
-            "for that dish using culinary knowledge.\n"
-            "- For drinks: ingredients_ka and ingredients_en should be empty strings.\n"
-            "- Detect whether each input name is Georgian or English and translate to the OTHER language.\n\n"
-            "Return ONLY valid JSON array (SAME ORDER and COUNT as input):\n"
-            '[{"i":0,"name_ka":"ქართული სახელი","name_en":"English Name","category_en":"Category",'
-            '"ingredients_ka":"ინგ1, ინგ2, ინგ3","ingredients_en":"ing1, ing2, ing3"}]\n\n'
-            "Items:\n" + json.dumps(payload, ensure_ascii=False)
+            "You are an AI system that normalizes and translates restaurant menu data into both Georgian and English.\n\n"
+            "---\n\n"
+            "INPUT:\n"
+            "You will receive a structured JSON menu. The content may be in Georgian, English, or mixed.\n\n"
+            "---\n\n"
+            "YOUR TASK:\n\n"
+            "For each item:\n\n"
+            "1. Provide BOTH:\n"
+            "   * Georgian (ka)\n"
+            "   * English (en)\n\n"
+            "2. Detect the original language and translate accordingly:\n"
+            "   * If Georgian → translate to English\n"
+            "   * If English → translate to Georgian\n"
+            "   * If mixed → normalize both\n\n"
+            "---\n\n"
+            "CRITICAL TRANSLATION RULES:\n\n"
+            "1. Use FOOD INDUSTRY STANDARD translations (NOT literal translation)\n"
+            "   Examples:\n"
+            "   * ხაჭაპური → Khachapuri (NOT 'cheese bread')\n"
+            "   * ხინკალი → Khinkali (NOT 'dumplings')\n"
+            "   * შაურმა → Shawarma\n"
+            "   * ცეზარი → Caesar Salad\n\n"
+            "2. Preserve internationally recognized dish names: Pizza, Burger, Pasta\n\n"
+            "3. If a dish is local/traditional: keep transliteration in English, do NOT over-explain\n\n"
+            "4. If a dish is generic: translate meaningfully (e.g. 'ქათმის სალათი' → 'Chicken Salad')\n\n"
+            "5. Descriptions: translate naturally, not word-by-word. Keep menu-friendly tone.\n\n"
+            "6. Ingredients: normalize to standard culinary terms\n"
+            "   * 'ყველი' → 'cheese'\n"
+            "   * 'საქონლის ხორცი' → 'beef'\n\n"
+            "7. Keep naming consistent across all items\n\n"
+            "8. Fix typos before translating\n\n"
+            "9. Capitalization: English = Title Case for names; Georgian = natural rules\n\n"
+            "10. Do NOT invent new dishes or modify meaning\n\n"
+            "---\n\n"
+            "SPECIAL RULES:\n"
+            "* If translation is uncertain: keep original + best approximation\n"
+            "* Avoid overly long translations\n"
+            "* Keep menu style concise and clean\n"
+            "* Maintain cultural correctness\n"
+            "* Accuracy > creativity. Consistency is critical. Do not hallucinate.\n\n"
+            "---\n\n"
+            "OUTPUT FORMAT (STRICT):\n"
+            "Return ONLY valid JSON array, SAME ORDER and COUNT as input:\n"
+            '[{"i":0,"name":{"ka":"ქართ. სახელი","en":"English Name"},'
+            '"category":{"ka":"კატეგორია","en":"Category"},'
+            '"description":{"ka":"აღწერა","en":"Description"},'
+            '"ingredients":{"ka":"ინგ1, ინგ2","en":"ing1, ing2"}}]\n\n'
+            "---\n\n"
+            "INPUT JSON:\n" + menu_json
         )
         try:
             response = client.chat.completions.create(
@@ -532,11 +594,11 @@ def translate_items_bilingual(items: list) -> list:
             result_map = {r["i"]: r for r in results if isinstance(r, dict)}
             for j, it in enumerate(batch):
                 r = result_map.get(j, {})
-                it["name_ka"] = (r.get("name_ka") or it.get("name", "")).strip()
-                it["name_en"] = (r.get("name_en") or it.get("name", "")).strip()
-                it["category_en"] = (r.get("category_en") or it.get("category", "")).strip()
-                it["ingredients_ka"] = (r.get("ingredients_ka") or it.get("ingredients", "")).strip()
-                it["ingredients_en"] = (r.get("ingredients_en") or "").strip()
+                it["name_ka"] = ((r.get("name") or {}).get("ka") or it.get("name", "")).strip()
+                it["name_en"] = ((r.get("name") or {}).get("en") or it.get("name", "")).strip()
+                it["category_en"] = ((r.get("category") or {}).get("en") or it.get("category", "")).strip()
+                it["ingredients_ka"] = ((r.get("ingredients") or {}).get("ka") or it.get("ingredients", "")).strip()
+                it["ingredients_en"] = ((r.get("ingredients") or {}).get("en") or "").strip()
         except Exception as e:
             print(f"[AI] translate_items_bilingual error: {e}")
             for it in batch:
@@ -548,6 +610,99 @@ def translate_items_bilingual(items: list) -> list:
 
     print(f"[AI] Bilingual translation done for {len(items)} items")
     return items
+
+
+# ---------------------------------------------------------------------------
+# Library photo matching
+# ---------------------------------------------------------------------------
+
+def match_library_photos_ai(menu_items: list, library: list) -> list:
+    """
+    Use GPT to semantically match menu items against the global dish library.
+
+    menu_items — list of {i, name, name_ka, name_en, category}
+    library    — list of {id, name: {ka, en}, aliases, image_url}
+
+    Returns list of {i, matched_dish_id, matched_image_url, match_confidence}.
+    Only items with confidence=high get a match assigned.
+    """
+    if not menu_items or not library:
+        return []
+    try:
+        client = _get_client()
+    except ImportError:
+        return []
+
+    prompt = (
+        "You are an AI system that matches menu items to a global dish library in order to assign the correct image.\n\n"
+        "---\n\n"
+        "INPUT:\n\n"
+        "1. MENU JSON:\n"
+        "   Structured restaurant menu with items (name in Georgian and/or English)\n\n"
+        "2. DISH LIBRARY:\n"
+        "   A predefined list of dishes with:\n\n"
+        '   {"id": "unique_id", "name": {"ka": "...", "en": "..."}, "aliases": [...], "image_url": "..."}\n\n'
+        "---\n\n"
+        "YOUR TASK:\n\n"
+        "For each menu item:\n"
+        "1. Try to match it with ONE item from the dish library\n"
+        "2. If a match is found → assign: matched_dish_id, matched_image_url\n"
+        "3. If no reliable match → leave as null\n\n"
+        "---\n\n"
+        "MATCHING STRATEGY:\n\n"
+        "1. Normalize names:\n"
+        "   * Lowercase\n"
+        '   * Remove extra words like: "classic", "homemade", "special", "best", "style"\n'
+        '   * Ignore size/variants: "large", "small", "xl"\n\n'
+        "2. Language-aware matching:\n"
+        "   * Georgian ↔ English\n"
+        '   * Example: "ხინკალი" = "Khinkali"\n\n'
+        "3. Alias matching: match using library aliases\n\n"
+        "4. Fuzzy matching — handle typos:\n"
+        '   "xinkali", "hinkali", "khinkal"\n\n'
+        "5. Category-aware matching:\n"
+        "   * Drinks should match drinks\n"
+        "   * Desserts → desserts\n\n"
+        '6. Partial match: "Chicken Caesar Salad" → match "Caesar Salad"\n\n'
+        "---\n\n"
+        "STRICT RULES:\n"
+        "1. ONLY match if confidence is HIGH\n"
+        "2. If ambiguous → do NOT match\n"
+        "3. NEVER guess randomly\n"
+        "4. Prefer exact or near-exact dish identity\n"
+        '5. Generic names like "Salad", "Soup" → should NOT be matched\n\n'
+        "---\n\n"
+        "OUTPUT FORMAT:\n"
+        "Return ONLY valid JSON array, same order and count as MENU:\n"
+        '[{"i":0,"matched_dish_id":"id or null","matched_image_url":"url or null","match_confidence":"high|medium|low"}]\n\n'
+        "CONFIDENCE RULES:\n"
+        "* HIGH → exact or very strong match\n"
+        "* MEDIUM → partial match\n"
+        "* LOW → weak or uncertain match\n"
+        "IMPORTANT: Only assign image if confidence = HIGH\n\n"
+        "---\n\n"
+        "IMPORTANT:\n"
+        "* Do not modify original names\n"
+        "* Do not invent matches\n"
+        "* Be strict and conservative\n"
+        "* Accuracy is more important than coverage\n\n"
+        "---\n\n"
+        "INPUT DATA:\n\n"
+        "MENU:\n" + json.dumps(menu_items, ensure_ascii=False) + "\n\n"
+        "LIBRARY:\n" + json.dumps(library, ensure_ascii=False)
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=config.OPENAI_MODEL_MINI,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4096,
+        )
+        results = _parse_json_response(response.choices[0].message.content)
+        return [r for r in results if isinstance(r, dict)]
+    except Exception as e:
+        print(f"[AI] match_library_photos_ai error: {e}")
+        return []
 
 
 # ---------------------------------------------------------------------------
