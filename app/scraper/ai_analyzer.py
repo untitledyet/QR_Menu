@@ -1,45 +1,8 @@
-"""AI-powered menu analysis using OpenAI GPT-4o + Google Cloud Vision OCR."""
+"""AI-powered menu analysis using OpenAI GPT-4o."""
 import json
 import base64
 import os
 from . import config
-
-
-def _google_vision_ocr(image_path: str) -> str:
-    """
-    Extract text from image using Google Cloud Vision DOCUMENT_TEXT_DETECTION.
-    Returns empty string if credentials are not configured or on error.
-    """
-    creds_json = os.environ.get('GOOGLE_VISION_CREDENTIALS_JSON', '')
-    if not creds_json:
-        return ''
-    try:
-        from google.cloud import vision as gv
-        from google.oauth2 import service_account
-
-        creds_info = json.loads(creds_json)
-        credentials = service_account.Credentials.from_service_account_info(
-            creds_info,
-            scopes=['https://www.googleapis.com/auth/cloud-platform'],
-        )
-        client = gv.ImageAnnotatorClient(credentials=credentials)
-
-        with open(image_path, 'rb') as f:
-            content = f.read()
-
-        image = gv.Image(content=content)
-        response = client.document_text_detection(image=image)
-
-        if response.error.message:
-            print(f'[Vision] API error: {response.error.message}')
-            return ''
-
-        text = response.full_text_annotation.text or ''
-        print(f'[Vision] OCR extracted {len(text)} chars from {os.path.basename(image_path)}')
-        return text
-    except Exception as e:
-        print(f'[Vision] OCR failed for {os.path.basename(image_path)}: {e}')
-        return ''
 
 
 def _get_client():
@@ -179,31 +142,24 @@ def analyze_menu_photo_structured(image_path: str, event_cb=None) -> list:
     except ImportError:
         return []
 
-    # ── Step 1: OCR — Google Cloud Vision (primary) → GPT-4o Vision (fallback) ──
-    raw_text = _google_vision_ocr(image_path)
-    ocr_source = 'Google Vision'
-
-    if not raw_text or len(raw_text) < 10:
-        # Fallback: GPT-4o vision
-        ocr_source = 'GPT vision'
-        img_b64, mime = _prepare_image(image_path)
-        ocr_prompt = "Extract all text exactly as it appears in this image."
-        try:
-            raw_text = _vision_call(client, img_b64, mime, ocr_prompt)
-            print(f"[AI] OCR (GPT fallback) extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
-        except Exception as e:
-            print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
-            return []
+    # ── Step 1: OCR — read everything off the image ──────────────────────────
+    img_b64, mime = _prepare_image(image_path)
+    ocr_prompt = "Extract all text exactly as it appears in this image."
+    try:
+        raw_text = _vision_call(client, img_b64, mime, ocr_prompt)
+        print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
+        if event_cb:
+            try:
+                display = raw_text[:700] + ('\u2026' if len(raw_text) > 700 else '')
+                event_cb('ocr_done', text=display)
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
+        return []
 
     if not raw_text or len(raw_text) < 10:
         return []
-
-    if event_cb:
-        try:
-            display = raw_text[:700] + ('\u2026' if len(raw_text) > 700 else '')
-            event_cb('ocr_done', text=display, source=ocr_source)
-        except Exception:
-            pass
 
     # ── Step 2: Parse — structure the raw text into hierarchical menu JSON ──
     parse_prompt = """You are an AI system that extracts and structures restaurant menu data from raw OCR text.
