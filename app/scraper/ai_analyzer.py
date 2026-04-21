@@ -19,35 +19,26 @@ def _get_client():
 _MAX_VISION_PX = 1568  # OpenAI's internal tile limit — no benefit sending larger
 
 
-def _prepare_image_b64(image_path: str) -> str:
-    """
-    Send the image as-is — no sharpening, no contrast, no re-encoding.
-    gpt-5.4 reads the original file better than any preprocessed version.
-    Only exception: EXIF auto-rotate (lossless, fixes sideways phone photos).
-    """
-    try:
-        from PIL import Image, ImageOps
-        import io
-        with Image.open(image_path) as img:
-            img = ImageOps.exif_transpose(img)
-            # Only re-save if EXIF rotation actually changed the image
-            if img != Image.open(image_path):
-                buf = io.BytesIO()
-                fmt = img.format or "JPEG"
-                img.save(buf, format=fmt)
-                return base64.b64encode(buf.getvalue()).decode("utf-8")
-    except Exception:
-        pass
-    # Default: send raw bytes untouched
+_MIME_MAP = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg",
+    "png": "image/png", "webp": "image/webp", "gif": "image/gif",
+}
+
+
+def _prepare_image(image_path: str) -> tuple:
+    """Return (base64_str, mime_type) — raw bytes, correct MIME, zero processing."""
+    ext = image_path.rsplit(".", 1)[-1].lower() if "." in image_path else ""
+    mime = _MIME_MAP.get(ext, "image/jpeg")
     with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+        return base64.b64encode(f.read()).decode("utf-8"), mime
 
 
-def _vision_call(client, img_b64: str, prompt: str) -> str:
+def _vision_call(client, img_b64: str, mime: str, prompt: str) -> str:
     """
     Call the vision model with an image.
     Uses the Responses API (gpt-5.x) with fallback to Chat Completions API (gpt-4o).
     """
+    data_url = f"data:{mime};base64,{img_b64}"
     try:
         resp = client.responses.create(
             model=config.OPENAI_MODEL,
@@ -55,23 +46,19 @@ def _vision_call(client, img_b64: str, prompt: str) -> str:
                 "role": "user",
                 "content": [
                     {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_url": f"data:image/jpeg;base64,{img_b64}"},
+                    {"type": "input_image", "image_url": data_url},
                 ],
             }],
         )
         return resp.output_text.strip()
     except AttributeError:
-        # client.responses not available — older SDK, fall back to chat.completions
         resp = client.chat.completions.create(
             model=config.OPENAI_MODEL,
             messages=[{
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/jpeg;base64,{img_b64}",
-                        "detail": "high",
-                    }},
+                    {"type": "image_url", "image_url": {"url": data_url, "detail": "high"}},
                 ],
             }],
             max_tokens=4096,
@@ -105,8 +92,7 @@ def analyze_menu_photo(image_path: str) -> list:
         print("[AI] openai not installed.")
         return []
 
-    with open(image_path, "rb") as f:
-        img_b64 = base64.b64encode(f.read()).decode("utf-8")
+    img_b64, mime = _prepare_image(image_path)
 
     prompt = (
         "This is a printed restaurant menu photo. Extract ALL menu items visible.\n"
@@ -123,7 +109,7 @@ def analyze_menu_photo(image_path: str) -> list:
     )
 
     try:
-        text = _vision_call(client, img_b64, prompt)
+        text = _vision_call(client, img_b64, mime, prompt)
         items = _parse_json_response(text)
         filtered = []
         for it in items:
@@ -157,10 +143,10 @@ def analyze_menu_photo_structured(image_path: str) -> list:
         return []
 
     # ── Step 1: OCR — read everything off the image ──────────────────────────
-    img_b64 = _prepare_image_b64(image_path)
+    img_b64, mime = _prepare_image(image_path)
     ocr_prompt = "Extract all text exactly as it appears in this image."
     try:
-        raw_text = _vision_call(client, img_b64, ocr_prompt)
+        raw_text = _vision_call(client, img_b64, mime, ocr_prompt)
         print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
     except Exception as e:
         print(f"[AI] OCR error for {os.path.basename(image_path)}: {e}")
