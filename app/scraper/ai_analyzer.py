@@ -155,52 +155,168 @@ def analyze_menu_photo_structured(image_path: str) -> list:
     if not raw_text or len(raw_text) < 10:
         return []
 
-    # ── Step 2: Parse — structure the raw text into menu items ───────────────
-    parse_prompt = (
-        "You are a restaurant menu parser. Below is raw OCR text from a restaurant menu.\n"
-        "Parse it into a structured list of menu items. Return ONLY a valid JSON array:\n"
-        '[{"name":"...","category":"...","subcategory":"...","ingredients":"...","price":"..."}]\n\n'
-        "RULES:\n"
-        "- name: the dish or drink name (required — skip if unclear)\n"
-        "- category + subcategory: split section headers intelligently.\n"
-        "  If a section header is 'TYPE METHOD' (two parts), use TYPE as category and METHOD as subcategory.\n"
-        "  Examples: 'არაყი ბოთლის' → category='არაყი', subcategory='ბოთლის'\n"
-        "            'არაყი ჩამოსასხმელი' → category='არაყი', subcategory='ჩამოსასხმელი'\n"
-        "            'ჭაჭა ბოთლის' → category='ჭაჭა', subcategory='ბოთლის'\n"
-        "            'ჭაჭა ჩამოსასხმელი' → category='ჭაჭა', subcategory='ჩამოსასხმელი'\n"
-        "            'ცხელი სასმელები' → category='ცხელი სასმელები', subcategory=''\n"
-        "  Use judgement: if the second word is a serving method or variant, it's a subcategory.\n"
-        "- ingredients: description or ingredients visible in the text, else empty string\n"
-        "- price: numeric value only (e.g. '12.50'), empty string if not found\n"
-        "- SKIP restaurant name, address, phone numbers, service charge lines\n"
-        "- SKIP entries where the name is a number, a price, or fewer than 2 characters\n"
-        "- Assign the price that appears on the same line or directly after an item\n"
-        "Return [] if no valid items found.\n\n"
-        "RAW MENU TEXT:\n" + raw_text
-    )
+    # ── Step 2: Parse — structure the raw text into hierarchical menu JSON ──
+    parse_prompt = """You are an AI system that extracts and structures restaurant menu data from raw OCR text.
+
+Your task is to convert unstructured menu text into a clean, normalized, hierarchical JSON structure.
+
+---
+
+INPUT:
+You will receive raw OCR text of a restaurant menu. The text may be messy, unordered, multilingual, or inconsistent.
+
+---
+
+POSSIBLE INPUT VARIATIONS (you MUST handle all):
+
+1. Plain list of items (no categories)
+2. Clearly defined categories (e.g. "Starters", "Drinks")
+3. Nested categories (e.g. Drinks → Alcoholic → Beer)
+4. Handwritten-style text with errors and typos
+5. Multiple languages mixed (e.g. Georgian + English)
+6. Prices in different formats (e.g. "10", "10₾", "GEL 10", "$5")
+7. Items with multiple variants:
+   Example:
+   Pizza
+   Small - 10
+   Large - 15
+8. Missing prices
+9. Duplicated or repeated items
+10. Implicit categories (not explicitly written)
+11. Decorative or irrelevant text (ignore it)
+12. Inconsistent formatting and spacing
+
+---
+
+YOUR GOAL:
+
+Transform the input into structured JSON with:
+
+* Categories
+* Subcategories (if applicable)
+* Items under correct categories
+* Cleaned item names
+* Normalized prices (numbers only)
+* Optional descriptions (if present)
+
+---
+
+OUTPUT FORMAT (STRICT):
+
+Return ONLY valid JSON. No explanations.
+
+Structure:
+
+{
+  "categories": [
+    {
+      "name": "Category Name",
+      "subcategories": [
+        {
+          "name": "Subcategory Name",
+          "items": [
+            {
+              "name": "Item Name",
+              "price": null,
+              "description": "",
+              "variants": [{"name": "variant name", "price": 0}]
+            }
+          ]
+        }
+      ],
+      "items": [
+        {
+          "name": "Item Name",
+          "price": null,
+          "description": "",
+          "variants": []
+        }
+      ]
+    }
+  ]
+}
+
+---
+
+RULES:
+
+1. If no categories exist → infer logical categories (e.g. Drinks, Main Dishes, Desserts)
+2. If unsure → use "Other"
+3. Normalize all names: fix typos, capitalize properly
+4. Normalize prices: extract only numeric value, remove currency symbols
+5. Merge duplicates
+6. Detect variants (Small, Large, etc.)
+7. Assign items to the most logical category
+8. Ignore irrelevant text (addresses, phone numbers, slogans, service charge)
+9. Preserve hierarchy if it exists
+10. If subcategories do not exist → leave as empty array []
+11. Do not hallucinate items that are not present
+12. Keep output clean and minimal
+
+---
+
+IMPORTANT:
+
+* Be conservative: do not invent data
+* Be intelligent: infer structure when missing
+* Be consistent: same format for all outputs
+
+---
+
+INPUT TEXT:
+""" + raw_text
     try:
         parse_resp = client.chat.completions.create(
             model=config.OPENAI_MODEL_MINI,
             messages=[{"role": "user", "content": parse_prompt}],
             max_tokens=4096,
         )
-        items = _parse_json_response(parse_resp.choices[0].message.content)
-        filtered = []
-        for it in items:
-            name = it.get("name", "").strip()
-            if not name or len(name) < 2:
-                continue
-            if name.replace(".", "").replace(",", "").isdigit():
-                continue
-            filtered.append({
-                "name": name,
-                "category": (it.get("category") or "").strip(),
-                "subcategory": (it.get("subcategory") or "").strip(),
-                "ingredients": (it.get("ingredients") or "").strip(),
-                "price": (it.get("price") or "").strip(),
-            })
-        print(f"[AI] Parsed {len(filtered)} items from {os.path.basename(image_path)}")
-        return filtered
+        parsed = _parse_json_response(parse_resp.choices[0].message.content)
+
+        # Flatten hierarchical {categories:[{name, subcategories, items}]} → flat item list
+        flat = []
+        categories = parsed.get("categories", []) if isinstance(parsed, dict) else parsed
+        for cat in categories:
+            cat_name = (cat.get("name") or "").strip()
+
+            def _add_items(items_list, sub_name=""):
+                for it in (items_list or []):
+                    name = (it.get("name") or "").strip()
+                    if not name or len(name) < 2:
+                        continue
+                    if name.replace(".", "").replace(",", "").isdigit():
+                        continue
+                    price = it.get("price")
+                    # Handle variants: expand each variant as a separate item
+                    variants = it.get("variants") or []
+                    if variants:
+                        for v in variants:
+                            v_name = f"{name} ({v.get('name', '')})" if v.get("name") else name
+                            flat.append({
+                                "name": v_name,
+                                "category": cat_name,
+                                "subcategory": sub_name,
+                                "ingredients": (it.get("description") or "").strip(),
+                                "price": str(v.get("price") or "").strip(),
+                            })
+                    else:
+                        flat.append({
+                            "name": name,
+                            "category": cat_name,
+                            "subcategory": sub_name,
+                            "ingredients": (it.get("description") or "").strip(),
+                            "price": str(price or "").strip(),
+                        })
+
+            # Direct items on category
+            _add_items(cat.get("items", []))
+            # Items inside subcategories
+            for sub in (cat.get("subcategories") or []):
+                sub_name = (sub.get("name") or "").strip()
+                _add_items(sub.get("items", []), sub_name)
+
+        print(f"[AI] Parsed {len(flat)} items from {os.path.basename(image_path)}")
+        return flat
     except Exception as e:
         print(f"[AI] Parse error for {os.path.basename(image_path)}: {e}")
         return []
