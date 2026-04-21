@@ -158,11 +158,7 @@ def analyze_menu_photo_structured(image_path: str) -> list:
 
     # ── Step 1: OCR — read everything off the image ──────────────────────────
     img_b64 = _prepare_image_b64(image_path)
-    ocr_prompt = (
-        "Extract all text from this image exactly as it appears. "
-        "Do not correct, interpret, or change any words. "
-        "Preserve the layout — keep prices next to their items."
-    )
+    ocr_prompt = "Extract all text exactly as it appears in this image."
     try:
         raw_text = _vision_call(client, img_b64, ocr_prompt)
         print(f"[AI] OCR extracted {len(raw_text)} chars from {os.path.basename(image_path)}")
