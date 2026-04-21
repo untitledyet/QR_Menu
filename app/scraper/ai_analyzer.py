@@ -159,21 +159,9 @@ def analyze_menu_photo_structured(image_path: str) -> list:
     # ── Step 1: OCR — read everything off the image ──────────────────────────
     img_b64 = _prepare_image_b64(image_path)
     ocr_prompt = (
-        "You are an OCR engine specialized in restaurant menus.\n"
-        "This image may contain a physical menu, a menu board, or a photo taken inside a restaurant.\n\n"
-        "YOUR TASK: Transcribe ONLY the text that belongs to the menu itself — "
-        "dish names, drink names, prices, section headers (e.g. სალათები, Hot Dishes), "
-        "and ingredient/description lines.\n\n"
-        "IGNORE completely (do not transcribe):\n"
-        "- Restaurant name, logo, slogan\n"
-        "- Address, phone number, website, social media handles\n"
-        "- Background decorations, wall art, signs, posters\n"
-        "- Staff clothing text, table numbers, receipts\n"
-        "- Any text that is clearly NOT part of the food/drink menu\n\n"
-        "FORMAT: Preserve layout — section headers on their own lines, "
-        "prices immediately after the item they belong to.\n"
-        "If text is partially cut off, include what is readable with '...'.\n"
-        "Return ONLY the raw menu text, nothing else."
+        "Extract all text from this image exactly as it appears. "
+        "Do not correct, interpret, or change any words. "
+        "Preserve the layout — keep prices next to their items."
     )
     try:
         raw_text = _vision_call(client, img_b64, ocr_prompt)
