@@ -74,7 +74,7 @@ def _vision_call(client, img_b64: str, prompt: str) -> str:
                 "role": "user",
                 "content": [
                     {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_base64": img_b64},
+                    {"type": "input_image", "image_url": f"data:image/jpeg;base64,{img_b64}"},
                 ],
             }],
         )
@@ -178,14 +178,21 @@ def analyze_menu_photo_structured(image_path: str) -> list:
     # ── Step 1: OCR — read everything off the image ──────────────────────────
     img_b64 = _prepare_image_b64(image_path)
     ocr_prompt = (
-        "You are an OCR engine. This is a photo of a restaurant menu.\n"
-        "Read and transcribe ALL visible text EXACTLY as it appears — every dish name, "
-        "price, section header, description, and ingredient list.\n"
-        "Preserve the visual layout: keep section headers on their own lines, "
-        "keep prices next to the item they belong to.\n"
-        "Do NOT interpret, translate, or restructure anything. Just read the text.\n"
+        "You are an OCR engine specialized in restaurant menus.\n"
+        "This image may contain a physical menu, a menu board, or a photo taken inside a restaurant.\n\n"
+        "YOUR TASK: Transcribe ONLY the text that belongs to the menu itself — "
+        "dish names, drink names, prices, section headers (e.g. სალათები, Hot Dishes), "
+        "and ingredient/description lines.\n\n"
+        "IGNORE completely (do not transcribe):\n"
+        "- Restaurant name, logo, slogan\n"
+        "- Address, phone number, website, social media handles\n"
+        "- Background decorations, wall art, signs, posters\n"
+        "- Staff clothing text, table numbers, receipts\n"
+        "- Any text that is clearly NOT part of the food/drink menu\n\n"
+        "FORMAT: Preserve layout — section headers on their own lines, "
+        "prices immediately after the item they belong to.\n"
         "If text is partially cut off, include what is readable with '...'.\n"
-        "Return ONLY the raw transcribed text, nothing else."
+        "Return ONLY the raw menu text, nothing else."
     )
     try:
         raw_text = _vision_call(client, img_b64, ocr_prompt)
