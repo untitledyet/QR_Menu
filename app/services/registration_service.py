@@ -3,7 +3,6 @@
 import os
 import secrets
 import string
-import random
 import requests
 from datetime import datetime, timedelta
 from flask import current_app
@@ -27,11 +26,16 @@ def _sms_text(code, lang='ka', purpose='otp'):
     return f"Tably: დამადასტურებელი კოდი: {code}. მოქმედებს 2 წუთი."
 
 
+def _generate_otp_code(length: int = 6) -> str:
+    """Generate a cryptographically secure numeric OTP."""
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
+
+
 def send_sms_code(phone, lang='ka', purpose='otp'):
     """Generate 6-digit OTP and send via smsoffice.ge.
     Returns (code, error_message). error_message is None on success.
     """
-    code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+    code = _generate_otp_code()
     message = _sms_text(code, lang=lang, purpose=purpose)
 
     api_key = os.environ.get('SMS_API_KEY', '')

@@ -259,7 +259,65 @@ def run_migrations():
             ))
             conn.commit()
 
+        # --- Performance indexes on foreign keys ---
+        _ensure_indexes()
+
         print('Migrations complete.')
+
+
+_INDEXES_TO_ENSURE = [
+    # (index_name, table, column)
+    ('ix_AdminUsers_venue_id',              'AdminUsers',             'venue_id'),
+    ('ix_AdminUsers_phone',                 'AdminUsers',             'phone'),
+    ('ix_Venues_group_id',                  'Venues',                 'group_id'),
+    ('ix_VenueGroups_owner_venue_id',       'VenueGroups',            'owner_venue_id'),
+    ('ix_VenueGroupInvites_group_id',       'VenueGroupInvites',      'group_id'),
+    ('ix_VenueGroupInvites_invited_by',     'VenueGroupInvites',      'invited_by'),
+    ('ix_VenueGroupInvites_target_venue_id','VenueGroupInvites',      'target_venue_id'),
+    ('ix_VenueGroupInvites_status',         'VenueGroupInvites',      'status'),
+    ('ix_VenueFeatureOverrides_venue_id',   'VenueFeatureOverrides',  'venue_id'),
+    ('ix_Categories_venue_id',              'Categories',             'venue_id'),
+    ('ix_Categories_group_id',              'Categories',             'group_id'),
+    ('ix_Subcategories_CategoryID',         'Subcategories',          'CategoryID'),
+    ('ix_FoodItems_CategoryID',             'FoodItems',              'CategoryID'),
+    ('ix_FoodItems_SubcategoryID',          'FoodItems',              'SubcategoryID'),
+    ('ix_Promotions_venue_id',              'Promotions',             'venue_id'),
+    ('ix_Orders_TableID',                   'Orders',                 'TableID'),
+    ('ix_Orders_Status',                    'Orders',                 'Status'),
+    ('ix_Orders_venue_id',                  'Orders',                 'venue_id'),
+    ('ix_GlobalSubcategories_category_id',  'GlobalSubcategories',    'category_id'),
+    ('ix_GlobalItems_category_id',          'GlobalItems',            'category_id'),
+    ('ix_GlobalItems_subcategory_id',       'GlobalItems',            'subcategory_id'),
+    ('ix_RestaurantTables_venue_id',        'RestaurantTables',       'venue_id'),
+    ('ix_Bookings_venue_id',                'Bookings',               'venue_id'),
+    ('ix_Bookings_table_id',                'Bookings',               'table_id'),
+    ('ix_Bookings_customer_id',             'Bookings',               'customer_id'),
+    ('ix_Bookings_booking_date',            'Bookings',               'booking_date'),
+    ('ix_Bookings_status',                  'Bookings',               'status'),
+    ('ix_VenueItemPriceOverrides_venue_id', 'VenueItemPriceOverrides','venue_id'),
+    ('ix_VenueItemPriceOverrides_food_item_id',
+                                            'VenueItemPriceOverrides','food_item_id'),
+]
+
+
+def _ensure_indexes():
+    """Create every required index if missing. Safe on re-run (IF NOT EXISTS)."""
+    insp = inspect(db.engine)
+    existing_tables = set(insp.get_table_names())
+    created = 0
+    with db.engine.connect() as conn:
+        for idx_name, table, col in _INDEXES_TO_ENSURE:
+            if table not in existing_tables:
+                continue
+            try:
+                conn.execute(text(
+                    f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "{table}" ("{col}")'
+                ))
+                created += 1
+            except Exception as e:
+                print(f'Index {idx_name}: {e}')
+        conn.commit()
+    print(f'Indexes: {created}/{len(_INDEXES_TO_ENSURE)} ensured')
 
 
 def _backfill_venue_codes():

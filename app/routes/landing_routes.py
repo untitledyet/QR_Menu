@@ -22,6 +22,7 @@ from app.services.registration_service import (
     send_password_reset_email, send_2fa_email, search_google_place,
     generate_strong_password, validate_password,
 )
+from app.utils.observability import rate_limit
 
 landing_bp = Blueprint('landing_bp', __name__)
 
@@ -145,6 +146,7 @@ def check_availability():
 # ============================================================
 
 @landing_bp.route('/api/send-phone-otp', methods=['POST'])
+@rate_limit('30/hour', '3/minute')
 def send_phone_otp():
     # Global maintenance: remove all expired entries on each request
     PhoneOtp.query.filter(PhoneOtp.expires < datetime.utcnow()).delete()
@@ -204,6 +206,7 @@ def send_phone_otp():
 
 
 @landing_bp.route('/api/verify-phone-otp', methods=['POST'])
+@rate_limit('30/hour', '10/minute')
 def verify_phone_otp_api():
     data = request.get_json() or {}
     raw_phone = data.get('phone', '').strip()
@@ -245,6 +248,7 @@ def verify_phone_otp_api():
 # ============================================================
 
 @landing_bp.route('/register', methods=['POST'])
+@rate_limit('10/hour')
 def register_venue():
     data = request.get_json() or {}
     venue_name = data.get('venue_name', '').strip()
@@ -391,6 +395,7 @@ def verify_email(token):
 
 
 @landing_bp.route('/resend-email-verification', methods=['POST'])
+@rate_limit('5/hour')
 def resend_email_verification():
     from flask import session as flask_session
     data = request.get_json() or {}
@@ -452,6 +457,7 @@ def resend_email_verification():
 # ============================================================
 
 @landing_bp.route('/login-venue', methods=['POST'])
+@rate_limit('20/hour', '5/minute')
 def login_venue():
     data = request.get_json() or {}
     step = data.get('step', 'credentials')
@@ -507,7 +513,8 @@ def login_venue():
             return jsonify(success=True, step='sms_2fa',
                            message='SMS kodi gaigzavna ' + phone_display + '-ze')
         else:  # email 2FA
-            code = ''.join([str(__import__('random').randint(0, 9)) for _ in range(6)])
+            from app.services.registration_service import _generate_otp_code
+            code = _generate_otp_code()
             admin.set_sms_code(code)  # reuse sms_code_hash for storage
             admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
             db.session.commit()
@@ -572,6 +579,7 @@ def login_venue():
 # ============================================================
 
 @landing_bp.route('/forgot-password', methods=['POST'])
+@rate_limit('10/hour', '3/minute')
 def forgot_password():
     data = request.get_json() or {}
     identifier = data.get('identifier', '').strip()
@@ -628,6 +636,7 @@ def forgot_password():
 
 
 @landing_bp.route('/verify-reset-sms', methods=['POST'])
+@rate_limit('30/hour', '10/minute')
 def verify_reset_sms():
     data = request.get_json() or {}
     code = data.get('code', '').strip()
@@ -673,6 +682,7 @@ def verify_reset_sms():
 
 
 @landing_bp.route('/resend-reset-sms', methods=['POST'])
+@rate_limit('10/hour', '3/minute')
 def resend_reset_sms():
     admin_id = session.get('reset_admin_id')
     if not admin_id:
@@ -712,6 +722,7 @@ def reset_password_page(token):
 
 
 @landing_bp.route('/reset-password/<token>', methods=['POST'])
+@rate_limit('10/hour')
 def reset_password_submit(token):
     data = request.get_json() or {}
     password = data.get('password', '')

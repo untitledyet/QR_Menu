@@ -1,25 +1,37 @@
+"""Scraper pipeline runner.
+
+Entry points:
+  * `trigger_scraper_job(app, venue_id, place_id, venue_name)` — fire-and-forget
+    from a web request. Dispatches to RQ when REDIS_URL is present, falls back
+    to a background thread otherwise.
+  * `_worker(app, venue_id, place_id, venue_name)` — the actual unit of work.
+    Invoked by both the thread path and the RQ worker (see queue.py).
+
+The pipeline itself is unchanged in shape (Google text → Google photos → Glovo
+→ AI merge → dedup → enrich), but each stage now uses:
+  * ai_analyzer.py with Responses API + structured outputs
+  * image_preprocessor.py before any vision call
+  * embeddings for dedup and library matching
+  * r2_storage with content-addressable compression
 """
-Scraper job runner — triggered after venue registration.
-Runs in a background thread with Flask app context.
-Results are stored in ScraperJob DB table.
-"""
-import os
-import threading
-import tempfile
-import shutil
+from __future__ import annotations
+
 import logging
+import os
+import shutil
+import tempfile
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Pipeline logger — accumulates steps into result_json['_log']
-# ---------------------------------------------------------------------------
+# ═════════════════════════════════════════════════════════════════════════════
+# Pipeline log — accumulated into ScraperJob.result_json['_log']
+# ═════════════════════════════════════════════════════════════════════════════
 
 class PipelineLog:
     def __init__(self):
-        self.entries = []
+        self.entries: list = []
 
     def step(self, title: str, detail: str = '', status: str = 'ok', data=None):
         entry = {
@@ -43,26 +55,21 @@ class PipelineLog:
         )
 
 
-_pipeline_log: PipelineLog = None
+# ═════════════════════════════════════════════════════════════════════════════
+# Dispatch
+# ═════════════════════════════════════════════════════════════════════════════
 
-
-def trigger_scraper_job(app, venue_id: int, place_id: str, venue_name: str):
-    """Fire-and-forget: starts the scraper pipeline in a background thread."""
+def trigger_scraper_job(app, venue_id: int, place_id: str, venue_name: str) -> str:
+    """Fire-and-forget: dispatch the pipeline via RQ (if available) or thread."""
     if not place_id:
-        return
-    thread = threading.Thread(
-        target=_worker,
-        args=(app, venue_id, place_id, venue_name),
-        daemon=True,
-        name=f'scraper-{venue_id}',
-    )
-    thread.start()
-    logger.info(f'[ScraperJob] Queued for venue_id={venue_id}')
+        return ''
+    from app.scraper.queue import enqueue_scraper_job
+    return enqueue_scraper_job(app, venue_id, place_id, venue_name)
 
 
-# ---------------------------------------------------------------------------
-# Worker
-# ---------------------------------------------------------------------------
+# ═════════════════════════════════════════════════════════════════════════════
+# Worker — called by both thread and RQ paths
+# ═════════════════════════════════════════════════════════════════════════════
 
 def _worker(app, venue_id: int, place_id: str, venue_name: str):
     with app.app_context():
@@ -95,11 +102,12 @@ def _worker(app, venue_id: int, place_id: str, venue_name: str):
             db.session.commit()
 
 
-# ---------------------------------------------------------------------------
+# ═════════════════════════════════════════════════════════════════════════════
 # Pipeline
-# ---------------------------------------------------------------------------
+# ═════════════════════════════════════════════════════════════════════════════
 
 def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
+    from app.scraper import config as scraper_config
     from app.scraper.google_menu import extract_google_text_menu
     from app.scraper.google_photos import extract_google_menu_photos
     from app.scraper.glovo_menu import find_glovo_url, find_glovo_url_direct, extract_glovo_menu
@@ -112,10 +120,10 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
     tmpdir = tempfile.mkdtemp(prefix=f'scraper_{venue_id}_')
 
     google_text = None
-    google_photo_urls = []
+    google_photo_urls: list = []
     google_photos_ai = None
     glovo_data = None
-    glovo_photo_map = {}
+    glovo_photo_map: dict = {}
 
     plog.step('პაიფლაინი დაიწყო', f'place_id={place_id}, venue_id={venue_id}')
 
@@ -124,7 +132,10 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, slow_mo=0)
+            browser = p.chromium.launch(
+                headless=scraper_config.HEADLESS,
+                slow_mo=scraper_config.SLOW_MO,
+            )
             ctx = browser.new_context(
                 viewport={'width': 1280, 'height': 900},
                 locale='en-US',
@@ -156,14 +167,15 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                 plog.step('Google Maps ტექსტური მენიუ', str(e), 'error')
                 logger.warning(f'[ScraperJob] Google text error: {e}')
 
-            # Screenshot for debugging
+            # Debug screenshot — full PNG, no compression
             try:
                 shot_path = os.path.join(tmpdir, 'debug_after_google_text.png')
                 page.screenshot(path=shot_path, full_page=False)
-                shot_url = upload_from_path(shot_path, prefix=f'debug/{venue_id}')
+                shot_url = upload_from_path(
+                    shot_path, prefix=f'debug/{venue_id}', no_compress=True,
+                )
                 if shot_url:
                     plog.step('Debug screenshot', shot_url, 'ok', data={'url': shot_url})
-                logger.info(f'[ScraperJob] Screenshot after google_text: {shot_url}')
             except Exception:
                 pass
 
@@ -179,7 +191,7 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                 plog.step('Google Maps ფოტოები', str(e), 'error')
                 logger.warning(f'[ScraperJob] Google photos error: {e}')
 
-            # Step 3 — Glovo (try Google Maps first, fall back to direct Glovo search)
+            # Step 3 — Glovo
             try:
                 glovo_url = find_glovo_url(page, maps_url)
                 if not glovo_url and venue_name:
@@ -206,9 +218,9 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
 
             browser.close()
 
-        # Step 4 — Download photos
+        # ── Download Google photos ────────────────────────────────────────
         import requests as req_lib
-        local_photo_paths = []
+        local_photo_paths: list = []
         for i, base_url in enumerate(google_photo_urls):
             dest = os.path.join(tmpdir, f'gphoto_{i+1:03d}.jpg')
             try:
@@ -221,7 +233,7 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                 pass
         plog.step('ფოტოები ჩამოიტვირთა', f'{len(local_photo_paths)}/{len(google_photo_urls)} წარმატებით')
 
-        # ── Glovo photos → R2 ─────────────────────────────────────────────
+        # ── Glovo photos → R2 (content-addressable dedup handled inside) ──
         if glovo_data:
             uploaded = 0
             for cat, items in glovo_data.items():
@@ -236,9 +248,9 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                             uploaded += 1
             plog.step('Glovo ფოტოები R2-ზე', f'{uploaded} ფოტო ატვირთული')
 
-        # Step 5 — AI photo analysis
+        # ── AI photo analysis ─────────────────────────────────────────────
         if local_photo_paths:
-            all_ai_items = []
+            all_ai_items: list = []
             for path in local_photo_paths:
                 try:
                     items_from_photo = analyze_menu_photo(path)
@@ -247,12 +259,11 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                     logger.warning(f'[ScraperJob] AI photo error {path}: {e}')
 
             plog.ai_call(
-                model='gpt-4o (vision)',
+                model=scraper_config.OPENAI_MODEL_VISION,
                 purpose=f'ფოტო ანალიზი ({len(local_photo_paths)} ფოტო)',
                 prompt_preview=(
-                    'Extract ALL menu items visible. Return JSON array: '
-                    '[{name, description, price, category}]. '
-                    'SKIP category headers, prices only, single letters.'
+                    'Vision extraction via Responses API (json_schema). '
+                    'Returns flat array of {name, price, description, category}.'
                 ),
                 result_preview=f'{len(all_ai_items)} კერძი ამოღებული {len(local_photo_paths)} ფოტოდან',
             )
@@ -267,67 +278,64 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
                     plog.step('ფოტო AI კატეგორიები', f'{len(google_photos_ai)} კატეგორია (GPT-დან)')
                 else:
                     plog.ai_call(
-                        model='gpt-4o-mini',
+                        model=scraper_config.OPENAI_MODEL_FAST,
                         purpose='კატეგორიზაცია',
-                        prompt_preview='Categorize Georgian restaurant menu items into logical categories. Return JSON {category: [item_names]}.',
+                        prompt_preview='Grouping un-categorised items into logical buckets (structured).',
                         result_preview=f'{len(all_ai_items)} კერძი კატეგორიებში',
                     )
                     google_photos_ai = categorize_items(all_ai_items)
 
-            # Upload Google menu photos to R2
+            # Upload the downloaded menu photos (compressed) to R2
             for path in local_photo_paths:
                 upload_from_path(path, prefix=f'venues/{venue_id}/menu_photos')
 
-        # Step 6 — Merge
+        # ── Merge all sources ─────────────────────────────────────────────
         plog.step('მერჯი', 'ყველა წყაროს გაერთიანება...')
         final_menu = merge_menu(google_text, google_photos_ai, glovo_data, glovo_photo_map)
         total_after_merge = sum(len(v) for v in final_menu.values())
         plog.step(
             'მერჯი დასრულდა',
             f'{total_after_merge} კერძი — '
-            + ('ტექსტი ავტორიტეტული, ფოტო AI მხოლოდ ავსებს' if google_text and sum(len(v) for v in google_text.values()) >= 15 else 'ყველა წყარო შეუწყდა'),
+            + ('ტექსტი ავტორიტეტული, ფოტო AI მხოლოდ ავსებს'
+               if google_text and sum(len(v) for v in google_text.values()) >= 15
+               else 'ყველა წყარო შეუწყდა'),
             'ok',
         )
 
-        # Step 7 — AI deduplication
+        # ── Embedding-based deduplication ─────────────────────────────────
         all_items = [it for items in final_menu.values() for it in items]
         text_count = sum(len(v) for v in google_text.values()) if google_text else 0
         if len(all_items) > max(text_count * 1.3, 20):
             from app.scraper.ai_analyzer import ai_deduplicate
             plog.ai_call(
-                model='gpt-4o-mini',
+                model=scraper_config.OPENAI_MODEL_EMBED,
                 purpose=f'დედუბლიკაცია ({len(all_items)} კერძი)',
-                prompt_preview=(
-                    'Identify groups of DUPLICATE items — same dish with different spellings/language. '
-                    'Return array of arrays of indices. Only group when certain.'
-                ),
+                prompt_preview='Embedding-based cosine similarity (threshold 0.88).',
                 result_preview='...',
             )
             final_menu = ai_deduplicate(final_menu)
             all_items = [it for items in final_menu.values() for it in items]
             plog.step('დედუბლიკაცია', f'{total_after_merge} → {len(all_items)} კერძი')
 
-        # Step 8 — Ingredient enrichment (always runs — fills 'ingredients' field)
+        # ── Ingredient enrichment ─────────────────────────────────────────
         missing_ing = sum(1 for it in all_items if not it.get('ingredients'))
         if missing_ing:
             plog.ai_call(
-                model='gpt-4o-mini',
+                model=scraper_config.OPENAI_MODEL_FAST,
                 purpose=f'ინგრედიენტების გამდიდრება ({missing_ing} კერძი)',
-                prompt_preview=(
-                    'For each dish, provide typical ingredients in Georgian (3-6 words). '
-                    'Return JSON {"dish_name": "ingredients"}. Drinks → empty string.'
-                ),
+                prompt_preview='Ingredient enrichment via structured JSON schema.',
                 result_preview=f'{missing_ing} კერძს ემატება ინგრედიენტები',
             )
             enrich_ingredients(all_items)
             filled = sum(1 for it in all_items if it.get('ingredients'))
             plog.step('ინგრედიენტები', f'{filled}/{len(all_items)} კერძს აქვს ინგრედიენტები')
 
+        # Second-pass categorization if needed
         if len(final_menu) <= 1 and len(all_items) > 5:
             plog.ai_call(
-                model='gpt-4o-mini',
+                model=scraper_config.OPENAI_MODEL_FAST,
                 purpose='კატეგორიზაცია (მეორე პასი)',
-                prompt_preview='Categorize Georgian restaurant menu items. Return {category: [item_names]}.',
+                prompt_preview='Fallback grouping of flat item list.',
                 result_preview='...',
             )
             final_menu = categorize_items(all_items)
@@ -359,20 +367,18 @@ def _run_pipeline(place_id: str, venue_id: int, venue_name: str = '') -> dict:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-# ---------------------------------------------------------------------------
-# Library photo matching
-# ---------------------------------------------------------------------------
+# ═════════════════════════════════════════════════════════════════════════════
+# Library photo matching — embedding-backed
+# ═════════════════════════════════════════════════════════════════════════════
 
 def _match_library_photos(result: dict, GlobalItem, db):
-    """Annotate each item with library_photo suggestion using AI semantic matching."""
+    """Annotate each result item with library_photo suggestion."""
     from app.scraper.ai_analyzer import match_library_photos_ai
-    from app.scraper import config as scraper_config
 
     categories = result.get('categories', {})
 
-    # Collect all items with flat index for mapping back
-    flat_items = []
-    item_refs = []
+    flat_items: list = []
+    item_refs: list = []
     for cat_name, items in categories.items():
         for item in items:
             name = (item.get('name') or '').strip()
@@ -380,48 +386,46 @@ def _match_library_photos(result: dict, GlobalItem, db):
                 continue
             idx = len(flat_items)
             flat_items.append({
-                "i": idx,
-                "name": name,
-                "name_ka": item.get('name_ka', ''),
-                "name_en": item.get('name_en', ''),
-                "category": cat_name,
+                'i': idx,
+                'name': name,
+                'name_ka': item.get('name_ka', ''),
+                'name_en': item.get('name_en', ''),
+                'category': cat_name,
             })
             item_refs.append(item)
 
     if not flat_items:
         return
 
-    # Build library from GlobalItems that have a photo
     lib_entries = GlobalItem.query.filter(GlobalItem.image_filename.isnot(None)).all()
     if not lib_entries:
         return
 
-    r2_public = scraper_config.__dict__.get('R2_PUBLIC_URL') or ''
-    try:
-        import os
-        r2_public = os.environ.get('R2_PUBLIC_URL', '')
-    except Exception:
-        pass
-
+    r2_public = os.environ.get('R2_PUBLIC_URL', '').rstrip('/')
     library = []
     for g in lib_entries:
-        image_url = f"{r2_public}/{g.image_filename}" if r2_public and g.image_filename else g.image_filename
+        if r2_public and g.image_filename and not g.image_filename.startswith('http'):
+            image_url = f'{r2_public}/{g.image_filename}'
+        else:
+            image_url = g.image_filename or ''
         library.append({
-            "id": g.id,
-            "name": {"ka": g.name or '', "en": g.name_en or ''},
-            "aliases": [],
-            "image_url": image_url or '',
+            'id': g.id,
+            'name': {'ka': g.name or '', 'en': g.name_en or ''},
+            'aliases': [],
+            'image_url': image_url,
         })
 
-    # AI matching in batches of 60 items
-    BATCH = 60
-    for i in range(0, len(flat_items), BATCH):
-        batch_items = flat_items[i:i + BATCH]
-        matches = match_library_photos_ai(batch_items, library)
-        match_map = {m['i']: m for m in matches}
-        for entry in batch_items:
-            m = match_map.get(entry['i'], {})
-            if m.get('match_confidence') == 'high' and m.get('matched_dish_id') is not None:
-                ref = item_refs[entry['i']]
-                ref['library_photo'] = m.get('matched_image_url') or ''
-                ref['library_photo_id'] = m.get('matched_dish_id')
+    # Embedding-based matching — one call for everything, no batching needed
+    try:
+        matches = match_library_photos_ai(flat_items, library)
+    except Exception as e:
+        logger.warning(f'[ScraperJob] library match failed: {e}')
+        return
+
+    for m in matches:
+        i = m.get('i')
+        if i is None or i >= len(item_refs):
+            continue
+        ref = item_refs[i]
+        ref['library_photo'] = m.get('matched_image_url') or ''
+        ref['library_photo_id'] = m.get('matched_dish_id')

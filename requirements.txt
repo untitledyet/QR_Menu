@@ -12,3 +12,17 @@ httpx>=0.27.0
 playwright==1.48.0
 certifi
 Pillow>=10.0.0
+
+# Observability
+sentry-sdk[flask]>=2.18.0
+structlog>=24.4.0
+
+# Rate limiting
+Flask-Limiter>=3.8.0
+
+# Background jobs (optional — activated when REDIS_URL is set)
+rq>=1.16.0
+redis>=5.0.0
+
+# Embeddings / numerical (optional but makes cosine-similarity fast)
+numpy>=1.26.0

@@ -97,10 +97,10 @@ class AdminUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=True)  # kept for super admin compat
     email = db.Column(db.String(150), unique=True, nullable=True)
-    phone = db.Column(db.String(20), nullable=True)
+    phone = db.Column(db.String(20), nullable=True, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='venue')
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Verification
@@ -180,7 +180,7 @@ class Venue(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Chain membership — nullable; if set, venue belongs to this group
     group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id',
-                         use_alter=True, name='fk_venue_group'), nullable=True)
+                         use_alter=True, name='fk_venue_group'), nullable=True, index=True)
 
     feature_overrides = db.relationship('VenueFeatureOverride', backref='venue',
                                          lazy=True, cascade='all, delete-orphan')
@@ -222,7 +222,7 @@ class VenueGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     # The venue that created/owns the group
-    owner_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    owner_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, index=True)
     # Whether branch admins are allowed to override item prices
     allow_price_override = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -250,12 +250,12 @@ class VenueGroupInvite(db.Model):
     __tablename__ = 'VenueGroupInvites'
 
     id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=False, index=True)
     invite_code = db.Column(db.String(20), unique=True, nullable=False)
-    invited_by = db.Column(db.Integer, db.ForeignKey('AdminUsers.id'), nullable=False)
+    invited_by = db.Column(db.Integer, db.ForeignKey('AdminUsers.id'), nullable=False, index=True)
     # Optional: pre-targeted to a specific venue (unused unless specified)
-    target_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
-    status = db.Column(db.String(20), default='pending', nullable=False)  # pending/accepted/expired
+    target_venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
+    status = db.Column(db.String(20), default='pending', nullable=False, index=True)  # pending/accepted/expired
     expires_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -271,7 +271,7 @@ class VenueFeatureOverride(db.Model):
     __tablename__ = 'VenueFeatureOverrides'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, index=True)
     feature_key = db.Column(db.String(50), nullable=False)
     enabled = db.Column(db.Boolean, nullable=False)
 
@@ -290,9 +290,9 @@ class Category(db.Model):
     Description = db.Column(db.String(200), nullable=True)
     Description_en = db.Column(db.String(200), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
     # If group_id is set and venue_id is NULL → shared group category
-    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=True, index=True)
 
 
 class Subcategory(db.Model):
@@ -300,7 +300,7 @@ class Subcategory(db.Model):
     SubcategoryID = db.Column(db.Integer, primary_key=True)
     SubcategoryName = db.Column(db.String(50), nullable=False)
     SubcategoryName_en = db.Column(db.String(50), nullable=True)
-    CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
+    CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False, index=True)
     category = db.relationship('Category', backref=db.backref('subcategories', lazy=True))
 
 
@@ -315,8 +315,8 @@ class FoodItem(db.Model):
     Ingredients_en = db.Column(db.String(200), nullable=True)
     Price = db.Column(db.Float, nullable=False)
     ImageFilename = db.Column(db.String(100), nullable=True)
-    CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False)
-    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True)
+    CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False, index=True)
+    SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True, index=True)
     allow_customization = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
 
@@ -342,17 +342,17 @@ class Promotion(db.Model):
     EndDate = db.Column(db.Date, nullable=False)
     BackgroundImage = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
 
 
 class Order(db.Model):
     __tablename__ = 'Orders'
     OrderID = db.Column(db.Integer, primary_key=True)
-    TableID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    TableID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False, index=True)
     Items = db.Column(db.Text, nullable=False)
-    Status = db.Column(db.String(50), default="Pending")
+    Status = db.Column(db.String(50), default="Pending", index=True)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
 
     def __init__(self, TableID, Items, venue_id=None):
         self.TableID = TableID
@@ -382,7 +382,7 @@ class GlobalSubcategory(db.Model):
     __tablename__ = 'GlobalSubcategories'
 
     id = db.Column(db.Integer, primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False)
     name_en = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
@@ -395,8 +395,8 @@ class GlobalItem(db.Model):
     __tablename__ = 'GlobalItems'
 
     id = db.Column(db.Integer, primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False)
-    subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False, index=True)
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True, index=True)
     name = db.Column(db.String(100), nullable=False)
     name_en = db.Column(db.String(100), nullable=True)
     description = db.Column(db.String(500), nullable=True)
@@ -462,7 +462,7 @@ class RestaurantTable(db.Model):
     __tablename__ = 'RestaurantTables'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, index=True)
     label = db.Column(db.String(20), nullable=False)
     shape = db.Column(db.String(20), nullable=False, default='circle')
     capacity = db.Column(db.Integer, nullable=False, default=4)
@@ -480,17 +480,17 @@ class Booking(db.Model):
     __tablename__ = 'Bookings'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
-    table_id = db.Column(db.Integer, db.ForeignKey('RestaurantTables.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('ReservationCustomers.id'), nullable=False)
-    booking_date = db.Column(db.Date, nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, index=True)
+    table_id = db.Column(db.Integer, db.ForeignKey('RestaurantTables.id'), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('ReservationCustomers.id'), nullable=False, index=True)
+    booking_date = db.Column(db.Date, nullable=False, index=True)
     time_slot = db.Column(db.Time, nullable=False)
     guest_count = db.Column(db.Integer, nullable=False)
     guest_name = db.Column(db.String(100), nullable=False)
     guest_email = db.Column(db.String(150), nullable=False)
     guest_phone = db.Column(db.String(20), nullable=False)
     comment = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), nullable=False, default='pending_payment')
+    status = db.Column(db.String(20), nullable=False, default='pending_payment', index=True)
     language = db.Column(db.String(5), nullable=False, default='ka')
     cancellation_token = db.Column(db.String(64), unique=True, nullable=True)
     payment_intent_id = db.Column(db.String(100), nullable=True)
@@ -559,8 +559,8 @@ class VenueItemPriceOverride(db.Model):
     __tablename__ = 'VenueItemPriceOverrides'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
-    food_item_id = db.Column(db.Integer, db.ForeignKey('FoodItems.FoodItemID'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False, index=True)
+    food_item_id = db.Column(db.Integer, db.ForeignKey('FoodItems.FoodItemID'), nullable=False, index=True)
     price = db.Column(db.Float, nullable=False)
 
     venue = db.relationship('Venue', backref=db.backref('price_overrides', lazy=True))

@@ -13,6 +13,7 @@ from app import db
 from app.models import (AdminUser, Venue, VenueFeatureOverride, Category, Subcategory,
                          FoodItem, Promotion, Order, PLAN_FEATURES, FEATURE_LIST,
                          MAX_ITEMS_PER_VENUE, ScraperJob, GlobalItem, GlobalCategory)
+from app.utils.observability import rate_limit
 from app.services.registration_service import validate_password, send_sms_code, send_2fa_email
 from app.services.translation_service import (
     translate_item_async, translate_category_async, needs_translation
@@ -106,6 +107,7 @@ def verify_promo_ownership(promo_id):
 # ============================================================
 
 @bo_bp.route('/login', methods=['POST'])
+@rate_limit('20/hour', '5/minute')
 def login():
     """Backoffice login — POST only, handles AJAX auth."""
 
@@ -160,8 +162,8 @@ def login():
                            message='SMS kodi gaigzavna ' + phone_display + '-ze')
 
         if admin.two_fa_method == 'email' and admin.email:
-            import random as _rnd
-            code = ''.join([str(_rnd.randint(0, 9)) for _ in range(6)])
+            from app.services.registration_service import _generate_otp_code
+            code = _generate_otp_code()
             admin.set_sms_code(code)
             admin.sms_code_expires = datetime.utcnow() + timedelta(minutes=2)
             db.session.commit()
