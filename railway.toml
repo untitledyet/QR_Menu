@@ -2,9 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-# Release phase: run migrations + seed + library migration once per deploy.
-# Runtime: gunicorn with proper worker/thread config (see gunicorn.conf.py).
-startCommand = "python -c 'from manage import run_migrations; run_migrations()' && python seed.py && python migrate_to_library.py && gunicorn manage:app --config gunicorn.conf.py"
+startCommand = "flask db upgrade && gunicorn manage:app --config gunicorn.conf.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 healthcheckPath = "/health"

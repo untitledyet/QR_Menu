@@ -1,5 +1,8 @@
 """Extract menu photo base-URLs from Google Maps Menu tab."""
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 def _dismiss_consent(page):
@@ -24,7 +27,7 @@ def _find_menu_tab(page):
         try:
             t = page.get_by_role('tab', name=name, exact=True)
             t.wait_for(timeout=4000)
-            print(f'[GooglePhotos] Found tab: "{name}"')
+            logger.info('[GooglePhotos] Found tab: "%s"', name)
             return t
         except Exception:
             pass
@@ -33,8 +36,8 @@ def _find_menu_tab(page):
             "() => Array.from(document.querySelectorAll('[role=\"tab\"]'))"
             ".map(t => t.textContent.trim())"
         )
-        print(f'[GooglePhotos] All tabs: {all_tabs}')
-        print(f'[GooglePhotos] URL: {page.url}')
+        logger.debug('[GooglePhotos] All tabs: %s', all_tabs)
+        logger.debug('[GooglePhotos] URL: %s', page.url)
     except Exception:
         pass
     return None
@@ -45,7 +48,7 @@ def extract_google_menu_photos(page, place_url, output_dir=None):
     Navigate to Google Maps place, Menu tab, collect HD photo base-URLs.
     Returns list of base URL strings (without size suffix).
     """
-    print('[GooglePhotos] Opening place: ' + place_url)
+    logger.info('[GooglePhotos] Opening place: %s', place_url)
     page.set_default_navigation_timeout(60000)
     page.goto(place_url)
     page.wait_for_timeout(4000)
@@ -65,7 +68,7 @@ def extract_google_menu_photos(page, place_url, output_dir=None):
         menu_tab = _find_menu_tab(page)
 
     if menu_tab is None:
-        print('[GooglePhotos] No Menu tab found')
+        logger.warning('[GooglePhotos] No Menu tab found')
         return []
 
     menu_tab.click()
@@ -75,17 +78,17 @@ def extract_google_menu_photos(page, place_url, output_dir=None):
     try:
         first_btn.wait_for(timeout=5000)
     except Exception:
-        print('[GooglePhotos] No photo buttons found')
+        logger.warning('[GooglePhotos] No photo buttons found')
         return []
 
     label = first_btn.get_attribute('aria-label')
     m = re.search(r'of (\d+)', label or '')
     if not m:
-        print('[GooglePhotos] Cannot determine photo count, label=' + str(label))
+        logger.warning('[GooglePhotos] Cannot determine photo count, label=%s', label)
         return []
 
     total = int(m.group(1))
-    print('[GooglePhotos] Total photos: ' + str(total))
+    logger.info('[GooglePhotos] Total photos: %d', total)
 
     network_urls = set()
     capturing = True
@@ -132,5 +135,5 @@ def extract_google_menu_photos(page, place_url, output_dir=None):
     other = sorted(u for u in menu_urls if '/gps-cs' not in u)
     final = (gps + other)[:total]
 
-    print('[GooglePhotos] Collected ' + str(len(final)) + ' photo URLs')
+    logger.info('[GooglePhotos] Collected %d photo URLs', len(final))
     return final

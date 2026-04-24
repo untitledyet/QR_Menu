@@ -348,7 +348,7 @@ class Promotion(db.Model):
 class Order(db.Model):
     __tablename__ = 'Orders'
     OrderID = db.Column(db.Integer, primary_key=True)
-    TableID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False, index=True)
+    TableID = db.Column(db.Integer, nullable=False, index=True)
     Items = db.Column(db.Text, nullable=False)
     Status = db.Column(db.String(50), default="Pending", index=True)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
