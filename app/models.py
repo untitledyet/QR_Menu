@@ -286,10 +286,10 @@ class VenueFeatureOverride(db.Model):
 class Category(db.Model):
     __tablename__ = 'Categories'
     CategoryID = db.Column(db.Integer, primary_key=True)
-    CategoryName = db.Column(db.String(50), nullable=False)
-    CategoryName_en = db.Column(db.String(50), nullable=True)
-    Description = db.Column(db.String(200), nullable=True)
-    Description_en = db.Column(db.String(200), nullable=True)
+    CategoryName = db.Column(db.String(150), nullable=False)
+    CategoryName_en = db.Column(db.String(150), nullable=True)
+    Description = db.Column(db.String(500), nullable=True)
+    Description_en = db.Column(db.String(500), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
     # If group_id is set and venue_id is NULL → shared group category
@@ -299,8 +299,8 @@ class Category(db.Model):
 class Subcategory(db.Model):
     __tablename__ = 'Subcategories'
     SubcategoryID = db.Column(db.Integer, primary_key=True)
-    SubcategoryName = db.Column(db.String(50), nullable=False)
-    SubcategoryName_en = db.Column(db.String(50), nullable=True)
+    SubcategoryName = db.Column(db.String(150), nullable=False)
+    SubcategoryName_en = db.Column(db.String(150), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False, index=True)
     category = db.relationship('Category', backref=db.backref('subcategories', lazy=True))
 
@@ -308,14 +308,14 @@ class Subcategory(db.Model):
 class FoodItem(db.Model):
     __tablename__ = 'FoodItems'
     FoodItemID = db.Column(db.Integer, primary_key=True)
-    FoodName = db.Column(db.String(50), nullable=False)
-    FoodName_en = db.Column(db.String(50), nullable=True)
-    Description = db.Column(db.String(200), nullable=False)
-    Description_en = db.Column(db.String(200), nullable=True)
-    Ingredients = db.Column(db.String(200), nullable=False)
-    Ingredients_en = db.Column(db.String(200), nullable=True)
+    FoodName = db.Column(db.String(150), nullable=False)
+    FoodName_en = db.Column(db.String(150), nullable=True)
+    Description = db.Column(db.String(500), nullable=False)
+    Description_en = db.Column(db.String(500), nullable=True)
+    Ingredients = db.Column(db.String(500), nullable=False)
+    Ingredients_en = db.Column(db.String(500), nullable=True)
     Price = db.Column(db.Float, nullable=False)
-    ImageFilename = db.Column(db.String(100), nullable=True)
+    ImageFilename = db.Column(db.String(500), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False, index=True)
     SubcategoryID = db.Column(db.Integer, db.ForeignKey('Subcategories.SubcategoryID'), nullable=True, index=True)
     allow_customization = db.Column(db.Boolean, default=True)
