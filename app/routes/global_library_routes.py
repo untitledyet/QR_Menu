@@ -439,15 +439,14 @@ def verify_api_describe(item_id):
         'model': 'gpt-4o',
         'messages': [
             {'role': 'system', 'content': (
-                'You are a menu content writer for a restaurant. '
-                'Write a clear, factual description of the dish in 1-2 sentences. '
-                'Describe what the dish is and how it is made. No marketing language. '
+                'You are writing one-line dish descriptions for a restaurant menu. '
+                'Your goal: help a customer who has never heard of this dish understand what it is. '
+                'Write exactly 1 sentence. Explain what kind of dish it is — NOT what ingredients it contains. '
+                'Focus on the dish identity (e.g. "a baked Georgian flatbread filled with spiced kidney beans"). '
+                'Do not list ingredients. Do not use the word "traditional" or "delicious". '
                 'Return ONLY valid JSON: {"description_en": "..."}'
             )},
-            {'role': 'user', 'content': (
-                f'Dish name (Georgian): {item.name_ge}\n'
-                f'Ingredients: {item.ingredients_ge or "unknown"}'
-            )},
+            {'role': 'user', 'content': f'Dish name: {item.name_ge}'},
         ],
         'temperature': 0.2,
         'response_format': {'type': 'json_object'},
