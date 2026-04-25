@@ -490,7 +490,11 @@ def verify_api_generate_photo_styled(item_id):
     import base64
     import io
 
-    ref_bytes = request.files['reference'].read()
+    ref_file = request.files['reference']
+    ref_bytes = ref_file.read()
+    content_type = ref_file.content_type or 'image/jpeg'
+    if content_type not in ('image/jpeg', 'image/png', 'image/webp'):
+        content_type = 'image/jpeg'
     dish_label = item.name_en or item.name_ge or 'dish'
 
     prompt = (
@@ -505,7 +509,7 @@ def verify_api_generate_photo_styled(item_id):
         client = OpenAI(api_key=api_key)
         result = client.images.edit(
             model='gpt-image-2',
-            image=[io.BytesIO(ref_bytes)],
+            image=[('reference', ref_bytes, content_type)],
             prompt=prompt,
             size='1024x1024',
             quality='medium',
