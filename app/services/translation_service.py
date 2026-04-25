@@ -14,7 +14,7 @@ OPENAI_MODEL = 'gpt-4o'
 _SYSTEM_GE_TO_EN = (
     'You are a professional translator specializing in Georgian cuisine and gastronomy. '
     'Translate Georgian restaurant menu content into precise, natural English. '
-    'For dish names: transliterate only — do not add explanations or parenthetical notes. '
+    'For dish names: translate into natural English culinary terms (e.g. "ორაგულის სტეიკი" → "Salmon Steak"). Do not transliterate Georgian words — always use the correct English equivalent. '
     'Use exact culinary English terminology for ingredients. '
     'Do not add or omit any information. Preserve empty strings as empty strings. '
     'Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.'
