@@ -1,6 +1,8 @@
 {% extends 'backoffice/base.html' %}
 {% block title %}კერძების ვერიფიკაცია{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <style>
 .vr-layout { display:flex; gap:0; height:calc(100vh - 120px); min-height:500px; }
 
@@ -473,27 +475,80 @@ function translateItem() {
   });
 }
 
-// ── Photo upload ─────────────────────────────────────────────
+// ── Photo crop & upload ───────────────────────────────────────
+let _cropper = null;
+
 document.getElementById('vr-photo-input').addEventListener('change', function() {
   if (!currentId || !this.files[0]) return;
-  const form = new FormData();
-  form.append('photo', this.files[0]);
-  const wrap = document.getElementById('vr-photo-wrap');
-  wrap.innerHTML = '<i class="fas fa-circle-notch spin" style="font-size:1.5rem"></i>';
-  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/photo`), {
-    method: 'POST', body: form
-  }).then(r => r.json()).then(d => {
-    if (d.ok) {
-      wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
-      updateMissing(d.missing);
-      toast('ფოტო ატვირთულია', 'ok');
-      refreshRow(currentId);
-    } else {
-      wrap.innerHTML = '<i class="fas fa-image"></i>';
-      toast(d.error || 'ატვირთვის შეცდომა', 'err');
-    }
-  });
+  const file = this.files[0];
+  const reader = new FileReader();
+  reader.onload = e => openCropModal(e.target.result);
+  reader.readAsDataURL(file);
+  this.value = '';
 });
+
+function openCropModal(src) {
+  const modal = document.getElementById('vr-crop-modal');
+  const img = document.getElementById('vr-crop-img');
+  img.src = src;
+  modal.style.display = 'flex';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+  setTimeout(() => {
+    _cropper = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 2,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      restore: false,
+      guides: false,
+      center: true,
+      highlight: false,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+    });
+  }, 100);
+}
+
+function closeCropModal() {
+  document.getElementById('vr-crop-modal').style.display = 'none';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+}
+
+function confirmCrop() {
+  if (!_cropper || !currentId) return;
+  const btn = document.getElementById('vr-crop-confirm');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> ატვირთვა...';
+
+  _cropper.getCroppedCanvas({width: 800, height: 800, imageSmoothingQuality: 'high'})
+    .toBlob(blob => {
+      const form = new FormData();
+      form.append('photo', blob, 'photo.jpg');
+      const wrap = document.getElementById('vr-photo-wrap');
+
+      fetch('/backoffice/library/verify/api/item/' + currentId + '/photo', {
+        method: 'POST', body: form
+      }).then(r => r.json()).then(d => {
+        closeCropModal();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-crop-alt"></i> შენახვა';
+        if (d.ok) {
+          wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
+          updateMissing(d.missing);
+          toast('ფოტო ატვირთულია', 'ok');
+          refreshRow(currentId);
+        } else {
+          toast(d.error || 'ატვირთვის შეცდომა', 'err');
+        }
+      }).catch(() => {
+        closeCropModal();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-crop-alt"></i> შენახვა';
+        toast('შეცდომა', 'err');
+      });
+    }, 'image/jpeg', 0.92);
+}
 
 // ── Verify ───────────────────────────────────────────────────
 function verifyItem() {
@@ -605,6 +660,30 @@ document.addEventListener('keydown', e => {
 // init
 loadList(true);
 </script>
+
+<!-- ── Crop Modal ── -->
+<div id="vr-crop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:var(--bo-surface);border:1px solid var(--bo-border);border-radius:var(--bo-radius);width:520px;max-width:96vw;padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;color:var(--bo-text);font-size:.95rem"><i class="fas fa-crop-alt" style="color:var(--bo-primary)"></i> ფოტოს მოჭრა</h3>
+      <button onclick="closeCropModal()" style="background:none;border:none;color:var(--bo-text-2);cursor:pointer;font-size:1.1rem"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="width:100%;max-height:400px;overflow:hidden;border-radius:8px;background:#000">
+      <img id="vr-crop-img" style="max-width:100%;display:block">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:.75rem;color:var(--bo-text-2)">ზუმი:</span>
+      <button class="btn btn--ghost btn--sm" onclick="_cropper&&_cropper.zoom(0.1)"><i class="fas fa-search-plus"></i></button>
+      <button class="btn btn--ghost btn--sm" onclick="_cropper&&_cropper.zoom(-0.1)"><i class="fas fa-search-minus"></i></button>
+      <button class="btn btn--ghost btn--sm" onclick="_cropper&&_cropper.reset()"><i class="fas fa-undo"></i> Reset</button>
+      <span style="font-size:.72rem;color:var(--bo-text-2);margin-left:auto">გადაათრიე ფოტო პოზიციის შესაცვლელად</span>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn--ghost" onclick="closeCropModal()">გაუქმება</button>
+      <button class="btn btn--primary" id="vr-crop-confirm" onclick="confirmCrop()"><i class="fas fa-crop-alt"></i> შენახვა</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Add Dishes Modal ── -->
 <div id="vr-add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
