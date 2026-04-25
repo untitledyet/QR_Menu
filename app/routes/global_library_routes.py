@@ -415,10 +415,11 @@ def verify_api_generate_photo(item_id):
     from openai import OpenAI
     import base64
 
+    dish_label = item.name_en or item.name_ge
     prompt = (
-        f'A highly realistic professional food photography image of {item.name_ge}. '
+        f'A highly realistic professional food photography image of {dish_label} (Georgian dish: {item.name_ge}). '
         'The dish must be placed in the center of the frame and fully visible, not cropped or cut off at the edges. '
-        f'The image must strictly represent exactly this dish: "{item.name_ge}". '
+        f'The image must strictly represent exactly this dish: "{dish_label}". '
         'Do not reinterpret or replace it with a more popular variation. '
         'Styled in rustic, dark moody food photography style. '
         'Set on a dark wooden table with natural textures and subtle props. '
@@ -430,14 +431,15 @@ def verify_api_generate_photo(item_id):
     )
 
     try:
+        import requests as _req
         client = OpenAI(api_key=api_key)
         result = client.images.generate(
             model='gpt-image-2',
             prompt=prompt,
             size='1024x1024',
-            response_format='b64_json',
         )
-        image_bytes = base64.b64decode(result.data[0].b64_json)
+        image_url = result.data[0].url
+        image_bytes = _req.get(image_url, timeout=30).content
     except Exception as e:
         return jsonify(error=f'Image generation failed: {e}'), 500
 
