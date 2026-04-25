@@ -34,10 +34,36 @@ _SYSTEM_EN_TO_GE = (
 
 _USER_PROMPT = 'Translate the following restaurant menu JSON from {source} to {target}:\n\n{content}'
 
+_SYSTEM_GE_REVIEW = (
+    'You are a Georgian language expert and editor. '
+    'You will receive a JSON object whose values are Georgian text. '
+    'Review each value carefully and correct any grammatical errors: '
+    'noun cases (ბრუნვები), verb conjugations (ზმნის უღვლილება), postpositions (თანდებულები), '
+    'and word agreement. Do not change the meaning or style — only fix grammatical mistakes. '
+    'Preserve empty strings as empty strings. '
+    'Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.'
+)
+
+
+def _post_openai(payload: dict, api_key: str, verify_ssl) -> dict:
+    import requests
+    resp = requests.post(
+        'https://api.openai.com/v1/chat/completions',
+        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+        json=payload,
+        verify=verify_ssl,
+        timeout=20,
+    )
+    resp.raise_for_status()
+    text = resp.json()['choices'][0]['message']['content'].strip()
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if not match:
+        raise ValueError('No JSON object found in OpenAI response')
+    return json.loads(match.group(0))
+
 
 def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str) -> dict:
-    """Call OpenAI Chat Completions API and return translated dict. Raises on failure."""
-    import requests
+    """Translate fields. When target is Georgian, runs a second grammar-review pass."""
     try:
         import certifi
         verify = certifi.where()
@@ -49,7 +75,8 @@ def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str)
     system = _SYSTEM_GE_TO_EN if source_lang == 'ka' else _SYSTEM_EN_TO_GE
     content = json.dumps(fields, ensure_ascii=False)
 
-    payload = {
+    # Step 1: translate
+    translated = _post_openai({
         'model': OPENAI_MODEL,
         'messages': [
             {'role': 'system', 'content': system},
@@ -58,21 +85,22 @@ def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str)
         'temperature': 0.1,
         'max_tokens': 1024,
         'response_format': {'type': 'json_object'},
-    }
-    resp = requests.post(
-        'https://api.openai.com/v1/chat/completions',
-        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-        json=payload,
-        verify=verify,
-        timeout=20,
-    )
-    resp.raise_for_status()
+    }, api_key, verify)
 
-    text = resp.json()['choices'][0]['message']['content'].strip()
-    match = re.search(r'\{.*\}', text, re.DOTALL)
-    if not match:
-        raise ValueError('No JSON object found in OpenAI response')
-    return json.loads(match.group(0))
+    # Step 2: grammar review only when translating into Georgian
+    if target_lang == 'ka':
+        translated = _post_openai({
+            'model': OPENAI_MODEL,
+            'messages': [
+                {'role': 'system', 'content': _SYSTEM_GE_REVIEW},
+                {'role': 'user', 'content': json.dumps(translated, ensure_ascii=False)},
+            ],
+            'temperature': 0.0,
+            'max_tokens': 1024,
+            'response_format': {'type': 'json_object'},
+        }, api_key, verify)
+
+    return translated
 
 
 def translate_item_async(item_id: int, fields: dict, source_lang: str, target_lang: str, app):
