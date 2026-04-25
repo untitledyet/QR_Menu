@@ -398,7 +398,7 @@ class GlobalItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=True, index=True)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True, index=True)
-    name_ge = db.Column(db.String(100), nullable=False)
+    name_ge = db.Column(db.String(100), nullable=False, unique=True)
     ingredients_ge = db.Column(db.String(500), nullable=True)
     description_ge = db.Column(db.String(500), nullable=True)
     name_en = db.Column(db.String(100), nullable=True)
