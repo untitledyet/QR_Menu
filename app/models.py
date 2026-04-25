@@ -3,6 +3,7 @@ import secrets
 import string
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import validates
 from app import db
 
 
@@ -409,6 +410,19 @@ class GlobalItem(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     subcategory = db.relationship('GlobalSubcategory', backref=db.backref('items', lazy=True))
+
+    _REQUIRED_FOR_VERIFIED = (
+        'name_ge', 'ingredients_ge', 'description_ge',
+        'name_en', 'ingredients_en', 'description_en', 'image_filename',
+    )
+
+    @validates('is_verified')
+    def validate_is_verified(self, key, value):
+        if value:
+            missing = [f for f in self._REQUIRED_FOR_VERIFIED if not getattr(self, f, None)]
+            if missing:
+                raise ValueError(f'is_verified=True მოითხოვს: {", ".join(missing)}')
+        return value
 
     def to_dict(self):
         return {
