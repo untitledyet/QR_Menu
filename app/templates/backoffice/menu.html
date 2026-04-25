@@ -143,7 +143,7 @@
            data-name="{{ item.FoodName|lower }}"
            data-name-en="{{ (item.FoodName_en or '')|lower }}">
         <div class="um-item-card__img-wrap">
-          <img src="{{ url_for('static', filename='images/' ~ (item.ImageFilename or 'default-image.png')) }}"
+          <img src="{{ item.ImageFilename if item.ImageFilename and item.ImageFilename.startswith('http') else url_for('static', filename='images/' ~ (item.ImageFilename or 'default-image.png')) }}"
                class="um-item-card__img" loading="lazy" alt="{{ item.FoodName }}">
           {% if not item.is_active %}
           <span class="um-item-card__badge-inactive">გამორთული</span>

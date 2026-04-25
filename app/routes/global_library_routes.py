@@ -473,6 +473,57 @@ def verify_api_generate_photo(item_id):
     return jsonify(ok=True, image_url=url, missing=_missing(item))
 
 
+@lib_bp.route('/verify/api/item/<int:item_id>/generate-photo-styled', methods=['POST'])
+@login_required
+@super_required
+def verify_api_generate_photo_styled(item_id):
+    """Generate a food photo using a reference image for style/subject guidance."""
+    item = GlobalItem.query.get_or_404(item_id)
+    if 'reference' not in request.files:
+        return jsonify(error='reference file required'), 400
+
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+
+    from openai import OpenAI
+    import base64
+    import io
+
+    ref_bytes = request.files['reference'].read()
+    dish_label = item.name_en or item.name_ge or 'dish'
+
+    prompt = (
+        f'Transform this reference photo into a professional restaurant menu photograph of {dish_label}. '
+        'Keep the dish appearance faithful to the reference. '
+        'Dark wooden table, soft warm directional light from the left, 45-degree overhead angle, '
+        'bokeh background, shallow depth of field. '
+        'Photorealistic, natural food textures, no artificial gloss, no studio overexposure.'
+    )
+
+    try:
+        client = OpenAI(api_key=api_key)
+        result = client.images.edit(
+            model='gpt-image-2',
+            image=[io.BytesIO(ref_bytes)],
+            prompt=prompt,
+            size='1024x1024',
+            quality='medium',
+        )
+        image_bytes = base64.b64decode(result.data[0].b64_json)
+    except Exception as e:
+        return jsonify(error=f'Image generation failed: {e}'), 500
+
+    from app.services.r2_storage import upload_bytes
+    url = upload_bytes(image_bytes, prefix='global-items', no_compress=False)
+    if not url:
+        return jsonify(error='R2 upload failed'), 500
+
+    item.image_filename = url
+    db.session.commit()
+    return jsonify(ok=True, image_url=url, missing=_missing(item))
+
+
 @lib_bp.route('/verify/api/item/<int:item_id>/verify', methods=['POST'])
 @login_required
 @super_required

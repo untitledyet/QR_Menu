@@ -247,6 +247,10 @@
               <button class="btn btn--sm" id="vr-genphoto-btn" onclick="generatePhoto()" style="background:#7c3aed;color:#fff">
                 <i class="fas fa-magic"></i> AI გენერაცია
               </button>
+              <input type="file" id="vr-ref-input" class="vr-photo__input" accept="image/*">
+              <label for="vr-ref-input" style="font-size:.7rem;color:var(--bo-text-2);cursor:pointer;display:flex;align-items:center;gap:5px;opacity:.7" title="ატვირთე რეალური ფოტო — AI გადააკეთებს მენიუს სტილში">
+                <i class="fas fa-image" style="font-size:.65rem"></i> რეფერენსით
+              </label>
               <p style="font-size:.72rem;color:var(--bo-text-2);margin:0">JPG / PNG / WebP<br>ავტომატურად შეინახება R2-ზე</p>
             </div>
           </div>
@@ -656,35 +660,35 @@ function describeItem() {
 }
 
 // ── AI Photo generation ──────────────────────────────────────
-function generatePhoto() {
+function _runGenPhoto(fetchPromise) {
   if (!currentId) return;
   const btn = document.getElementById('vr-genphoto-btn');
   const wrap = document.getElementById('vr-photo-wrap');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> გენერაცია (~30წმ)...';
   wrap.innerHTML = '<i class="fas fa-circle-notch spin" style="font-size:1.5rem"></i>';
-
-  fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-photo', {method: 'POST'})
-    .then(r => r.json())
-    .then(d => {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
-      if (d.ok) {
-        wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
-        updateMissing(d.missing);
-        toast('ფოტო დაგენერირდა', 'ok');
-        refreshRow(currentId);
-      } else {
-        wrap.innerHTML = '<i class="fas fa-image"></i>';
-        toast(d.error || 'შეცდომა', 'err');
-      }
-    }).catch(() => {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
-      wrap.innerHTML = '<i class="fas fa-image"></i>';
-      toast('შეცდომა', 'err');
-    });
+  fetchPromise.then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
+    if (d.ok) {
+      wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
+      updateMissing(d.missing); toast('ფოტო დაგენერირდა', 'ok'); refreshRow(currentId);
+    } else { wrap.innerHTML = '<i class="fas fa-image"></i>'; toast(d.error || 'შეცდომა', 'err'); }
+  }).catch(() => {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
+    wrap.innerHTML = '<i class="fas fa-image"></i>'; toast('შეცდომა', 'err');
+  });
 }
+
+function generatePhoto() {
+  _runGenPhoto(fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-photo', {method:'POST'}));
+}
+
+document.getElementById('vr-ref-input').addEventListener('change', function() {
+  if (!currentId || !this.files[0]) return;
+  const form = new FormData(); form.append('reference', this.files[0]); this.value = '';
+  _runGenPhoto(fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-photo-styled', {method:'POST', body:form}));
+});
 
 // Keyboard shortcut: Ctrl+S / Cmd+S → save
 document.addEventListener('keydown', e => {
