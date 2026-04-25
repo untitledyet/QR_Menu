@@ -521,7 +521,7 @@ function confirmCrop() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> ატვირთვა...';
 
-  _cropper.getCroppedCanvas({width: 800, height: 800, imageSmoothingQuality: 'high'})
+  _cropper.getCroppedCanvas({width: 1200, height: 1200, imageSmoothingQuality: 'high'})
     .toBlob(blob => {
       const form = new FormData();
       form.append('photo', blob, 'photo.jpg');
