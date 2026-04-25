@@ -5,8 +5,36 @@ import uuid
 from datetime import datetime, timedelta
 from functools import wraps
 
-# In-memory store for photo import jobs {job_id → {status, venue_id, result, error}}
-_photo_jobs: dict = {}
+import tempfile
+
+def _job_path(job_id):
+    return os.path.join('/tmp', f'qr_job_{job_id}.json')
+
+def _job_read(job_id):
+    try:
+        with open(_job_path(job_id)) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+def _job_write(job_id, data):
+    fd, tmp = tempfile.mkstemp(dir='/tmp', prefix='qrjob_')
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(data, f)
+        os.replace(tmp, _job_path(job_id))
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+def _job_delete(job_id):
+    try:
+        os.unlink(_job_path(job_id))
+    except FileNotFoundError:
+        pass
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
@@ -725,14 +753,15 @@ def photo_import_page():
 
 
 def _emit(job_id: str, event_type: str, **data):
-    """Append an event to the job's event stream (thread-safe via GIL)."""
-    job = _photo_jobs.get(job_id)
+    """Append an event to the job's event stream (file-backed, cross-worker)."""
+    job = _job_read(job_id)
     if job is not None:
         job.setdefault('events', []).append({'type': event_type, **data})
+        _job_write(job_id, job)
 
 
 def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
-    """Background thread: run full photo analysis pipeline and store result in _photo_jobs."""
+    """Background thread: run full photo analysis pipeline and store result in /tmp job file."""
     import shutil
     from sqlalchemy import func
     from app.scraper.ai_analyzer import (
@@ -744,11 +773,12 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
         _emit(job_id, event_type, **data)
 
     def fail(msg):
-        job = _photo_jobs.get(job_id)
+        job = _job_read(job_id)
         if job:
             job['status'] = 'failed'
             job['error'] = msg
-            emit('error', message=msg)
+            _job_write(job_id, job)
+        emit('error', message=msg)
 
     try:
         with app.app_context():
@@ -849,7 +879,7 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
 
             emit('complete', total=len(deduped))
 
-            job = _photo_jobs.get(job_id, {})
+            job = _job_read(job_id) or {}
             job['status'] = 'done'
             job['result'] = {
                 'success': True,
@@ -858,6 +888,7 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                 'cat_icons': cat_icons,
                 'cats_en': cats_en,
             }
+            _job_write(job_id, job)
     except Exception as e:
         app.logger.exception('photo analysis pipeline error')
         fail(str(e))
@@ -898,7 +929,7 @@ def analyze_photos():
         return jsonify(error='მხარდაჭერილი ფორმატი: JPG, PNG, WEBP'), 400
 
     job_id = str(uuid.uuid4())
-    _photo_jobs[job_id] = {'status': 'processing', 'venue_id': admin.venue.id, 'events': []}
+    _job_write(job_id, {'status': 'processing', 'venue_id': admin.venue.id, 'events': []})
 
     t = threading.Thread(
         target=_run_photo_analysis,
@@ -913,18 +944,18 @@ def analyze_photos():
 @login_required
 def analyze_photos_status(job_id):
     admin = get_current_admin()
-    job = _photo_jobs.get(job_id)
+    job = _job_read(job_id)
     if not job:
         return jsonify(status='not_found'), 404
     if admin.venue and job.get('venue_id') != admin.venue.id:
         return jsonify(status='not_found'), 404
     if job['status'] == 'done':
         result = job.get('result', {})
-        _photo_jobs.pop(job_id, None)
+        _job_delete(job_id)
         return jsonify(status='done', **result)
     if job['status'] == 'failed':
         error = job.get('error', 'უცნობი შეცდომა')
-        _photo_jobs.pop(job_id, None)
+        _job_delete(job_id)
         return jsonify(status='failed', error=error)
     return jsonify(status='processing')
 
@@ -934,7 +965,7 @@ def analyze_photos_status(job_id):
 def analyze_events(job_id):
     """Return new events since cursor. Includes final result when done."""
     admin = get_current_admin()
-    job = _photo_jobs.get(job_id)
+    job = _job_read(job_id)
     if not job:
         return jsonify(status='not_found', events=[], cursor=0), 404
     if admin.venue and job.get('venue_id') != admin.venue.id:
@@ -950,10 +981,10 @@ def analyze_events(job_id):
     error = None
     if status == 'done':
         result = job.get('result')
-        _photo_jobs.pop(job_id, None)
+        _job_delete(job_id)
     elif status == 'failed':
         error = job.get('error', 'უცნობი შეცდომა')
-        _photo_jobs.pop(job_id, None)
+        _job_delete(job_id)
 
     return jsonify(status=status, events=new_events, cursor=new_cursor, result=result, error=error)
 
