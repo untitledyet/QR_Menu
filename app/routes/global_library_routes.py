@@ -399,6 +399,58 @@ def verify_api_photo(item_id):
     return jsonify(ok=True, image_url=url, missing=_missing(item))
 
 
+@lib_bp.route('/verify/api/item/<int:item_id>/generate-photo', methods=['POST'])
+@login_required
+@super_required
+def verify_api_generate_photo(item_id):
+    """Generate a food photo via gpt-image-2 and upload to R2."""
+    item = GlobalItem.query.get_or_404(item_id)
+    if not item.name_ge:
+        return jsonify(error='name_ge is required'), 400
+
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+
+    from openai import OpenAI
+    import base64
+
+    prompt = (
+        f'A highly realistic professional food photography image of {item.name_ge}. '
+        'The dish must be placed in the center of the frame and fully visible, not cropped or cut off at the edges. '
+        f'The image must strictly represent exactly this dish: "{item.name_ge}". '
+        'Do not reinterpret or replace it with a more popular variation. '
+        'Styled in rustic, dark moody food photography style. '
+        'Set on a dark wooden table with natural textures and subtle props. '
+        'Warm, soft, directional lighting creating gentle shadows and depth. '
+        'Captured from a three-quarter angle, approximately 45-degree view, slightly top-down perspective. '
+        'Sharp focus on the dish with shallow depth of field and soft background blur. '
+        'Rich textures, natural colors, slightly warm tones. '
+        'Ultra-realistic, high detail, crisp quality.'
+    )
+
+    try:
+        client = OpenAI(api_key=api_key)
+        result = client.images.generate(
+            model='gpt-image-2',
+            prompt=prompt,
+            size='1024x1024',
+            response_format='b64_json',
+        )
+        image_bytes = base64.b64decode(result.data[0].b64_json)
+    except Exception as e:
+        return jsonify(error=f'Image generation failed: {e}'), 500
+
+    from app.services.r2_storage import upload_bytes
+    url = upload_bytes(image_bytes, prefix='global-items', no_compress=False)
+    if not url:
+        return jsonify(error='R2 upload failed'), 500
+
+    item.image_filename = url
+    db.session.commit()
+    return jsonify(ok=True, image_url=url, missing=_missing(item))
+
+
 @lib_bp.route('/verify/api/item/<int:item_id>/verify', methods=['POST'])
 @login_required
 @super_required

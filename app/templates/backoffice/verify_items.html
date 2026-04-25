@@ -244,6 +244,9 @@
               <button class="btn btn--ghost btn--sm" onclick="document.getElementById('vr-photo-input').click()">
                 <i class="fas fa-upload"></i> ატვირთვა
               </button>
+              <button class="btn btn--sm" id="vr-genphoto-btn" onclick="generatePhoto()" style="background:#7c3aed;color:#fff">
+                <i class="fas fa-magic"></i> AI გენერაცია
+              </button>
               <p style="font-size:.72rem;color:var(--bo-text-2);margin:0">JPG / PNG / WebP<br>ავტომატურად შეინახება R2-ზე</p>
             </div>
           </div>
@@ -650,6 +653,37 @@ function describeItem() {
     btn.innerHTML = '<i class="fas fa-align-left"></i> აღწერის გენერაცია';
     toast('შეცდომა', 'err');
   });
+}
+
+// ── AI Photo generation ──────────────────────────────────────
+function generatePhoto() {
+  if (!currentId) return;
+  const btn = document.getElementById('vr-genphoto-btn');
+  const wrap = document.getElementById('vr-photo-wrap');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> გენერაცია (~30წმ)...';
+  wrap.innerHTML = '<i class="fas fa-circle-notch spin" style="font-size:1.5rem"></i>';
+
+  fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-photo', {method: 'POST'})
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
+      if (d.ok) {
+        wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
+        updateMissing(d.missing);
+        toast('ფოტო დაგენერირდა', 'ok');
+        refreshRow(currentId);
+      } else {
+        wrap.innerHTML = '<i class="fas fa-image"></i>';
+        toast(d.error || 'შეცდომა', 'err');
+      }
+    }).catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-magic"></i> AI გენერაცია';
+      wrap.innerHTML = '<i class="fas fa-image"></i>';
+      toast('შეცდომა', 'err');
+    });
 }
 
 // Keyboard shortcut: Ctrl+S / Cmd+S → save
