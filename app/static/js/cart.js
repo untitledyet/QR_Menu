@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const el = document.createElement('div');
                 el.classList.add('cart-item');
                 el.innerHTML = `
-                    <img class="cart-item__img" src="/static/images/${item.imageFilename || 'default-image.png'}" alt="${item.name}">
+                    <img class="cart-item__img" src="${(item.imageFilename && item.imageFilename.startsWith('http')) ? item.imageFilename : '/static/images/' + (item.imageFilename || 'default-image.png')}" alt="${item.name}">
                     <div class="cart-item__info">
                         <div class="cart-item__name">${item.name}</div>
                         <div class="cart-item__mods">${buildModTags(item)}</div>

@@ -51,8 +51,11 @@ function createItemCard(item) {
     const ingEn = item.Ingredients_en || ingKa;
     const displayName = itemDisplayName(item);
     const displayIngredients = itemDisplayIngredients(item);
+    const imgSrc = (item.ImageFilename && item.ImageFilename.startsWith('http'))
+        ? item.ImageFilename
+        : `/static/images/${item.ImageFilename || 'default-image.png'}`;
     card.innerHTML = `
-        <img class="food-card__img" src="/static/images/${item.ImageFilename || 'default-image.png'}" alt="${displayName}">
+        <img class="food-card__img" src="${imgSrc}" alt="${displayName}">
         <div class="food-card__body">
             <div class="food-card__name" data-ka="${nameKa}" data-en="${nameEn}">${displayName}</div>
             <div class="food-card__desc" data-ka="${ingKa}" data-en="${ingEn}">${displayIngredients}</div>
@@ -99,7 +102,9 @@ function showItemPopup(item) {
     const displayName = itemDisplayName(item);
     const rawIngredients = itemDisplayIngredients(item);
 
-    modalImage.src = `/static/images/${item.ImageFilename || 'default-image.png'}`;
+    modalImage.src = (item.ImageFilename && item.ImageFilename.startsWith('http'))
+        ? item.ImageFilename
+        : `/static/images/${item.ImageFilename || 'default-image.png'}`;
     modalImage.alt = displayName;
     modalTitle.textContent = displayName;
     modalList.innerHTML = '';
@@ -197,7 +202,7 @@ function addToCart(item, modifiedIngredients, rawIngredients) {
     else {
         cart.push({
             id: item.FoodItemID, name: displayName, price: item.Price,
-            imageFilename: item.ImageFilename || 'default-image.png',
+            imageFilename: item.ImageFilename || '',
             ingredients: modifiedIngredients.length > 0 ? modifiedIngredients :
                 (ingSource ? ingSource.split(',').map(n => ({ name: n.trim(), action: 'default' })) : []),
             quantity: 1, ingredientKey, comment
