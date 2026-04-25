@@ -234,10 +234,10 @@ function loadMore() {
         .then(data => {
             _loading = false;
             var grid = document.getElementById('lib-grid');
-            if (_page === 0) grid.innerHTML = '';
+            if (_page === 1) grid.innerHTML = '';
 
             if (!data.items || data.items.length === 0) {
-                if (_page === 0) {
+                if (_page === 1) {
                     grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1;"><i class="fas fa-box-open"></i><p>კერძი არ მოიძებნა</p></div>';
                 }
                 _hasMore = false;
@@ -246,34 +246,7 @@ function loadMore() {
             }
 
             data.items.forEach(function(item) {
-                var imgHtml = item.image_url
-                    ? '<img src="' + item.image_url + '" onerror="this.parentElement.innerHTML=\'<i class=\\\"fas fa-image\\\"></i>\'">'
-                    : '<i class="fas fa-image"></i>';
-                var badge = item.is_verified
-                    ? '<span class="lib-badge-verified"><i class="fas fa-check"></i> ვერ.</span>'
-                    : '<span class="lib-badge-unverified"><i class="fas fa-clock"></i></span>';
-                var nameEn = item.name_en ? '<p class="lib-card__name-en">' + esc(item.name_en) + '</p>' : '';
-                var desc = item.description_ge ? '<p class="lib-card__desc">' + esc(item.description_ge) + '</p>' : '';
-
-                var card = document.createElement('div');
-                card.className = 'lib-card';
-                card.innerHTML =
-                    '<div class="lib-card__img">' + imgHtml + badge + '</div>' +
-                    '<div class="lib-card__body">' +
-                        '<p class="lib-card__name" title="' + esc(item.name_ge) + '">' + esc(item.name_ge) + '</p>' +
-                        nameEn + desc +
-                    '</div>' +
-                    '<div class="lib-card__footer">' +
-                        '<span class="lib-card__id">#' + item.id + '</span>' +
-                        '<div style="display:flex;gap:4px;">' +
-                            '<a href="/backoffice/library/verify?id=' + item.id + '" class="bo-btn bo-btn--ghost bo-btn--sm" title="რედაქტირება">' +
-                                '<i class="fas fa-edit"></i>' +
-                            '</a>' +
-                            '<button onclick="deleteItem(' + item.id + ', \'' + esc(item.name_ge) + '\')" class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);" title="წაშლა">' +
-                                '<i class="fas fa-trash"></i>' +
-                            '</button>' +
-                        '</div>' +
-                    '</div>';
+                var card = makeCard(item);
                 grid.appendChild(card);
             });
 
@@ -285,6 +258,88 @@ function loadMore() {
             _loading = false;
             console.error(e);
         });
+}
+
+function makeCard(item) {
+    var card = document.createElement('div');
+    card.className = 'lib-card';
+
+    // Image area
+    var imgDiv = document.createElement('div');
+    imgDiv.className = 'lib-card__img';
+    if (item.image_url) {
+        var img = document.createElement('img');
+        img.src = item.image_url;
+        img.style.cssText = 'width:100%;height:130px;object-fit:cover;';
+        img.onerror = function() {
+            imgDiv.innerHTML = '<i class="fas fa-image"></i>';
+        };
+        imgDiv.appendChild(img);
+    } else {
+        var ico = document.createElement('i');
+        ico.className = 'fas fa-image';
+        imgDiv.appendChild(ico);
+    }
+    // Badge
+    var badge = document.createElement('span');
+    if (item.is_verified) {
+        badge.className = 'lib-badge-verified';
+        badge.innerHTML = '<i class="fas fa-check"></i> ვერ.';
+    } else {
+        badge.className = 'lib-badge-unverified';
+        badge.innerHTML = '<i class="fas fa-clock"></i>';
+    }
+    imgDiv.appendChild(badge);
+    card.appendChild(imgDiv);
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'lib-card__body';
+    var nameEl = document.createElement('p');
+    nameEl.className = 'lib-card__name';
+    nameEl.title = item.name_ge;
+    nameEl.textContent = item.name_ge;
+    body.appendChild(nameEl);
+    if (item.name_en) {
+        var enEl = document.createElement('p');
+        enEl.className = 'lib-card__name-en';
+        enEl.textContent = item.name_en;
+        body.appendChild(enEl);
+    }
+    if (item.description_ge) {
+        var descEl = document.createElement('p');
+        descEl.className = 'lib-card__desc';
+        descEl.textContent = item.description_ge;
+        body.appendChild(descEl);
+    }
+    card.appendChild(body);
+
+    // Footer
+    var footer = document.createElement('div');
+    footer.className = 'lib-card__footer';
+    var idSpan = document.createElement('span');
+    idSpan.className = 'lib-card__id';
+    idSpan.textContent = '#' + item.id;
+    footer.appendChild(idSpan);
+    var btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:4px;';
+    var editA = document.createElement('a');
+    editA.href = '/backoffice/library/verify?id=' + item.id;
+    editA.className = 'bo-btn bo-btn--ghost bo-btn--sm';
+    editA.title = 'რედაქტირება';
+    editA.innerHTML = '<i class="fas fa-edit"></i>';
+    btns.appendChild(editA);
+    var delBtn = document.createElement('button');
+    delBtn.className = 'bo-btn bo-btn--ghost bo-btn--sm';
+    delBtn.style.color = 'var(--bo-red)';
+    delBtn.title = 'წაშლა';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    delBtn.addEventListener('click', function() { deleteItem(item.id, item.name_ge); });
+    btns.appendChild(delBtn);
+    footer.appendChild(btns);
+    card.appendChild(footer);
+
+    return card;
 }
 
 function deleteItem(id, name) {
