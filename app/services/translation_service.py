@@ -1,5 +1,5 @@
 """
-Auto-translation service using Gemini AI.
+Auto-translation service using OpenAI.
 Translates restaurant menu content (items, categories) between Georgian and English.
 Runs asynchronously — saves to DB after item is already committed.
 """
@@ -9,12 +9,25 @@ import json
 import threading
 
 
-OPENAI_MODEL = 'gpt-4o-mini'
+OPENAI_MODEL = 'gpt-4o'
 
-# Professional culinary translation prompt
-_SYSTEM_PROMPT = (
-    'You are a professional culinary translator specialising in restaurant menus and gastronomy. '
-    'Translate accurately using precise culinary and gastronomic terminology. '
+_SYSTEM_GE_TO_EN = (
+    'You are a professional translator specializing in Georgian cuisine and gastronomy. '
+    'Translate Georgian restaurant menu content into precise, natural English. '
+    'For Georgian dish names with no English equivalent: transliterate and add a brief parenthetical explanation '
+    '(e.g. "Lobiani (bean-filled flatbread)"). '
+    'Use exact culinary English terminology for ingredients. '
+    'Do not add or omit any information. Preserve empty strings as empty strings. '
+    'Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.'
+)
+
+_SYSTEM_EN_TO_GE = (
+    'You are a professional translator specializing in Georgian language and cuisine. '
+    'Translate English restaurant menu content into grammatically correct, natural Georgian. '
+    'Use standard literary Georgian (სალიტერატურო ქართული). '
+    'Pay strict attention to verb conjugations, noun cases, and postpositions. '
+    'Use natural Georgian culinary terms where they exist. '
+    'Do not translate dish names already written in Georgian script — keep them as-is. '
     'Preserve empty strings as empty strings. '
     'Return ONLY a valid JSON object with the exact same keys as the input. No markdown, no explanation.'
 )
@@ -33,12 +46,13 @@ def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str)
 
     src = 'Georgian' if source_lang == 'ka' else 'English'
     tgt = 'Georgian' if target_lang == 'ka' else 'English'
+    system = _SYSTEM_GE_TO_EN if source_lang == 'ka' else _SYSTEM_EN_TO_GE
     content = json.dumps(fields, ensure_ascii=False)
 
     payload = {
         'model': OPENAI_MODEL,
         'messages': [
-            {'role': 'system', 'content': _SYSTEM_PROMPT},
+            {'role': 'system', 'content': system},
             {'role': 'user', 'content': _USER_PROMPT.format(source=src, target=tgt, content=content)},
         ],
         'temperature': 0.1,
@@ -55,22 +69,14 @@ def _call_openai(fields: dict, source_lang: str, target_lang: str, api_key: str)
     resp.raise_for_status()
 
     text = resp.json()['choices'][0]['message']['content'].strip()
-
-    # Extract JSON object (response_format: json_object guarantees valid JSON)
     match = re.search(r'\{.*\}', text, re.DOTALL)
     if not match:
         raise ValueError('No JSON object found in OpenAI response')
-
     return json.loads(match.group(0))
 
 
 def translate_item_async(item_id: int, fields: dict, source_lang: str, target_lang: str, app):
-    """
-    Translate FoodItem fields in background and update DB.
-
-    fields: dict with keys 'name', 'description', 'ingredients'
-    source_lang / target_lang: 'ka' or 'en'
-    """
+    """Translate FoodItem fields in background and update DB."""
     api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
         return
@@ -80,7 +86,7 @@ def translate_item_async(item_id: int, fields: dict, source_lang: str, target_la
             result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
-                app.logger.error('[TRANSLATE] Gemini error for item %s: %s', item_id, exc)
+                app.logger.error('[TRANSLATE] error for item %s: %s', item_id, exc)
             except Exception:
                 pass
             return
@@ -112,11 +118,7 @@ def translate_item_async(item_id: int, fields: dict, source_lang: str, target_la
 
 
 def translate_category_async(cat_id: int, fields: dict, source_lang: str, target_lang: str, app):
-    """
-    Translate Category name/description in background and update DB.
-
-    fields: dict with keys 'name', 'description'
-    """
+    """Translate Category name/description in background and update DB."""
     api_key = os.environ.get('OPENAI_API_KEY', '')
     if not api_key:
         return
@@ -126,7 +128,7 @@ def translate_category_async(cat_id: int, fields: dict, source_lang: str, target
             result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
-                app.logger.error('[TRANSLATE] Gemini error for category %s: %s', cat_id, exc)
+                app.logger.error('[TRANSLATE] error for category %s: %s', cat_id, exc)
             except Exception:
                 pass
             return
@@ -166,7 +168,7 @@ def translate_global_item_async(item_id: int, fields: dict, source_lang: str, ta
             result = _call_openai(fields, source_lang, target_lang, api_key)
         except Exception as exc:
             try:
-                app.logger.error('[TRANSLATE] Gemini error for GlobalItem %s: %s', item_id, exc)
+                app.logger.error('[TRANSLATE] error for GlobalItem %s: %s', item_id, exc)
             except Exception:
                 pass
             return

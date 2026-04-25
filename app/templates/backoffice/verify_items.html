@@ -192,7 +192,10 @@
   <!-- ── Left: item list ── -->
   <div class="vr-list">
     <div class="vr-list__header">
-      <p class="vr-list__title">კერძები</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <p class="vr-list__title" style="margin:0">კერძები</p>
+        <button class="btn btn--primary btn--sm" onclick="openAddModal()"><i class="fas fa-plus"></i> დამატება</button>
+      </div>
       <div class="vr-progress">
         <div class="vr-progress__bar"><div class="vr-progress__fill" id="vr-prog-fill" style="width:0%"></div></div>
         <span class="vr-progress__text" id="vr-prog-text">{{ verified }}/{{ total }}</span>
@@ -218,6 +221,9 @@
       <div class="vr-editor__header">
         <span class="vr-editor__name" id="vr-item-name">—</span>
         <button class="btn btn--ghost btn--sm" onclick="saveItem()"><i class="fas fa-save"></i> შენახვა</button>
+        <button class="btn btn--sm" id="vr-describe-btn" onclick="describeItem()" style="background:#0891b2;color:#fff">
+          <i class="fas fa-align-left"></i> აღწერის გენერაცია
+        </button>
         <button class="btn btn--sm" id="vr-translate-btn" onclick="translateItem()" style="background:#6366f1;color:#fff">
           <i class="fas fa-language"></i> ავტოთარგმნა
         </button>
@@ -556,6 +562,41 @@ document.getElementById('vr-load-more').addEventListener('click', () => { page++
   window._vrBase = base.replace(/\/items$/, '');
 })();
 
+// ── Describe ────────────────────────────────────────────────
+function describeItem() {
+  if (!currentId) return;
+  const btn = document.getElementById('vr-describe-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> გენერაცია...';
+  // save Georgian fields first
+  const data = {};
+  ['name_ge','ingredients_ge','description_ge'].forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) data[f] = el.value;
+  });
+  fetch('/backoffice/library/verify/api/item/' + currentId + '/save', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  }).then(() =>
+    fetch('/backoffice/library/verify/api/item/' + currentId + '/describe', {method: 'POST'})
+  ).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-align-left"></i> აღწერის გენერაცია';
+    if (d.ok) {
+      ['description_en','description_ge'].forEach(f => {
+        const el = document.getElementById('f-' + f);
+        if (el && d[f]) { el.value = d[f]; updateFieldStyle(el); }
+      });
+      updateMissing(d.missing);
+      toast('აღწერა დაგენერირდა', 'ok');
+      refreshRow(currentId);
+    } else toast(d.error || 'შეცდომა', 'err');
+  }).catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-align-left"></i> აღწერის გენერაცია';
+    toast('შეცდომა', 'err');
+  });
+}
+
 // Keyboard shortcut: Ctrl+S / Cmd+S → save
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(); }
@@ -563,5 +604,69 @@ document.addEventListener('keydown', e => {
 
 // init
 loadList(true);
+</script>
+
+<!-- ── Add Dishes Modal ── -->
+<div id="vr-add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bo-surface);border:1px solid var(--bo-border);border-radius:var(--bo-radius);width:480px;max-width:95vw;padding:24px;position:relative">
+    <button onclick="closeAddModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--bo-text-2);cursor:pointer;font-size:1.1rem"><i class="fas fa-times"></i></button>
+    <h3 style="margin:0 0 6px;color:var(--bo-text);font-size:1rem"><i class="fas fa-plus-circle" style="color:var(--bo-primary)"></i> კერძების დამატება</h3>
+    <p style="font-size:.78rem;color:var(--bo-text-2);margin:0 0 16px">კერძების სახელები შეიყვანე მძიმით გამოყოფილი. AI ავტომატურად მოიძიებს ინგრედიენტებს.</p>
+    <textarea id="add-names-input" style="width:100%;background:var(--bo-surface-2);border:1px solid var(--bo-border);color:var(--bo-text);border-radius:8px;padding:10px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:80px;box-sizing:border-box;outline:none" placeholder="ხინკალი, ხაჭაპური, ქაბაბი, ლობიანი..."></textarea>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn--primary" id="add-run-btn" onclick="runAddDishes()"><i class="fas fa-play"></i> დამუშავება</button>
+      <button class="btn btn--ghost" onclick="closeAddModal()">გაუქმება</button>
+    </div>
+    <div id="add-log" style="display:none;margin-top:14px;background:var(--bo-surface-2);border:1px solid var(--bo-border);border-radius:8px;padding:12px;font-size:.78rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--bo-text-2)"></div>
+  </div>
+</div>
+
+<script>
+function openAddModal() {
+  document.getElementById('vr-add-modal').style.display = 'flex';
+  document.getElementById('add-names-input').value = '';
+  document.getElementById('add-log').style.display = 'none';
+  document.getElementById('add-log').innerHTML = '';
+}
+function closeAddModal() {
+  document.getElementById('vr-add-modal').style.display = 'none';
+}
+function runAddDishes() {
+  const names = document.getElementById('add-names-input').value.trim();
+  if (!names) return;
+  const btn = document.getElementById('add-run-btn');
+  const log = document.getElementById('add-log');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> მუშავდება...';
+  log.style.display = 'block';
+  log.innerHTML = 'AI-ს ვუგზავნი მოთხოვნას...\n';
+
+  fetch('/backoffice/library/verify/api/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({names}),
+  }).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play"></i> დამუშავება';
+    if (d.error) { log.innerHTML += '❌ ' + d.error; return; }
+    const icons = {new:'✅', updated:'🔄', skip:'⏭️', error:'❌'};
+    d.results.forEach(r => {
+      log.innerHTML += `${icons[r.status]||'•'} ${r.name} — ${r.msg}\n`;
+    });
+    const added = d.results.filter(r => r.status === 'new').length;
+    if (added > 0) {
+      totalItems += added;
+      loadList(true);
+    }
+    log.scrollTop = log.scrollHeight;
+  }).catch(e => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play"></i> დამუშავება';
+    log.innerHTML += '❌ შეცდომა: ' + e;
+  });
+}
+document.getElementById('vr-add-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
 </script>
 {% endblock %}

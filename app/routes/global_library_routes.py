@@ -1,5 +1,6 @@
 """Super admin routes for managing the global product library."""
 import os
+import json
 from functools import wraps
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
@@ -412,3 +413,148 @@ def verify_api_verify(item_id):
     except ValueError as e:
         return jsonify(error=str(e)), 400
     return jsonify(ok=True)
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/describe', methods=['POST'])
+@login_required
+@super_required
+def verify_api_describe(item_id):
+    """Generate English description from name_ge + ingredients_ge, then translate to Georgian."""
+    import requests as _req
+    item = GlobalItem.query.get_or_404(item_id)
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+    if not item.name_ge:
+        return jsonify(error='name_ge is required'), 400
+
+    try:
+        import certifi
+        verify_ssl = certifi.where()
+    except ImportError:
+        verify_ssl = True
+
+    # Step 1: generate description_en
+    gen_payload = {
+        'model': 'gpt-5.5',
+        'messages': [
+            {'role': 'system', 'content': (
+                'You are a menu content writer for a restaurant. '
+                'Write a clear, factual description of the dish in 1-2 sentences. '
+                'Describe what the dish is and how it is made. No marketing language. '
+                'Return ONLY valid JSON: {"description_en": "..."}'
+            )},
+            {'role': 'user', 'content': (
+                f'Dish name (Georgian): {item.name_ge}\n'
+                f'Ingredients: {item.ingredients_ge or "unknown"}'
+            )},
+        ],
+        'temperature': 0.2,
+        'response_format': {'type': 'json_object'},
+    }
+    resp = _req.post(
+        'https://api.openai.com/v1/chat/completions',
+        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+        json=gen_payload, verify=verify_ssl, timeout=20,
+    )
+    resp.raise_for_status()
+    description_en = json.loads(resp.json()['choices'][0]['message']['content']).get('description_en', '')
+
+    # Step 2: translate EN → GE
+    description_ge = ''
+    if description_en:
+        try:
+            translated = _call_openai({'description': description_en}, 'en', 'ka', api_key)
+            description_ge = translated.get('description', '')
+        except Exception:
+            pass
+
+    item.description_en = description_en or item.description_en
+    if description_ge:
+        item.description_ge = description_ge
+    db.session.commit()
+    return jsonify(
+        ok=True,
+        description_en=item.description_en or '',
+        description_ge=item.description_ge or '',
+        missing=_missing(item),
+    )
+
+
+def _fetch_ingredients_ge(dish_name: str, api_key: str) -> str:
+    """Ask AI for Georgian ingredients list for a dish name."""
+    import requests as _req
+    try:
+        import certifi
+        verify_ssl = certifi.where()
+    except ImportError:
+        verify_ssl = True
+
+    payload = {
+        'model': 'gpt-5.5',
+        'messages': [
+            {'role': 'system', 'content': (
+                'შენ ხარ კულინარიის ექსპერტი. მომეცი მითითებული კერძის სტანდარტული '
+                'ინგრედიენტების სია ქართულად, გრამატიკულად სწორად. '
+                'უპასუხე მხოლოდ ამ JSON ფორმატით: {"ingredients": ["ინგრ1", "ინგრ2", ...]}'
+            )},
+            {'role': 'user', 'content': f'კერძი: {dish_name}'},
+        ],
+        'temperature': 0.1,
+        'response_format': {'type': 'json_object'},
+    }
+    resp = _req.post(
+        'https://api.openai.com/v1/chat/completions',
+        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+        json=payload, verify=verify_ssl, timeout=20,
+    )
+    resp.raise_for_status()
+    result = json.loads(resp.json()['choices'][0]['message']['content'])
+    ingredients = result.get('ingredients', [])
+    return ', '.join(ingredients) if isinstance(ingredients, list) else str(ingredients)
+
+
+@lib_bp.route('/verify/api/add', methods=['POST'])
+@login_required
+@super_required
+def verify_api_add():
+    """Add new dishes by name — fetches Georgian ingredients via AI."""
+    from sqlalchemy import func as sqlfunc
+    data = request.get_json() or {}
+    raw = data.get('names', '')
+    names = [n.strip() for n in raw.split(',') if n.strip()]
+    if not names:
+        return jsonify(error='კერძი არ შეიყვანე'), 400
+
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+
+    results = []
+    for name in names:
+        existing = GlobalItem.query.filter(
+            sqlfunc.lower(GlobalItem.name_ge) == name.lower()
+        ).first()
+
+        if existing:
+            if existing.ingredients_ge:
+                results.append({'name': name, 'status': 'skip', 'msg': 'უკვე არსებობს'})
+            else:
+                try:
+                    ingredients = _fetch_ingredients_ge(name, api_key)
+                    existing.ingredients_ge = ingredients
+                    db.session.commit()
+                    results.append({'name': name, 'status': 'updated', 'msg': 'ინგრედიენტები დაემატა', 'id': existing.id})
+                except Exception as e:
+                    results.append({'name': name, 'status': 'error', 'msg': str(e)})
+        else:
+            try:
+                ingredients = _fetch_ingredients_ge(name, api_key)
+                item = GlobalItem(name_ge=name, ingredients_ge=ingredients)
+                db.session.add(item)
+                db.session.commit()
+                results.append({'name': name, 'status': 'new', 'msg': 'დაემატა', 'id': item.id})
+            except Exception as e:
+                db.session.rollback()
+                results.append({'name': name, 'status': 'error', 'msg': str(e)})
+    return jsonify(results=results)
