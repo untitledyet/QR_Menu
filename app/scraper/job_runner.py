@@ -410,7 +410,7 @@ def _match_library_photos(result: dict, GlobalItem, db):
             image_url = g.image_filename or ''
         library.append({
             'id': g.id,
-            'name': {'ka': g.name or '', 'en': g.name_en or ''},
+            'name': {'ka': g.name_ge or '', 'en': g.name_en or ''},
             'aliases': [],
             'image_url': image_url,
         })

@@ -849,12 +849,12 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
             for it in deduped:
                 name = it['name'].strip()
                 lib = (GlobalItem.query
-                       .filter(func.lower(GlobalItem.name) == name.lower())
+                       .filter(func.lower(GlobalItem.name_ge) == name.lower())
                        .filter(GlobalItem.image_filename.isnot(None))
                        .first())
                 if not lib:
                     lib = (GlobalItem.query
-                           .filter(GlobalItem.name.ilike(f'%{name}%'))
+                           .filter(GlobalItem.name_ge.ilike(f'%{name}%'))
                            .filter(GlobalItem.image_filename.isnot(None))
                            .first())
                 it['library_photo'] = lib.image_filename if lib else None

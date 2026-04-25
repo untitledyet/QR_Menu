@@ -183,9 +183,9 @@ def translate_global_item_async(item_id: int, fields: dict, source_lang: str, ta
                     item.description_en = result.get('description') or item.description_en
                     item.ingredients_en = result.get('ingredients') or item.ingredients_en
                 else:
-                    item.name = result.get('name') or item.name
-                    item.description = result.get('description') or item.description
-                    item.ingredients = result.get('ingredients') or item.ingredients
+                    item.name_ge = result.get('name') or item.name_ge
+                    item.description_ge = result.get('description') or item.description_ge
+                    item.ingredients_ge = result.get('ingredients') or item.ingredients_ge
                 db.session.commit()
                 app.logger.info('[TRANSLATE] GlobalItem %s → %s done', item_id, target_lang)
         except Exception as exc:

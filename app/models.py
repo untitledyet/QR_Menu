@@ -397,12 +397,12 @@ class GlobalItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=True, index=True)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True, index=True)
-    name = db.Column(db.String(100), nullable=False)
+    name_ge = db.Column(db.String(100), nullable=False)
+    ingredients_ge = db.Column(db.String(500), nullable=True)
+    description_ge = db.Column(db.String(500), nullable=True)
     name_en = db.Column(db.String(100), nullable=True)
-    description = db.Column(db.String(500), nullable=True)
-    description_en = db.Column(db.String(500), nullable=True)
-    ingredients = db.Column(db.String(500), nullable=True)
     ingredients_en = db.Column(db.String(500), nullable=True)
+    description_en = db.Column(db.String(500), nullable=True)
     image_filename = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
@@ -415,9 +415,9 @@ class GlobalItem(db.Model):
             'id': self.id,
             'category_id': self.category_id,
             'subcategory_id': self.subcategory_id,
-            'name': self.name, 'name_en': self.name_en or '',
-            'description': self.description, 'description_en': self.description_en or '',
-            'ingredients': self.ingredients, 'ingredients_en': self.ingredients_en or '',
+            'name_ge': self.name_ge, 'name_en': self.name_en or '',
+            'description_ge': self.description_ge, 'description_en': self.description_en or '',
+            'ingredients_ge': self.ingredients_ge, 'ingredients_en': self.ingredients_en or '',
             'image_filename': self.image_filename,
         }
 

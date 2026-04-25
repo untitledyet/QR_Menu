@@ -124,11 +124,11 @@ def add_global_item():
 
     item = GlobalItem(
         category_id=cat_id,
-        name=name,
+        name_ge=name,
         name_en=request.form.get('name_en', '').strip() or None,
-        description=request.form.get('description', ''),
+        description_ge=request.form.get('description', ''),
         description_en=request.form.get('description_en', '').strip() or None,
-        ingredients=request.form.get('ingredients', ''),
+        ingredients_ge=request.form.get('ingredients', ''),
         ingredients_en=request.form.get('ingredients_en', '').strip() or None,
         image_filename=image_filename,
     )
@@ -140,8 +140,8 @@ def add_global_item():
     ing_en = request.form.get('ingredients_en', '').strip()
     if needs_translation(name, name_en):
         translate_global_item_async(item.id,
-                                    {'name': name, 'description': item.description or '',
-                                     'ingredients': item.ingredients or ''},
+                                    {'name': name, 'description': item.description_ge or '',
+                                     'ingredients': item.ingredients_ge or ''},
                                     'ka', 'en', current_app._get_current_object())
     elif needs_translation(name_en, name):
         translate_global_item_async(item.id,
@@ -158,7 +158,7 @@ def add_global_item():
 @super_required
 def delete_global_item(item_id):
     item = GlobalItem.query.get_or_404(item_id)
-    name = item.name
+    name = item.name_ge
     db.session.delete(item)
     db.session.commit()
     flash(f'"{name}" წაიშალა')
@@ -202,11 +202,11 @@ def import_item():
         return jsonify(error='Category not found'), 404
 
     item = FoodItem(
-        FoodName=global_item.name,
+        FoodName=global_item.name_ge,
         FoodName_en=global_item.name_en or None,
-        Description=global_item.description or global_item.name,
+        Description=global_item.description_ge or global_item.name_ge,
         Description_en=global_item.description_en or None,
-        Ingredients=global_item.ingredients or '',
+        Ingredients=global_item.ingredients_ge or '',
         Ingredients_en=global_item.ingredients_en or None,
         Price=float(price),
         ImageFilename=global_item.image_filename or 'default-image.png',
@@ -257,5 +257,5 @@ def api_library_items():
     q = GlobalItem.query.filter_by(is_active=True)
     if cat_id:
         q = q.filter_by(category_id=cat_id)
-    items = q.order_by(GlobalItem.name).all()
+    items = q.order_by(GlobalItem.name_ge).all()
     return jsonify(items=[it.to_dict() for it in items])
