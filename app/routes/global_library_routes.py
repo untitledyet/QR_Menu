@@ -255,7 +255,7 @@ def create_venue_category():
 def api_library_items():
     """JSON list of global items, optionally filtered by category."""
     cat_id = request.args.get('category_id', type=int)
-    q = GlobalItem.query.filter_by(is_active=True)
+    q = GlobalItem.query.filter_by(is_active=True, is_verified=True)
     if cat_id:
         q = q.filter_by(category_id=cat_id)
     items = q.order_by(GlobalItem.name_ge).all()

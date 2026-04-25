@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from sqlalchemy import text
 from .config import Config
 from flask_sqlalchemy import SQLAlchemy
@@ -46,6 +46,10 @@ def create_app(config_class=Config):
 
     from app.utils.feature_flags import init_feature_flags
     init_feature_flags(app)
+
+    @app.route('/favicon.ico')
+    def _favicon():
+        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/x-icon')
 
     # ── Health + readiness endpoints ─────────────────────────────────────────
     @app.route('/health')
