@@ -436,7 +436,7 @@ def verify_api_describe(item_id):
 
     # Step 1: generate description_en
     gen_payload = {
-        'model': 'gpt-5.5',
+        'model': 'gpt-4o',
         'messages': [
             {'role': 'system', 'content': (
                 'You are a menu content writer for a restaurant. '
@@ -491,7 +491,7 @@ def _fetch_ingredients_ge(dish_name: str, api_key: str) -> str:
         verify_ssl = True
 
     payload = {
-        'model': 'gpt-5.5',
+        'model': 'gpt-4o',
         'messages': [
             {'role': 'system', 'content': (
                 'შენ ხარ კულინარიის ექსპერტი. მომეცი მითითებული კერძის სტანდარტული '
