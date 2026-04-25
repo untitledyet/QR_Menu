@@ -22,8 +22,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 # Reasoning-heavy vision + parsing → flagship model.
 # Simple classification/translation → flagship (fast enough) unless env overrides.
 # Embeddings → text-embedding-3-large for best semantic quality.
-OPENAI_MODEL_VISION   = os.environ.get("OPENAI_MODEL_VISION",   "gpt-5.4")
-OPENAI_MODEL_REASON   = os.environ.get("OPENAI_MODEL_REASON",   "gpt-5.4")
+OPENAI_MODEL_VISION   = os.environ.get("OPENAI_MODEL_VISION",   "gpt-5.5")
+OPENAI_MODEL_REASON   = os.environ.get("OPENAI_MODEL_REASON",   "gpt-5.5")
 OPENAI_MODEL_FAST     = os.environ.get("OPENAI_MODEL_FAST",     "gpt-5.4")
 OPENAI_MODEL_EMBED    = os.environ.get("OPENAI_MODEL_EMBED",    "text-embedding-3-large")
 OPENAI_MODEL_IMAGE_GEN = os.environ.get("OPENAI_MODEL_IMAGE_GEN", "gpt-image-1")
