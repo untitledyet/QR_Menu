@@ -1,0 +1,567 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}კერძების ვერიფიკაცია{% endblock %}
+{% block content %}
+<style>
+.vr-layout { display:flex; gap:0; height:calc(100vh - 120px); min-height:500px; }
+
+/* ── Left panel ── */
+.vr-list {
+  width:300px; flex-shrink:0; display:flex; flex-direction:column;
+  background:var(--bo-surface); border:1px solid var(--bo-border);
+  border-radius:var(--bo-radius); overflow:hidden;
+}
+.vr-list__header {
+  padding:14px 16px; border-bottom:1px solid var(--bo-border); flex-shrink:0;
+}
+.vr-list__title { font-size:.9rem; font-weight:700; color:var(--bo-text); margin:0 0 10px; }
+.vr-progress { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.vr-progress__bar {
+  flex:1; height:6px; background:var(--bo-surface-2); border-radius:3px; overflow:hidden;
+}
+.vr-progress__fill { height:100%; background:var(--bo-green); border-radius:3px; transition:width .4s; }
+.vr-progress__text { font-size:.72rem; color:var(--bo-text-2); white-space:nowrap; }
+.vr-search {
+  display:flex; gap:6px; margin-bottom:8px;
+}
+.vr-search input {
+  flex:1; background:var(--bo-surface-2); border:1px solid var(--bo-border);
+  color:var(--bo-text); border-radius:8px; padding:6px 10px; font-size:.8rem;
+  font-family:inherit; outline:none;
+}
+.vr-search input:focus { border-color:var(--bo-primary); }
+.vr-filter {
+  display:flex; gap:6px;
+}
+.vr-filter label {
+  display:flex; align-items:center; gap:5px; font-size:.75rem; color:var(--bo-text-2);
+  cursor:pointer; user-select:none;
+}
+.vr-items { overflow-y:auto; flex:1; }
+.vr-item {
+  display:flex; align-items:center; gap:10px; padding:10px 14px;
+  cursor:pointer; border-bottom:1px solid var(--bo-border);
+  transition:background .15s; position:relative;
+}
+.vr-item:hover { background:var(--bo-surface-2); }
+.vr-item.active { background:rgba(255,107,53,.1); border-left:3px solid var(--bo-primary); padding-left:11px; }
+.vr-item__img {
+  width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0;
+  background:var(--bo-surface-2); border:1px solid var(--bo-border);
+}
+.vr-item__img-ph {
+  width:36px; height:36px; border-radius:6px; flex-shrink:0;
+  background:var(--bo-surface-2); border:1px solid var(--bo-border);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bo-text-2); font-size:.9rem;
+}
+.vr-item__info { flex:1; min-width:0; }
+.vr-item__name { font-size:.82rem; font-weight:600; color:var(--bo-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vr-item__missing { font-size:.68rem; color:var(--bo-text-2); margin-top:2px; }
+.vr-item__badge {
+  font-size:.62rem; font-weight:700; padding:2px 6px; border-radius:10px;
+  flex-shrink:0;
+}
+.vr-item__badge--ok { background:rgba(16,185,129,.15); color:var(--bo-green); }
+.vr-item__badge--no { background:rgba(239,68,68,.12); color:var(--bo-red); }
+.vr-list__load {
+  padding:12px; text-align:center; font-size:.78rem; color:var(--bo-text-2);
+  cursor:pointer; border-top:1px solid var(--bo-border); flex-shrink:0;
+}
+.vr-list__load:hover { color:var(--bo-primary); }
+
+/* ── Right panel ── */
+.vr-editor {
+  flex:1; display:flex; flex-direction:column;
+  background:var(--bo-surface); border:1px solid var(--bo-border);
+  border-radius:var(--bo-radius); margin-left:16px; overflow:hidden;
+}
+.vr-editor__empty {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; color:var(--bo-text-2);
+}
+.vr-editor__empty i { font-size:2.5rem; opacity:.3; }
+.vr-editor__inner { display:none; flex-direction:column; height:100%; overflow:hidden; }
+.vr-editor__inner.active { display:flex; }
+
+.vr-editor__header {
+  padding:14px 20px; border-bottom:1px solid var(--bo-border); flex-shrink:0;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.vr-editor__name { font-size:1rem; font-weight:700; color:var(--bo-text); flex:1; }
+.vr-editor__body { flex:1; overflow-y:auto; padding:20px; }
+
+.vr-section { margin-bottom:24px; }
+.vr-section__title {
+  font-size:.7rem; font-weight:700; color:var(--bo-text-2);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.vr-section__title::after {
+  content:''; flex:1; height:1px; background:var(--bo-border);
+}
+.vr-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.vr-field { display:flex; flex-direction:column; gap:4px; }
+.vr-field label {
+  font-size:.73rem; font-weight:600; color:var(--bo-text-2);
+  display:flex; align-items:center; gap:6px;
+}
+.vr-field label .req {
+  font-size:.65rem; color:var(--bo-red); font-weight:700;
+}
+.vr-field label .ok-dot {
+  width:7px; height:7px; border-radius:50%; background:var(--bo-green); display:inline-block;
+}
+.vr-field label .miss-dot {
+  width:7px; height:7px; border-radius:50%; background:var(--bo-red); display:inline-block;
+}
+.vr-field input, .vr-field textarea {
+  background:var(--bo-surface-2); border:1px solid var(--bo-border);
+  color:var(--bo-text); border-radius:8px; padding:8px 10px;
+  font-size:.82rem; font-family:inherit; outline:none; resize:vertical;
+  transition:border-color .15s;
+}
+.vr-field input:focus, .vr-field textarea:focus { border-color:var(--bo-primary); }
+.vr-field input.filled, .vr-field textarea.filled { border-color:rgba(16,185,129,.4); }
+.vr-field input.empty, .vr-field textarea.empty { border-color:rgba(239,68,68,.4); }
+.vr-field textarea { min-height:72px; }
+
+/* Photo */
+.vr-photo { display:flex; gap:16px; align-items:flex-start; }
+.vr-photo__preview {
+  width:120px; height:120px; border-radius:10px; object-fit:cover; flex-shrink:0;
+  background:var(--bo-surface-2); border:2px dashed var(--bo-border);
+  display:flex; align-items:center; justify-content:center; color:var(--bo-text-2);
+  font-size:2rem; cursor:pointer; overflow:hidden; transition:border-color .15s;
+}
+.vr-photo__preview:hover { border-color:var(--bo-primary); }
+.vr-photo__preview img { width:100%; height:100%; object-fit:cover; }
+.vr-photo__controls { display:flex; flex-direction:column; gap:8px; justify-content:center; }
+.vr-photo__input { display:none; }
+
+/* Buttons */
+.btn { border:none; border-radius:8px; padding:8px 16px; font-size:.82rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s, opacity .15s; display:inline-flex; align-items:center; gap:6px; }
+.btn--primary { background:var(--bo-primary); color:#fff; }
+.btn--primary:hover { background:var(--bo-primary-dark); }
+.btn--green { background:var(--bo-green); color:#fff; }
+.btn--green:hover { background:#0da270; }
+.btn--ghost { background:var(--bo-surface-2); color:var(--bo-text); border:1px solid var(--bo-border); }
+.btn--ghost:hover { background:var(--bo-border); }
+.btn--sm { padding:5px 11px; font-size:.75rem; }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Footer */
+.vr-editor__footer {
+  padding:14px 20px; border-top:1px solid var(--bo-border); flex-shrink:0;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.vr-missing-list {
+  flex:1; font-size:.73rem; color:var(--bo-red);
+  display:flex; flex-wrap:wrap; gap:4px; align-items:center;
+}
+.vr-missing-tag {
+  background:rgba(239,68,68,.1); border-radius:4px; padding:2px 7px;
+}
+
+/* Toast */
+.vr-toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px);
+  background:#1e2433; border:1px solid var(--bo-border); border-radius:10px;
+  padding:10px 20px; font-size:.82rem; color:var(--bo-text);
+  box-shadow:0 4px 24px rgba(0,0,0,.4); z-index:9999;
+  transition:transform .3s, opacity .3s; opacity:0; pointer-events:none;
+}
+.vr-toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+.vr-toast.ok { border-color:var(--bo-green); color:var(--bo-green); }
+.vr-toast.err { border-color:var(--bo-red); color:var(--bo-red); }
+
+/* Spinner */
+.spin { animation:spin .7s linear infinite; display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media(max-width:768px) {
+  .vr-layout { flex-direction:column; height:auto; }
+  .vr-list { width:100%; max-height:300px; }
+  .vr-editor { margin-left:0; margin-top:16px; min-height:500px; }
+  .vr-row { grid-template-columns:1fr; }
+}
+</style>
+
+<h1 class="bo-page-title"><i class="fas fa-check-circle"></i> კერძების ვერიფიკაცია</h1>
+
+<div class="vr-layout">
+  <!-- ── Left: item list ── -->
+  <div class="vr-list">
+    <div class="vr-list__header">
+      <p class="vr-list__title">კერძები</p>
+      <div class="vr-progress">
+        <div class="vr-progress__bar"><div class="vr-progress__fill" id="vr-prog-fill" style="width:0%"></div></div>
+        <span class="vr-progress__text" id="vr-prog-text">{{ verified }}/{{ total }}</span>
+      </div>
+      <div class="vr-search">
+        <input type="text" id="vr-search" placeholder="ძებნა..." autocomplete="off">
+      </div>
+      <div class="vr-filter">
+        <label><input type="checkbox" id="vr-only-unverified" checked> მხოლოდ დაუვერიფიცირებელი</label>
+      </div>
+    </div>
+    <div class="vr-items" id="vr-items"></div>
+    <div class="vr-list__load" id="vr-load-more" style="display:none">მეტის ჩვენება</div>
+  </div>
+
+  <!-- ── Right: editor ── -->
+  <div class="vr-editor">
+    <div class="vr-editor__empty" id="vr-empty">
+      <i class="fas fa-mouse-pointer"></i>
+      <span>აირჩიე კერძი მარცხნიდან</span>
+    </div>
+    <div class="vr-editor__inner" id="vr-inner">
+      <div class="vr-editor__header">
+        <span class="vr-editor__name" id="vr-item-name">—</span>
+        <button class="btn btn--ghost btn--sm" onclick="saveItem()"><i class="fas fa-save"></i> შენახვა</button>
+        <button class="btn btn--sm" id="vr-translate-btn" onclick="translateItem()" style="background:#6366f1;color:#fff">
+          <i class="fas fa-language"></i> ავტოთარგმნა
+        </button>
+      </div>
+
+      <div class="vr-editor__body">
+        <!-- Photo -->
+        <div class="vr-section">
+          <div class="vr-section__title">ფოტო</div>
+          <div class="vr-photo">
+            <div class="vr-photo__preview" id="vr-photo-wrap" onclick="document.getElementById('vr-photo-input').click()">
+              <i class="fas fa-image" id="vr-photo-icon"></i>
+            </div>
+            <input type="file" id="vr-photo-input" class="vr-photo__input" accept="image/*">
+            <div class="vr-photo__controls">
+              <button class="btn btn--ghost btn--sm" onclick="document.getElementById('vr-photo-input').click()">
+                <i class="fas fa-upload"></i> ატვირთვა
+              </button>
+              <p style="font-size:.72rem;color:var(--bo-text-2);margin:0">JPG / PNG / WebP<br>ავტომატურად შეინახება R2-ზე</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Georgian fields -->
+        <div class="vr-section">
+          <div class="vr-section__title">ქართული</div>
+          <div class="vr-row">
+            <div class="vr-field">
+              <label><span id="dot-name_ge" class="miss-dot"></span> სახელი <span class="req">*</span></label>
+              <input type="text" id="f-name_ge" placeholder="კერძის სახელი ქართულად">
+            </div>
+            <div class="vr-field" style="grid-column:span 2">
+              <label><span id="dot-ingredients_ge" class="miss-dot"></span> ინგრედიენტები</label>
+              <textarea id="f-ingredients_ge" placeholder="ინგრედიენტები ქართულად"></textarea>
+            </div>
+            <div class="vr-field" style="grid-column:span 2">
+              <label><span id="dot-description_ge" class="miss-dot"></span> აღწერა</label>
+              <textarea id="f-description_ge" placeholder="კერძის აღწერა ქართულად"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- English fields -->
+        <div class="vr-section">
+          <div class="vr-section__title">ინგლისური</div>
+          <div class="vr-row">
+            <div class="vr-field">
+              <label><span id="dot-name_en" class="miss-dot"></span> Name</label>
+              <input type="text" id="f-name_en" placeholder="Dish name in English">
+            </div>
+            <div class="vr-field" style="grid-column:span 2">
+              <label><span id="dot-ingredients_en" class="miss-dot"></span> Ingredients</label>
+              <textarea id="f-ingredients_en" placeholder="Ingredients in English"></textarea>
+            </div>
+            <div class="vr-field" style="grid-column:span 2">
+              <label><span id="dot-description_en" class="miss-dot"></span> Description</label>
+              <textarea id="f-description_en" placeholder="Dish description in English"></textarea>
+            </div>
+          </div>
+        </div>
+      </div><!-- /body -->
+
+      <div class="vr-editor__footer">
+        <div class="vr-missing-list" id="vr-missing-list"></div>
+        <button class="btn btn--green" id="vr-verify-btn" onclick="verifyItem()" disabled>
+          <i class="fas fa-check"></i> ვერიფიცირება
+        </button>
+      </div>
+    </div><!-- /inner -->
+  </div>
+</div>
+
+<div class="vr-toast" id="vr-toast"></div>
+
+<script>
+const FIELDS = ['name_ge','ingredients_ge','description_ge','name_en','ingredients_en','description_en','image_filename'];
+let currentId = null;
+let page = 1;
+let hasMore = false;
+let searchTimer = null;
+let totalVerified = {{ verified }};
+let totalItems = {{ total }};
+
+// ── Load list ────────────────────────────────────────────────
+function loadList(reset=false) {
+  if (reset) { page = 1; document.getElementById('vr-items').innerHTML = ''; }
+  const q = document.getElementById('vr-search').value;
+  const unv = document.getElementById('vr-only-unverified').checked ? 1 : 0;
+  fetch(`/backoffice/library/verify/api/items?page=${page}&unverified=${unv}&q=${encodeURIComponent(q)}`)
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById('vr-items');
+      data.items.forEach(it => container.appendChild(buildRow(it)));
+      hasMore = (page * data.per_page) < data.total;
+      document.getElementById('vr-load-more').style.display = hasMore ? '' : 'none';
+      if (reset) updateProgress();
+    });
+}
+
+function buildRow(it) {
+  const div = document.createElement('div');
+  div.className = 'vr-item' + (it.id === currentId ? ' active' : '');
+  div.dataset.id = it.id;
+  const missingCount = it.missing.length;
+  const imgHtml = it.image_filename
+    ? `<img class="vr-item__img" src="${it.image_filename}" onerror="this.style.display='none'">`
+    : `<div class="vr-item__img-ph"><i class="fas fa-utensils"></i></div>`;
+  const badge = it.is_verified
+    ? `<span class="vr-item__badge vr-item__badge--ok">✓</span>`
+    : missingCount === 0
+      ? `<span class="vr-item__badge vr-item__badge--ok">${missingCount}</span>`
+      : `<span class="vr-item__badge vr-item__badge--no">${missingCount}</span>`;
+  div.innerHTML = `${imgHtml}<div class="vr-item__info">
+    <div class="vr-item__name">${it.name_ge || '(სახელი არ არის)'}</div>
+    <div class="vr-item__missing">${it.is_verified ? 'ვერიფიცირებულია' : missingCount === 0 ? 'მზადაა ვერიფიკაციისთვის' : `${missingCount} ველი აკლია`}</div>
+  </div>${badge}`;
+  div.addEventListener('click', () => openItem(it.id, div));
+  return div;
+}
+
+function updateProgress() {
+  const pct = totalItems > 0 ? Math.round(totalVerified / totalItems * 100) : 0;
+  document.getElementById('vr-prog-fill').style.width = pct + '%';
+  document.getElementById('vr-prog-text').textContent = `${totalVerified}/${totalItems}`;
+}
+
+// ── Open item ────────────────────────────────────────────────
+function openItem(id, rowEl) {
+  currentId = id;
+  document.querySelectorAll('.vr-item').forEach(r => r.classList.remove('active'));
+  if (rowEl) rowEl.classList.add('active');
+
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${id}`))
+    .then(r => r.json())
+    .then(renderEditor);
+}
+
+function renderEditor(it) {
+  document.getElementById('vr-empty').style.display = 'none';
+  const inner = document.getElementById('vr-inner');
+  inner.classList.add('active');
+
+  document.getElementById('vr-item-name').textContent = it.name_ge || '(სახელი)';
+
+  FIELDS.filter(f => f !== 'image_filename').forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) { el.value = it[f] || ''; updateFieldStyle(el); }
+  });
+
+  // photo
+  const wrap = document.getElementById('vr-photo-wrap');
+  if (it.image_filename) {
+    wrap.innerHTML = `<img src="${it.image_filename}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
+  } else {
+    wrap.innerHTML = `<i class="fas fa-image" id="vr-photo-icon"></i>`;
+  }
+
+  updateMissing(it.missing);
+
+  // disable verify btn if already verified
+  if (it.is_verified) {
+    document.getElementById('vr-verify-btn').textContent = '✓ ვერიფიცირებულია';
+    document.getElementById('vr-verify-btn').disabled = true;
+    document.getElementById('vr-verify-btn').style.background = 'var(--bo-green)';
+  } else {
+    document.getElementById('vr-verify-btn').innerHTML = '<i class="fas fa-check"></i> ვერიფიცირება';
+    document.getElementById('vr-verify-btn').style.background = '';
+    document.getElementById('vr-verify-btn').disabled = it.missing.length > 0;
+  }
+}
+
+function updateFieldStyle(el) {
+  el.classList.remove('filled', 'empty');
+  el.classList.add(el.value.trim() ? 'filled' : 'empty');
+  const field = el.id.replace('f-', '');
+  const dot = document.getElementById('dot-' + field);
+  if (dot) {
+    dot.className = el.value.trim() ? 'ok-dot' : 'miss-dot';
+  }
+}
+
+function updateMissing(missing) {
+  const box = document.getElementById('vr-missing-list');
+  if (!missing || missing.length === 0) {
+    box.innerHTML = '';
+    document.getElementById('vr-verify-btn').disabled = false;
+  } else {
+    box.innerHTML = 'აკლია: ' + missing.map(f => `<span class="vr-missing-tag">${f}</span>`).join('');
+    document.getElementById('vr-verify-btn').disabled = true;
+  }
+}
+
+// Field change handlers
+document.querySelectorAll('[id^="f-"]').forEach(el => {
+  el.addEventListener('input', () => updateFieldStyle(el));
+});
+
+// ── Save ─────────────────────────────────────────────────────
+function saveItem() {
+  if (!currentId) return;
+  const data = {};
+  FIELDS.filter(f => f !== 'image_filename').forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) data[f] = el.value;
+  });
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/save`), {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  }).then(r => r.json()).then(d => {
+    if (d.ok) { updateMissing(d.missing); toast('შენახულია', 'ok'); refreshRow(currentId); }
+    else toast(d.error || 'შეცდომა', 'err');
+  });
+}
+
+// ── Translate ────────────────────────────────────────────────
+function translateItem() {
+  if (!currentId) return;
+  // save first so translation uses latest Georgian text
+  const data = {};
+  FIELDS.filter(f => f !== 'image_filename').forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) data[f] = el.value;
+  });
+  const btn = document.getElementById('vr-translate-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> თარგმანი...';
+
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/save`), {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  }).then(() =>
+    fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/translate`), {method:'POST'})
+  ).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-language"></i> ავტოთარგმნა';
+    if (d.ok) {
+      ['name_en','description_en','ingredients_en'].forEach(f => {
+        const el = document.getElementById('f-' + f);
+        if (el && d[f]) { el.value = d[f]; updateFieldStyle(el); }
+      });
+      updateMissing(d.missing);
+      toast('ითარგმნა', 'ok');
+      refreshRow(currentId);
+    } else toast(d.error || 'თარგმანის შეცდომა', 'err');
+  }).catch(e => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-language"></i> ავტოთარგმნა';
+    toast('შეცდომა', 'err');
+  });
+}
+
+// ── Photo upload ─────────────────────────────────────────────
+document.getElementById('vr-photo-input').addEventListener('change', function() {
+  if (!currentId || !this.files[0]) return;
+  const form = new FormData();
+  form.append('photo', this.files[0]);
+  const wrap = document.getElementById('vr-photo-wrap');
+  wrap.innerHTML = '<i class="fas fa-circle-notch spin" style="font-size:1.5rem"></i>';
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/photo`), {
+    method: 'POST', body: form
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      wrap.innerHTML = `<img src="${d.image_url}?t=${Date.now()}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">`;
+      updateMissing(d.missing);
+      toast('ფოტო ატვირთულია', 'ok');
+      refreshRow(currentId);
+    } else {
+      wrap.innerHTML = '<i class="fas fa-image"></i>';
+      toast(d.error || 'ატვირთვის შეცდომა', 'err');
+    }
+  });
+});
+
+// ── Verify ───────────────────────────────────────────────────
+function verifyItem() {
+  if (!currentId) return;
+  // auto-save first
+  const data = {};
+  FIELDS.filter(f => f !== 'image_filename').forEach(f => {
+    const el = document.getElementById('f-' + f);
+    if (el) data[f] = el.value;
+  });
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/save`), {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+  }).then(() =>
+    fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/verify`), {method:'POST'})
+  ).then(r => r.json()).then(d => {
+    if (d.ok) {
+      toast('ვერიფიცირებულია ✓', 'ok');
+      totalVerified++;
+      updateProgress();
+      document.getElementById('vr-verify-btn').innerHTML = '✓ ვერიფიცირებულია';
+      document.getElementById('vr-verify-btn').disabled = true;
+      document.getElementById('vr-verify-btn').style.background = 'var(--bo-green)';
+      refreshRow(currentId);
+      if (document.getElementById('vr-only-unverified').checked) {
+        // remove from list after short delay
+        setTimeout(() => {
+          const row = document.querySelector(`.vr-item[data-id="${currentId}"]`);
+          if (row) row.remove();
+        }, 800);
+      }
+    } else toast(d.error || 'შეცდომა', 'err');
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function refreshRow(id) {
+  fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${id}`))
+    .then(r => r.json()).then(it => {
+      const row = document.querySelector(`.vr-item[data-id="${id}"]`);
+      if (!row) return;
+      const newRow = buildRow(it);
+      newRow.classList.toggle('active', row.classList.contains('active'));
+      row.replaceWith(newRow);
+    });
+}
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('vr-toast');
+  el.textContent = msg;
+  el.className = 'vr-toast show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = 'vr-toast', 2800);
+}
+
+// ── Events ───────────────────────────────────────────────────
+document.getElementById('vr-search').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadList(true), 350);
+});
+document.getElementById('vr-only-unverified').addEventListener('change', () => loadList(true));
+document.getElementById('vr-load-more').addEventListener('click', () => { page++; loadList(); });
+
+// build correct API URLs using template
+(function patchUrls() {
+  const base = '/backoffice/library/verify/api/items';
+  window._vrBase = base.replace(/\/items$/, '');
+})();
+
+// Keyboard shortcut: Ctrl+S / Cmd+S → save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(); }
+});
+
+// init
+loadList(true);
+</script>
+{% endblock %}

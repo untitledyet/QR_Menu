@@ -29,8 +29,11 @@
                     <a href="{{ url_for('bo_bp.venues_list') }}" class="bo-nav__item {% if 'venue' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-store"></i> ობიექტები
                     </a>
-                    <a href="{{ url_for('lib_bp.library_index') }}" class="bo-nav__item {% if 'lib_bp' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('lib_bp.library_index') }}" class="bo-nav__item {% if request.endpoint in ('lib_bp.library_index','lib_bp.add_global_item','lib_bp.delete_global_item','lib_bp.add_global_category','lib_bp.delete_global_category','lib_bp.add_global_subcategory','lib_bp.delete_global_subcategory') %}active{% endif %}">
                         <i class="fas fa-database"></i> პროდუქტების ბიბლიოთეკა
+                    </a>
+                    <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-nav__item {% if 'verify' in request.endpoint %}active{% endif %}">
+                        <i class="fas fa-check-circle"></i> ვერიფიკაცია
                     </a>
                 {% elif admin and admin.venue %}
                     {# --- Determine chain role for nav --- #}

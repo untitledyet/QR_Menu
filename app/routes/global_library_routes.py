@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
 from app.models import AdminUser, GlobalCategory, GlobalSubcategory, GlobalItem, Category, Subcategory, FoodItem
-from app.services.translation_service import translate_global_item_async, needs_translation
+from app.services.translation_service import translate_global_item_async, needs_translation, _call_openai
 
 lib_bp = Blueprint('lib_bp', __name__, url_prefix='/backoffice/library')
 
@@ -259,3 +259,156 @@ def api_library_items():
         q = q.filter_by(category_id=cat_id)
     items = q.order_by(GlobalItem.name_ge).all()
     return jsonify(items=[it.to_dict() for it in items])
+
+
+# ============================================================
+# Dish Verification — Super Admin
+# ============================================================
+
+_VERIFY_FIELDS = ('name_ge', 'ingredients_ge', 'description_ge',
+                  'name_en', 'ingredients_en', 'description_en', 'image_filename')
+
+
+def _missing(item):
+    return [f for f in _VERIFY_FIELDS if not getattr(item, f, None)]
+
+
+def _item_verify_dict(item):
+    d = {f: getattr(item, f) or '' for f in _VERIFY_FIELDS}
+    d['id'] = item.id
+    d['is_verified'] = item.is_verified
+    d['is_active'] = item.is_active
+    d['category_id'] = item.category_id
+    d['subcategory_id'] = item.subcategory_id
+    d['missing'] = _missing(item)
+    return d
+
+
+@lib_bp.route('/verify')
+@login_required
+@super_required
+def verify_index():
+    admin = AdminUser.query.get(session['admin_id'])
+    total = GlobalItem.query.filter_by(is_active=True).count()
+    verified = GlobalItem.query.filter_by(is_active=True, is_verified=True).count()
+    return render_template('backoffice/verify_items.html', admin=admin,
+                           total=total, verified=verified)
+
+
+@lib_bp.route('/verify/api/items')
+@login_required
+@super_required
+def verify_api_items():
+    page = request.args.get('page', 1, type=int)
+    per_page = 40
+    only_unverified = request.args.get('unverified', '1') == '1'
+    search = request.args.get('q', '').strip()
+
+    q = GlobalItem.query.filter_by(is_active=True)
+    if only_unverified:
+        q = q.filter_by(is_verified=False)
+    if search:
+        q = q.filter(GlobalItem.name_ge.ilike(f'%{search}%'))
+    q = q.order_by(GlobalItem.id)
+
+    total = q.count()
+    items = q.offset((page - 1) * per_page).limit(per_page).all()
+    return jsonify(
+        total=total, page=page, per_page=per_page,
+        items=[_item_verify_dict(it) for it in items],
+    )
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>')
+@login_required
+@super_required
+def verify_api_item(item_id):
+    item = GlobalItem.query.get_or_404(item_id)
+    return jsonify(_item_verify_dict(item))
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/save', methods=['POST'])
+@login_required
+@super_required
+def verify_api_save(item_id):
+    item = GlobalItem.query.get_or_404(item_id)
+    data = request.get_json() or {}
+    for field in _VERIFY_FIELDS:
+        if field == 'image_filename':
+            continue
+        if field in data:
+            setattr(item, field, data[field].strip() or None)
+    db.session.commit()
+    return jsonify(ok=True, missing=_missing(item))
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/translate', methods=['POST'])
+@login_required
+@super_required
+def verify_api_translate(item_id):
+    item = GlobalItem.query.get_or_404(item_id)
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+
+    fields = {
+        'name': item.name_ge or '',
+        'description': item.description_ge or '',
+        'ingredients': item.ingredients_ge or '',
+    }
+    try:
+        result = _call_openai(fields, 'ka', 'en', api_key)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+    item.name_en = result.get('name') or item.name_en
+    item.description_en = result.get('description') or item.description_en
+    item.ingredients_en = result.get('ingredients') or item.ingredients_en
+    db.session.commit()
+    return jsonify(
+        ok=True,
+        name_en=item.name_en or '',
+        description_en=item.description_en or '',
+        ingredients_en=item.ingredients_en or '',
+        missing=_missing(item),
+    )
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/photo', methods=['POST'])
+@login_required
+@super_required
+def verify_api_photo(item_id):
+    item = GlobalItem.query.get_or_404(item_id)
+    file = request.files.get('photo')
+    if not file or not file.filename:
+        return jsonify(error='No file'), 400
+
+    data = file.read()
+    if len(data) < 1000:
+        return jsonify(error='File too small'), 400
+
+    from app.services.r2_storage import upload_bytes, R2_PUBLIC_URL
+    url = upload_bytes(data, prefix='global-items')
+    if not url:
+        return jsonify(error='R2 upload failed'), 500
+
+    # Store the full URL directly as image_filename for global items
+    item.image_filename = url
+    db.session.commit()
+    return jsonify(ok=True, image_url=url, missing=_missing(item))
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/verify', methods=['POST'])
+@login_required
+@super_required
+def verify_api_verify(item_id):
+    item = GlobalItem.query.get_or_404(item_id)
+    missing = _missing(item)
+    if missing:
+        return jsonify(error=f'შევსებული უნდა იყოს: {", ".join(missing)}'), 400
+    try:
+        item.is_verified = True
+        db.session.commit()
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    return jsonify(ok=True)
