@@ -643,7 +643,7 @@ def assign_global_categories(items: list, global_cats: list, global_subcats: lis
                 prompt=prompt,
                 schema_name="category_mapping",
                 schema=_SCHEMA_CATEGORY_MAP,
-                reasoning_effort="minimal",
+                reasoning_effort="low",
                 label="cat_map",
             )
             for row in parsed.get("mapping", []):
@@ -668,7 +668,7 @@ def assign_global_categories(items: list, global_cats: list, global_subcats: lis
                 prompt=prompt,
                 schema_name="subcategory_mapping",
                 schema=_SCHEMA_CATEGORY_MAP,
-                reasoning_effort="minimal",
+                reasoning_effort="low",
                 label="subcat_map",
             )
             for row in parsed.get("mapping", []):
@@ -920,7 +920,7 @@ def categorize_items(items: list) -> dict:
             prompt=prompt,
             schema_name="categorize",
             schema=_SCHEMA_CATEGORIZE,
-            reasoning_effort="minimal",
+            reasoning_effort="low",
             label="categorize",
         )
     except Exception as e:
@@ -977,7 +977,7 @@ def enrich_ingredients(items: list) -> list:
                 prompt=prompt,
                 schema_name="dish_ingredients",
                 schema=_SCHEMA_DISH_INGREDIENTS,
-                reasoning_effort="minimal",
+                reasoning_effort="low",
                 label="simple_ingr",
             )
         except Exception:
