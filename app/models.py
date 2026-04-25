@@ -395,7 +395,7 @@ class GlobalItem(db.Model):
     __tablename__ = 'GlobalItems'
 
     id = db.Column(db.Integer, primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False, index=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=True, index=True)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True, index=True)
     name = db.Column(db.String(100), nullable=False)
     name_en = db.Column(db.String(100), nullable=True)
@@ -405,6 +405,7 @@ class GlobalItem(db.Model):
     ingredients_en = db.Column(db.String(500), nullable=True)
     image_filename = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     subcategory = db.relationship('GlobalSubcategory', backref=db.backref('items', lazy=True))
