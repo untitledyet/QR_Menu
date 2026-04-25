@@ -47,7 +47,11 @@ def super_required(f):
 def library_index():
     admin = AdminUser.query.get(session['admin_id'])
     categories = GlobalCategory.query.order_by(GlobalCategory.sort_order).all()
-    return render_template('backoffice/global_library.html', admin=admin, categories=categories)
+    total = GlobalItem.query.filter_by(is_active=True).count()
+    verified = GlobalItem.query.filter_by(is_active=True, is_verified=True).count()
+    return render_template('backoffice/global_library.html',
+                           admin=admin, categories=categories,
+                           total=total, verified=verified)
 
 
 @lib_bp.route('/categories/add', methods=['POST'])
@@ -282,6 +286,7 @@ def _item_verify_dict(item):
     d['category_id'] = item.category_id
     d['subcategory_id'] = item.subcategory_id
     d['missing'] = _missing(item)
+    d['image_url'] = item.image_filename or None
     return d
 
 
@@ -301,12 +306,27 @@ def verify_index():
 @super_required
 def verify_api_items():
     page = request.args.get('page', 1, type=int)
-    per_page = 40
-    only_unverified = request.args.get('unverified', '1') == '1'
-    search = request.args.get('q', '').strip()
+    per_page = request.args.get('per_page', 40, type=int)
+    per_page = min(per_page, 100)
+
+    # filter= all/verified/unverified (new), or unverified=1/0 (legacy)
+    filt = request.args.get('filter', '').strip()
+    if filt == 'verified':
+        only_verified, only_unverified = True, False
+    elif filt == 'unverified':
+        only_verified, only_unverified = False, True
+    elif filt == 'all':
+        only_verified, only_unverified = False, False
+    else:
+        only_unverified = request.args.get('unverified', '1') == '1'
+        only_verified = False
+
+    search = (request.args.get('search') or request.args.get('q', '')).strip()
 
     q = GlobalItem.query.filter_by(is_active=True)
-    if only_unverified:
+    if only_verified:
+        q = q.filter_by(is_verified=True)
+    elif only_unverified:
         q = q.filter_by(is_verified=False)
     if search:
         q = q.filter(GlobalItem.name_ge.ilike(f'%{search}%'))
@@ -314,8 +334,10 @@ def verify_api_items():
 
     total = q.count()
     items = q.offset((page - 1) * per_page).limit(per_page).all()
+    has_more = (page * per_page) < total
     return jsonify(
         total=total, page=page, per_page=per_page,
+        has_more=has_more,
         items=[_item_verify_dict(it) for it in items],
     )
 

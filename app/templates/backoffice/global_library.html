@@ -1,322 +1,313 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}პროდუქტების ბიბლიოთეკა{% endblock %}
+{% block title %}კერძების ბიბლიოთეკა{% endblock %}
 {% block content %}
 
 <style>
-.lib-layout { display:flex; gap:20px; align-items:flex-start; }
-.lib-sidebar {
-    width:220px; flex-shrink:0; position:sticky; top:24px;
+.lib-stats { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.lib-stat-card {
     background:var(--bo-surface); border:1px solid var(--bo-border);
-    border-radius:var(--bo-radius); overflow:hidden;
-    max-height:calc(100vh - 80px); display:flex; flex-direction:column;
+    border-radius:var(--bo-radius); padding:14px 20px; flex:1; min-width:120px;
 }
-.lib-sidebar__header {
-    padding:12px 16px; border-bottom:1px solid var(--bo-border);
-    font-size:.72rem; font-weight:700; color:var(--bo-text-2);
-    text-transform:uppercase; letter-spacing:.05em; flex-shrink:0;
-}
-.lib-cat-list { overflow-y:auto; flex:1; }
-.lib-cat-item {
-    display:flex; align-items:center; gap:8px;
-    padding:10px 16px; cursor:pointer; border-bottom:1px solid var(--bo-border);
-    transition:background .15s; color:var(--bo-text-2); font-size:.85rem;
-}
-.lib-cat-item:hover { background:var(--bo-surface-2); color:var(--bo-text); }
-.lib-cat-item.active {
-    background:rgba(255,107,53,.1); color:var(--bo-primary);
-    border-left:3px solid var(--bo-primary); padding-left:13px;
-}
-.lib-cat-item .cnt {
-    font-size:.68rem; background:var(--bo-surface-2); color:var(--bo-text-2);
-    border-radius:10px; padding:2px 7px; margin-left:auto; flex-shrink:0;
-}
-.lib-cat-item.active .cnt { background:rgba(255,107,53,.2); color:var(--bo-primary); }
-.lib-add-cat-btn {
-    display:flex; align-items:center; gap:8px; padding:12px 16px;
-    color:var(--bo-primary); font-size:.82rem; font-weight:600;
-    cursor:pointer; border:none; background:none; width:100%; text-align:left;
-    border-top:1px solid var(--bo-border); font-family:inherit;
-    transition:background .15s; flex-shrink:0;
-}
-.lib-add-cat-btn:hover { background:rgba(255,107,53,.08); }
+.lib-stat-card__val { font-size:1.5rem; font-weight:700; color:var(--bo-text); }
+.lib-stat-card__lbl { font-size:.72rem; color:var(--bo-text-2); margin-top:2px; }
+.lib-stat-card--green .lib-stat-card__val { color:#10b981; }
+.lib-stat-card--orange .lib-stat-card__val { color:var(--bo-primary); }
 
-.lib-main { flex:1; min-width:0; }
-.lib-section { display:none; }
-.lib-section.active { display:block; }
-
-.lib-section-header {
-    display:flex; align-items:flex-start; justify-content:space-between;
-    margin-bottom:16px; gap:12px; flex-wrap:wrap;
+.lib-toolbar {
+    display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;
 }
-.lib-section-title { font-size:1.1rem; font-weight:700; color:var(--bo-text); margin:0; }
-.lib-section-meta { font-size:.78rem; color:var(--bo-text-2); margin-top:3px; }
-
-.lib-chips {
-    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; align-items:center;
+.lib-search {
+    flex:1; min-width:180px; max-width:320px;
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:8px; padding:8px 12px; color:var(--bo-text);
+    font-family:inherit; font-size:.85rem; outline:none;
+    transition:border-color .15s;
 }
-.lib-chip {
-    display:inline-flex; align-items:center; gap:5px;
-    background:var(--bo-surface-2); border:1px solid var(--bo-border);
-    border-radius:20px; padding:4px 10px; font-size:.75rem; color:var(--bo-text-2);
+.lib-search:focus { border-color:var(--bo-primary); }
+.lib-tabs { display:flex; gap:4px; }
+.lib-tab {
+    padding:7px 14px; border-radius:8px; font-size:.8rem; font-weight:600;
+    cursor:pointer; border:1px solid var(--bo-border);
+    background:var(--bo-surface); color:var(--bo-text-2);
+    transition:all .15s; white-space:nowrap;
 }
-.lib-chip-del {
-    background:none; border:none; color:var(--bo-text-2); cursor:pointer;
-    font-size:.7rem; padding:0; margin-left:2px; transition:color .15s;
-}
-.lib-chip-del:hover { color:var(--bo-red); }
-
-.lib-add-sub-row { display:flex; gap:6px; align-items:center; }
-.lib-add-sub-row .bo-input { width:140px; font-size:.78rem; padding:5px 10px; height:28px; }
-.lib-add-sub-row .bo-btn { font-size:.72rem; padding:4px 10px; height:28px; }
-
-.lib-add-panel {
-    background:var(--bo-surface-2); border:1px dashed var(--bo-border);
-    border-radius:var(--bo-radius); padding:18px; margin-bottom:20px;
-}
-.lib-add-panel h4 { margin:0 0 12px; font-size:.88rem; color:var(--bo-text); }
-.lib-form-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-.lib-form-row .bo-input { flex:1; min-width:140px; }
-.lib-form-row textarea.bo-input { resize:vertical; min-height:60px; }
+.lib-tab.active { background:var(--bo-primary); color:#fff; border-color:var(--bo-primary); }
+.lib-tab:hover:not(.active) { background:var(--bo-surface-2); color:var(--bo-text); }
 
 .lib-grid {
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
     gap:14px; margin-bottom:24px;
 }
 .lib-card {
     background:var(--bo-surface); border:1px solid var(--bo-border);
     border-radius:10px; overflow:hidden; transition:border-color .15s;
-    display:flex; flex-direction:column;
+    display:flex; flex-direction:column; position:relative;
 }
 .lib-card:hover { border-color:var(--bo-primary); }
 .lib-card__img {
     width:100%; height:130px; background:var(--bo-surface-2);
     display:flex; align-items:center; justify-content:center;
-    color:var(--bo-text-2); font-size:2rem; overflow:hidden;
+    color:var(--bo-text-2); font-size:2rem; overflow:hidden; position:relative;
 }
 .lib-card__img img { width:100%; height:130px; object-fit:cover; }
-.lib-card__body { padding:12px; flex:1; }
-.lib-card__name { font-size:.86rem; font-weight:600; color:var(--bo-text); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lib-badge-verified {
+    position:absolute; top:6px; right:6px;
+    background:#10b981; color:#fff; border-radius:20px;
+    font-size:.62rem; font-weight:700; padding:2px 7px; letter-spacing:.03em;
+}
+.lib-badge-unverified {
+    position:absolute; top:6px; right:6px;
+    background:rgba(0,0,0,.45); color:#f9a825; border-radius:20px;
+    font-size:.62rem; font-weight:700; padding:2px 7px;
+}
+.lib-card__body { padding:10px 12px; flex:1; }
+.lib-card__name { font-size:.85rem; font-weight:600; color:var(--bo-text); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lib-card__name-en { font-size:.74rem; color:var(--bo-text-2); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
 .lib-card__desc { font-size:.72rem; color:var(--bo-text-2); margin:0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.lib-card__meta { font-size:.68rem; color:var(--bo-text-2); margin-top:4px; }
-.lib-card__footer { padding:8px 12px; border-top:1px solid var(--bo-border); display:flex; justify-content:flex-end; }
+.lib-card__footer { padding:7px 10px; border-top:1px solid var(--bo-border); display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.lib-card__id { font-size:.66rem; color:var(--bo-text-2); }
 
 .lib-empty {
-    text-align:center; padding:48px 20px; color:var(--bo-text-2);
-    border:1px dashed var(--bo-border); border-radius:var(--bo-radius);
+    text-align:center; padding:60px 20px; color:var(--bo-text-2);
+    border:1px dashed var(--bo-border); border-radius:var(--bo-radius); grid-column:1/-1;
 }
 .lib-empty i { font-size:2.5rem; opacity:.3; display:block; margin-bottom:12px; }
 
-@media(max-width:768px){
-    .lib-layout { flex-direction:column; }
-    .lib-sidebar { width:100%; position:static; max-height:none; }
-    .lib-cat-list { display:flex; flex-direction:row; overflow-x:auto; padding:8px; gap:4px; flex-wrap:nowrap; }
-    .lib-cat-item { flex-shrink:0; border-bottom:none; border-radius:20px; padding:6px 12px; white-space:nowrap; }
-    .lib-cat-item.active { padding-left:12px; border-left:none; }
+.lib-load-more {
+    text-align:center; padding:16px;
+}
+
+/* Category management collapsible */
+.lib-cat-section {
+    background:var(--bo-surface); border:1px solid var(--bo-border);
+    border-radius:var(--bo-radius); margin-bottom:20px; overflow:hidden;
+}
+.lib-cat-toggle {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; cursor:pointer; user-select:none;
+    font-size:.82rem; font-weight:600; color:var(--bo-text-2);
+}
+.lib-cat-toggle:hover { background:var(--bo-surface-2); }
+.lib-cat-body { display:none; padding:12px 16px; border-top:1px solid var(--bo-border); }
+.lib-cat-body.open { display:block; }
+.lib-cat-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
+.lib-cat-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    background:var(--bo-surface-2); border:1px solid var(--bo-border);
+    border-radius:20px; padding:4px 10px; font-size:.75rem; color:var(--bo-text);
+}
+.lib-cat-chip button { background:none; border:none; color:var(--bo-text-2); cursor:pointer; font-size:.7rem; padding:0; margin-left:2px; }
+.lib-cat-chip button:hover { color:var(--bo-red); }
+
+@media(max-width:600px){
     .lib-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
     .lib-card__img { height:100px; }
+    .lib-toolbar { flex-direction:column; align-items:stretch; }
+    .lib-search { max-width:100%; }
 }
 </style>
 
-<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
     <div>
-        <h1>პროდუქტების ბიბლიოთეკა</h1>
+        <h1>კერძების ბიბლიოთეკა</h1>
         <p class="bo-header__sub">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
     </div>
-    <button onclick="document.getElementById('modal-add-cat').style.display='flex'" class="bo-btn bo-btn--primary">
-        <i class="fas fa-folder-plus"></i> კატეგორია
+    <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-btn bo-btn--primary">
+        <i class="fas fa-plus"></i> კერძის დამატება
+    </a>
+</div>
+
+{# Stats #}
+<div class="lib-stats">
+    <div class="lib-stat-card lib-stat-card--orange">
+        <div class="lib-stat-card__val" id="stat-total">{{ total }}</div>
+        <div class="lib-stat-card__lbl">სულ კერძი</div>
+    </div>
+    <div class="lib-stat-card lib-stat-card--green">
+        <div class="lib-stat-card__val" id="stat-verified">{{ verified }}</div>
+        <div class="lib-stat-card__lbl">ვერიფიცირებული</div>
+    </div>
+    <div class="lib-stat-card">
+        <div class="lib-stat-card__val" id="stat-unverified">{{ total - verified }}</div>
+        <div class="lib-stat-card__lbl">მოლოდინში</div>
+    </div>
+</div>
+
+{# Category management (collapsible) #}
+<div class="lib-cat-section">
+    <div class="lib-cat-toggle" onclick="toggleCatSection()">
+        <span><i class="fas fa-folder" style="margin-right:8px;color:var(--bo-primary);"></i>კატეგორიები ({{ categories|length }})</span>
+        <i class="fas fa-chevron-down" id="cat-chevron" style="transition:transform .2s;"></i>
+    </div>
+    <div class="lib-cat-body" id="cat-body">
+        <div class="lib-cat-row" id="cat-chips">
+            {% for cat in categories %}
+            <span class="lib-cat-chip">
+                {{ cat.name }}
+                <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
+                      onsubmit="return confirm('კატეგორია წაიშალოს?')" style="display:inline;">
+                    <button type="submit" title="წაშლა">✕</button>
+                </form>
+            </span>
+            {% else %}
+            <span style="font-size:.78rem;color:var(--bo-text-2);">კატეგორია არ არის</span>
+            {% endfor %}
+        </div>
+        <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}"
+              style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+            <input type="text" name="name" class="bo-input" placeholder="ახალი კატეგორიის სახელი"
+                   style="max-width:220px;font-size:.82rem;padding:6px 10px;height:32px;">
+            <button type="submit" class="bo-btn bo-btn--primary bo-btn--sm">
+                <i class="fas fa-plus"></i> დამატება
+            </button>
+        </form>
+    </div>
+</div>
+
+{# Toolbar #}
+<div class="lib-toolbar">
+    <input type="text" class="lib-search" id="lib-search" placeholder="&#128269; ძებნა..."
+           oninput="debounceSearch(this.value)">
+    <div class="lib-tabs">
+        <div class="lib-tab active" onclick="setFilter('all', this)">ყველა</div>
+        <div class="lib-tab" onclick="setFilter('verified', this)">ვერიფიცირებული</div>
+        <div class="lib-tab" onclick="setFilter('unverified', this)">მოლოდინში</div>
+    </div>
+</div>
+
+{# Grid #}
+<div class="lib-grid" id="lib-grid">
+    <div class="lib-empty" style="grid-column:1/-1;">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>იტვირთება...</p>
+    </div>
+</div>
+<div class="lib-load-more" id="lib-load-more" style="display:none;">
+    <button class="bo-btn bo-btn--ghost" onclick="loadMore()">
+        <i class="fas fa-chevron-down"></i> მეტის ჩვენება
     </button>
 </div>
 
-<div class="lib-layout">
-
-    {# ── Sidebar ── #}
-    <aside class="lib-sidebar">
-        <div class="lib-sidebar__header">კატეგორიები ({{ categories|length }})</div>
-        <div class="lib-cat-list">
-            {% for cat in categories %}
-            <div class="lib-cat-item {% if loop.first %}active{% endif %}"
-                 onclick="showSection({{ cat.id }}, this)">
-                <span style="flex:1;">{{ cat.name }}</span>
-                <span class="cnt">{{ cat.items|length }}</span>
-            </div>
-            {% else %}
-            <div style="padding:16px;font-size:.82rem;color:var(--bo-text-2);">კატეგორია არ არის</div>
-            {% endfor %}
-        </div>
-    </aside>
-
-    {# ── Main ── #}
-    <div class="lib-main">
-        {% for cat in categories %}
-        <div class="lib-section {% if loop.first %}active{% endif %}" id="section-{{ cat.id }}">
-
-            <div class="lib-section-header">
-                <div>
-                    <h2 class="lib-section-title">{{ cat.name }}</h2>
-                    <div class="lib-section-meta">{{ cat.items|length }} პროდუქტი · {{ cat.subcategories|length }} ქვეკატეგ.</div>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button onclick="toggleAddItem({{ cat.id }})" class="bo-btn bo-btn--primary bo-btn--sm">
-                        <i class="fas fa-plus"></i> პროდუქტი
-                    </button>
-                    <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
-                          onsubmit="return confirm('კატეგორია და ყველა პროდუქტი წაიშალოს?')">
-                        <button class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {# Subcategory chips #}
-            <div class="lib-chips">
-                {% for sub in cat.subcategories %}
-                <span class="lib-chip">
-                    {{ sub.name }}
-                    <form method="POST" action="{{ url_for('lib_bp.delete_global_subcategory', sub_id=sub.id) }}"
-                          onsubmit="return confirm('წაიშალოს?')" style="display:inline;">
-                        <button class="lib-chip-del" type="submit" title="წაშლა">✕</button>
-                    </form>
-                </span>
-                {% endfor %}
-                <form method="POST" action="{{ url_for('lib_bp.add_global_subcategory') }}"
-                      class="lib-add-sub-row">
-                    <input type="hidden" name="category_id" value="{{ cat.id }}">
-                    <input type="text" name="name" class="bo-input" placeholder="+ ქვეკატეგ.">
-                    <button class="bo-btn bo-btn--ghost bo-btn--sm">დამატება</button>
-                </form>
-            </div>
-
-            {# Add item panel #}
-            <div id="add-item-{{ cat.id }}" class="lib-add-panel" style="display:none;">
-                <h4><i class="fas fa-plus-circle" style="color:var(--bo-primary);margin-right:6px;"></i>ახალი პროდუქტი</h4>
-                <form method="POST" action="{{ url_for('lib_bp.add_global_item') }}" enctype="multipart/form-data">
-                    <input type="hidden" name="category_id" value="{{ cat.id }}">
-                    <div class="lib-form-row">
-                        <input type="text" name="name" class="bo-input" placeholder="სახელი (ქარ) *" required>
-                        <input type="text" name="name_en" class="bo-input" placeholder="Name (EN)">
-                    </div>
-                    <div class="lib-form-row">
-                        <input type="text" name="description" class="bo-input" placeholder="აღწერა (ქარ)">
-                        <input type="text" name="description_en" class="bo-input" placeholder="Description (EN)">
-                    </div>
-                    <div class="lib-form-row">
-                        <input type="text" name="ingredients" class="bo-input" placeholder="ინგრედიენტები (ქარ)">
-                        <input type="text" name="ingredients_en" class="bo-input" placeholder="Ingredients (EN)">
-                    </div>
-                    <div class="lib-form-row">
-                        <input type="file" name="image" accept="image/*" class="bo-input" style="padding:6px;">
-                    </div>
-                    <div style="display:flex;gap:8px;margin-top:4px;">
-                        <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> შენახვა</button>
-                        <button type="button" onclick="toggleAddItem({{ cat.id }})" class="bo-btn bo-btn--ghost">გაუქმება</button>
-                    </div>
-                </form>
-            </div>
-
-            {# Items grid #}
-            {% if cat.items %}
-            <div class="lib-grid">
-                {% for item in cat.items %}
-                <div class="lib-card">
-                    <div class="lib-card__img">
-                        {% if item.image_filename %}
-                        <img src="{{ url_for('static', filename='images/' + item.image_filename) }}"
-                             onerror="this.parentElement.innerHTML='<i class=\'fas fa-image\'></i>'">
-                        {% else %}
-                        <i class="fas fa-image"></i>
-                        {% endif %}
-                    </div>
-                    <div class="lib-card__body">
-                        <p class="lib-card__name" title="{{ item.name }}">{{ item.name }}</p>
-                        {% if item.name_en %}
-                        <p class="lib-card__desc" style="color:var(--bo-primary);opacity:.7;">{{ item.name_en }}</p>
-                        {% endif %}
-                        {% if item.description %}
-                        <p class="lib-card__desc">{{ item.description }}</p>
-                        {% endif %}
-                        {% if item.ingredients %}
-                        <p class="lib-card__meta"><i class="fas fa-leaf"></i> {{ item.ingredients|truncate(40) }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="lib-card__footer">
-                        <form method="POST" action="{{ url_for('lib_bp.delete_global_item', item_id=item.id) }}"
-                              onsubmit="return confirm('წაიშალოს?')">
-                            <button class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);">
-                                <i class="fas fa-trash"></i> წაშლა
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="lib-empty">
-                <i class="fas fa-box-open"></i>
-                ამ კატეგორიაში პროდუქტი არ არის
-            </div>
-            {% endif %}
-
-        </div>
-        {% else %}
-        <div class="lib-empty" style="padding:60px 20px;">
-            <i class="fas fa-database"></i>
-            <p style="margin-bottom:16px;">ბიბლიოთეკა ცარიელია</p>
-            <button onclick="document.getElementById('modal-add-cat').style.display='flex'"
-                    class="bo-btn bo-btn--primary">
-                <i class="fas fa-plus"></i> პირველი კატეგორია
-            </button>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-{# ── Add Category Modal ── #}
-<div class="bo-modal-backdrop" id="modal-add-cat" style="display:none;"
-     onclick="if(event.target===this)this.style.display='none'">
-    <div class="bo-modal-box" style="max-width:420px;width:92%;">
-        <div class="bo-modal-box__header">
-            <h3><i class="fas fa-folder-plus" style="color:var(--bo-primary);margin-right:8px;"></i>კატეგორიის დამატება</h3>
-            <button class="bo-icon-btn" onclick="document.getElementById('modal-add-cat').style.display='none'">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="bo-modal-box__body">
-            <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}">
-                <div class="bo-form-group">
-                    <label>სახელი *</label>
-                    <input type="text" name="name" class="bo-input" placeholder="მაგ. სასმელები" required autofocus>
-                </div>
-                <div class="bo-form-group">
-                    <label>აღწერა</label>
-                    <input type="text" name="description" class="bo-input" placeholder="სურვილისამებრ">
-                </div>
-                <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
-                    <button type="submit" class="bo-btn bo-btn--primary"><i class="fas fa-save"></i> შენახვა</button>
-                    <button type="button" onclick="document.getElementById('modal-add-cat').style.display='none'"
-                            class="bo-btn bo-btn--ghost">გაუქმება</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <script>
-function showSection(catId, el) {
-    document.querySelectorAll('.lib-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.lib-cat-item').forEach(i => i.classList.remove('active'));
-    document.getElementById('section-' + catId).classList.add('active');
+var _filter = 'all';
+var _search = '';
+var _page = 1;
+var _pageSize = 48;
+var _loading = false;
+var _hasMore = true;
+var _debounceTimer = null;
+
+function setFilter(f, el) {
+    _filter = f;
+    document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    reload();
 }
-function toggleAddItem(catId) {
-    var el = document.getElementById('add-item-' + catId);
-    var visible = el.style.display !== 'none';
-    el.style.display = visible ? 'none' : 'block';
-    if (!visible) {
-        var inp = el.querySelector('input[name="name"]');
-        if (inp) setTimeout(function(){ inp.focus(); }, 50);
-    }
+
+function debounceSearch(val) {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(function(){ _search = val; reload(); }, 300);
 }
+
+function reload() {
+    _page = 1;
+    _hasMore = true;
+    document.getElementById('lib-grid').innerHTML = '<div class="lib-empty" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i></div>';
+    document.getElementById('lib-load-more').style.display = 'none';
+    loadMore();
+}
+
+function loadMore() {
+    if (_loading || !_hasMore) return;
+    _loading = true;
+
+    var params = new URLSearchParams({
+        page: _page,
+        per_page: _pageSize,
+        search: _search,
+        filter: _filter
+    });
+
+    fetch('/backoffice/library/verify/api/items?' + params)
+        .then(r => r.json())
+        .then(data => {
+            _loading = false;
+            var grid = document.getElementById('lib-grid');
+            if (_page === 0) grid.innerHTML = '';
+
+            if (!data.items || data.items.length === 0) {
+                if (_page === 0) {
+                    grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1;"><i class="fas fa-box-open"></i><p>კერძი არ მოიძებნა</p></div>';
+                }
+                _hasMore = false;
+                document.getElementById('lib-load-more').style.display = 'none';
+                return;
+            }
+
+            data.items.forEach(function(item) {
+                var imgHtml = item.image_url
+                    ? '<img src="' + item.image_url + '" onerror="this.parentElement.innerHTML=\'<i class=\\\"fas fa-image\\\"></i>\'">'
+                    : '<i class="fas fa-image"></i>';
+                var badge = item.is_verified
+                    ? '<span class="lib-badge-verified"><i class="fas fa-check"></i> ვერ.</span>'
+                    : '<span class="lib-badge-unverified"><i class="fas fa-clock"></i></span>';
+                var nameEn = item.name_en ? '<p class="lib-card__name-en">' + esc(item.name_en) + '</p>' : '';
+                var desc = item.description_ge ? '<p class="lib-card__desc">' + esc(item.description_ge) + '</p>' : '';
+
+                var card = document.createElement('div');
+                card.className = 'lib-card';
+                card.innerHTML =
+                    '<div class="lib-card__img">' + imgHtml + badge + '</div>' +
+                    '<div class="lib-card__body">' +
+                        '<p class="lib-card__name" title="' + esc(item.name_ge) + '">' + esc(item.name_ge) + '</p>' +
+                        nameEn + desc +
+                    '</div>' +
+                    '<div class="lib-card__footer">' +
+                        '<span class="lib-card__id">#' + item.id + '</span>' +
+                        '<div style="display:flex;gap:4px;">' +
+                            '<a href="/backoffice/library/verify?id=' + item.id + '" class="bo-btn bo-btn--ghost bo-btn--sm" title="რედაქტირება">' +
+                                '<i class="fas fa-edit"></i>' +
+                            '</a>' +
+                            '<button onclick="deleteItem(' + item.id + ', \'' + esc(item.name_ge) + '\')" class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);" title="წაშლა">' +
+                                '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>';
+                grid.appendChild(card);
+            });
+
+            _page++;
+            _hasMore = !!data.has_more;
+            document.getElementById('lib-load-more').style.display = _hasMore ? 'block' : 'none';
+        })
+        .catch(function(e) {
+            _loading = false;
+            console.error(e);
+        });
+}
+
+function deleteItem(id, name) {
+    if (!confirm('"' + name + '" წაიშალოს?')) return;
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/backoffice/library/items/' + id + '/delete';
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function toggleCatSection() {
+    var body = document.getElementById('cat-body');
+    var chev = document.getElementById('cat-chevron');
+    body.classList.toggle('open');
+    chev.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Initial load
+reload();
 </script>
 {% endblock %}
