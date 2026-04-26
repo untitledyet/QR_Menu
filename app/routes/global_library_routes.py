@@ -415,11 +415,13 @@ def verify_api_generate_tags(item_id):
 
     system = (
         'You are a culinary expert. Given a dish name in Georgian and English, '
-        'generate a comprehensive list of alternative names, abbreviations, and aliases '
-        'that people might use to refer to this exact dish on a menu — in both Georgian and English. '
-        'Include shortened forms, regional names, and common misspellings. '
+        'generate a comprehensive list of alternative names and aliases '
+        'that people might use to refer to this exact dish on a printed menu — in both Georgian and English. '
+        'Include: shortened forms, word-order variants ("ხაჭაპური აჭარული", "ხაჭაპური (აჭარული)"), '
+        'parenthetical forms, abbreviations, transliterations, and common alternate spellings. '
         'Do NOT include the canonical name itself. '
         'Do NOT include other dishes that are merely similar. '
+        'Do NOT include quantity/size variants ("6 ნაჭრიანი", "დიდი") — these are handled separately. '
         'Return ONLY a comma-separated list of tags. No explanation, no numbering.'
     )
     user = f'Georgian name: {item.name_ge or ""}\nEnglish name: {item.name_en or ""}'

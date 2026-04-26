@@ -225,11 +225,12 @@ def _normalize_names_batch(names: List[str]) -> List[str]:
             messages=[
                 {'role': 'system', 'content': (
                     'You are given a numbered list of restaurant dish names. '
-                    'For each, return the canonical dish name stripped of all qualifiers: '
-                    'quantities ("6 ნაჭრიანი", "500g"), sizes ("დიდი", "პატარა", "large", "small"), '
-                    'and purely descriptive adjectives that do not change the dish identity. '
-                    'Preserve regional or ingredient-based qualifiers that define the dish '
-                    '("ღორის", "ხბოს", "იმერული"). '
+                    'For each, return the canonical dish name by applying these rules in order:\n'
+                    '1. Remove quantity/portion qualifiers: numbers, "ნაჭრიანი", "გრამიანი", "კგ", "გრ", "პორცია", "ნახევარი", "piece", "portion", "g", "kg".\n'
+                    '2. Remove size qualifiers: "დიდი", "პატარა", "მცირე", "საშუალო", "large", "small", "medium", "xl", "mini".\n'
+                    '3. Fix parenthetical reordering: "ხაჭაპური (აჭარული)" → "აჭარული ხაჭაპური". Move the parenthetical adjective before the noun.\n'
+                    '4. Fix word-order variants: "ხინკალი ქათმის" → "ქათმის ხინკალი" (adjective/genitive before noun).\n'
+                    '5. Preserve regional, ingredient, or preparation qualifiers that define the dish ("ღორის", "ხბოს", "იმერული", "მეგრული", "აჭარული").\n'
                     'Return ONLY a numbered list in the exact same order. No explanation.'
                 )},
                 {'role': 'user', 'content': joined},
