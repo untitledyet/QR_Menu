@@ -405,9 +405,16 @@ class GlobalItem(db.Model):
     ingredients_en = db.Column(db.String(500), nullable=True)
     description_en = db.Column(db.String(500), nullable=True)
     image_filename = db.Column(db.String(200), nullable=True)
+    tags = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def tags_list(self):
+        if not self.tags:
+            return []
+        return [t.strip().lower() for t in self.tags.split(',') if t.strip()]
 
     subcategory = db.relationship('GlobalSubcategory', backref=db.backref('items', lazy=True))
 

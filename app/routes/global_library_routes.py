@@ -287,6 +287,7 @@ def _item_verify_dict(item):
     d['subcategory_id'] = item.subcategory_id
     d['missing'] = _missing(item)
     d['image_url'] = item.image_filename or None
+    d['tags'] = item.tags or ''
     return d
 
 
@@ -361,6 +362,8 @@ def verify_api_save(item_id):
             continue
         if field in data:
             setattr(item, field, data[field].strip() or None)
+    if 'tags' in data:
+        item.tags = data['tags'].strip() or None
     db.session.commit()
     return jsonify(ok=True, missing=_missing(item))
 
@@ -395,6 +398,46 @@ def verify_api_translate(item_id):
         ingredients_en=item.ingredients_en or '',
         missing=_missing(item),
     )
+
+
+@lib_bp.route('/verify/api/item/<int:item_id>/generate-tags', methods=['POST'])
+@login_required
+@super_required
+def verify_api_generate_tags(item_id):
+    """Generate alias tags for a GlobalItem using GPT-4o."""
+    item = GlobalItem.query.get_or_404(item_id)
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
+
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key)
+
+    system = (
+        'You are a culinary expert. Given a dish name in Georgian and English, '
+        'generate a comprehensive list of alternative names, abbreviations, and aliases '
+        'that people might use to refer to this exact dish on a menu — in both Georgian and English. '
+        'Include shortened forms, regional names, and common misspellings. '
+        'Do NOT include the canonical name itself. '
+        'Do NOT include other dishes that are merely similar. '
+        'Return ONLY a comma-separated list of tags. No explanation, no numbering.'
+    )
+    user = f'Georgian name: {item.name_ge or ""}\nEnglish name: {item.name_en or ""}'
+
+    try:
+        resp = client.chat.completions.create(
+            model='gpt-4o',
+            messages=[{'role': 'system', 'content': system}, {'role': 'user', 'content': user}],
+            temperature=0.2,
+            max_tokens=300,
+        )
+        tags = resp.choices[0].message.content.strip()
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+    item.tags = tags
+    db.session.commit()
+    return jsonify(ok=True, tags=tags)
 
 
 @lib_bp.route('/verify/api/item/<int:item_id>/photo', methods=['POST'])

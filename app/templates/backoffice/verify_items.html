@@ -256,6 +256,20 @@
           </div>
         </div>
 
+        <!-- Tags -->
+        <div class="vr-section">
+          <div class="vr-section__title" style="justify-content:space-between">
+            <span>ტეგები / ალიასები</span>
+            <button class="btn btn--ghost btn--sm" id="vr-gentags-btn" onclick="generateTags()" style="font-size:.7rem;padding:3px 9px">
+              <i class="fas fa-tags"></i> AI ტეგები
+            </button>
+          </div>
+          <div class="vr-field">
+            <label style="font-size:.7rem;color:var(--bo-text-2)">მძიმით გამოყოფილი — ყველა ენა ერთ ველში</label>
+            <textarea id="f-tags" placeholder="ხაჭაპური, khachapuri, cheese bread, იმერი ხაჭაპური..." style="min-height:56px"></textarea>
+          </div>
+        </div>
+
         <!-- Georgian fields -->
         <div class="vr-section">
           <div class="vr-section__title">ქართული</div>
@@ -381,6 +395,8 @@ function renderEditor(it) {
     const el = document.getElementById('f-' + f);
     if (el) { el.value = it[f] || ''; updateFieldStyle(el); }
   });
+  const tagsEl = document.getElementById('f-tags');
+  if (tagsEl) tagsEl.value = it.tags || '';
 
   // photo
   const wrap = document.getElementById('vr-photo-wrap');
@@ -438,6 +454,8 @@ function saveItem() {
     const el = document.getElementById('f-' + f);
     if (el) data[f] = el.value;
   });
+  const tagsEl = document.getElementById('f-tags');
+  if (tagsEl) data.tags = tagsEl.value;
   fetch(`/backoffice/library/verify/api/items`.replace('items', `item/${currentId}/save`), {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
   }).then(r => r.json()).then(d => {
@@ -689,6 +707,25 @@ document.getElementById('vr-ref-input').addEventListener('change', function() {
   const form = new FormData(); form.append('reference', this.files[0]); this.value = '';
   _runGenPhoto(fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-photo-styled', {method:'POST', body:form}));
 });
+
+// ── AI Tag generation ────────────────────────────────────────
+function generateTags() {
+  if (!currentId) return;
+  const btn = document.getElementById('vr-gentags-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>';
+  fetch('/backoffice/library/verify/api/item/' + currentId + '/generate-tags', {method:'POST'})
+    .then(r => r.json()).then(d => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-tags"></i> AI ტეგები';
+      if (d.ok) { document.getElementById('f-tags').value = d.tags; toast('ტეგები დაგენერირდა', 'ok'); }
+      else toast(d.error || 'შეცდომა', 'err');
+    }).catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-tags"></i> AI ტეგები';
+      toast('შეცდომა', 'err');
+    });
+}
 
 // Keyboard shortcut: Ctrl+S / Cmd+S → save
 document.addEventListener('keydown', e => {

@@ -411,7 +411,7 @@ def _match_library_photos(result: dict, GlobalItem, db):
         library.append({
             'id': g.id,
             'name': {'ka': g.name_ge or '', 'en': g.name_en or ''},
-            'aliases': [],
+            'aliases': g.tags_list,
             'image_url': image_url,
         })
 

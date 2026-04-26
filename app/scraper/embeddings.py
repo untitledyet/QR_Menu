@@ -213,6 +213,43 @@ def dedupe_categories(categories: dict, threshold: float = 0.88) -> dict:
 
 # ── Library photo matching ────────────────────────────────────────────────────
 
+def _normalize_names_batch(names: List[str]) -> List[str]:
+    """Use GPT-4o to strip qualifiers (counts, sizes, adjectives) from dish names."""
+    if not names:
+        return names
+    try:
+        client = _get_client()
+        joined = '\n'.join(f'{i}. {n}' for i, n in enumerate(names))
+        resp = client.chat.completions.create(
+            model='gpt-4o',
+            messages=[
+                {'role': 'system', 'content': (
+                    'You are given a numbered list of restaurant dish names. '
+                    'For each, return the canonical dish name stripped of all qualifiers: '
+                    'quantities ("6 ნაჭრიანი", "500g"), sizes ("დიდი", "პატარა", "large", "small"), '
+                    'and purely descriptive adjectives that do not change the dish identity. '
+                    'Preserve regional or ingredient-based qualifiers that define the dish '
+                    '("ღორის", "ხბოს", "იმერული"). '
+                    'Return ONLY a numbered list in the exact same order. No explanation.'
+                )},
+                {'role': 'user', 'content': joined},
+            ],
+            temperature=0.0,
+            max_tokens=500,
+        )
+        lines = resp.choices[0].message.content.strip().split('\n')
+        result = []
+        for i, line in enumerate(lines):
+            stripped = re.sub(r'^\d+\.\s*', '', line).strip()
+            result.append(stripped if stripped else names[i])
+        if len(result) != len(names):
+            return names
+        return result
+    except Exception as e:
+        logger.warning(f'[embed] name normalization failed: {e}')
+        return names
+
+
 def match_library_photos(
     menu_items: list,
     library: list,
@@ -228,6 +265,44 @@ def match_library_photos(
     """
     if not menu_items or not library:
         return []
+
+    # ── Step 1: exact tag matching (priority) ─────────────────
+    # Build tag index: normalized tag → library entry
+    tag_index: dict = {}
+    for entry in library:
+        for alias in (entry.get('aliases') or []):
+            key = alias.strip().lower()
+            if key:
+                tag_index[key] = entry
+        name = entry.get('name') or {}
+        for n in (name.get('ka', ''), name.get('en', '')):
+            if n:
+                tag_index[n.strip().lower()] = entry
+
+    raw_names = [it.get('name_ka') or it.get('name') or '' for it in menu_items]
+    normalized = _normalize_names_batch(raw_names)
+
+    results: List[dict] = []
+    unmatched_items: list = []
+    for it, norm in zip(menu_items, normalized):
+        key = norm.strip().lower()
+        entry = tag_index.get(key)
+        if entry:
+            results.append({
+                'i': it.get('i', 0),
+                'matched_dish_id': entry.get('id'),
+                'matched_image_url': entry.get('image_url', ''),
+                'match_confidence': 'high',
+                'similarity': 1.0,
+            })
+        else:
+            unmatched_items.append(it)
+
+    if not unmatched_items:
+        return results
+
+    # ── Step 2: embedding fallback for unmatched ──────────────
+    menu_items = unmatched_items
 
     def _menu_text(item: dict) -> str:
         parts = [
@@ -253,11 +328,10 @@ def match_library_photos(
     # One combined embedding call is cheaper than two
     all_vecs = embed_texts(menu_texts + lib_texts)
     if not all_vecs:
-        return []
+        return results
     menu_vecs = all_vecs[:len(menu_texts)]
     lib_vecs  = all_vecs[len(menu_texts):]
 
-    results = []
     for i, mv in enumerate(menu_vecs):
         best_sim = 0.0
         best_idx = -1
