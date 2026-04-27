@@ -387,7 +387,11 @@ def super_ai_settings_save():
         'ai.image_gen.google_model',
     ]
     for k in keys:
-        v = request.form.get(k, '').strip()
+        # getlist returns [select_value, text_input_value] for model fields.
+        # Prefer the last non-empty, non-sentinel value so a typed custom
+        # model overrides the dropdown "__custom__" sentinel.
+        values = [v.strip() for v in request.form.getlist(k) if v.strip() and v.strip() != '__custom__']
+        v = values[-1] if values else ''
         if v:
             SystemSetting.set(k, v)
     flash('AI პარამეტრები შენახულია', 'success')

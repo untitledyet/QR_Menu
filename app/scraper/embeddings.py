@@ -293,13 +293,15 @@ def match_library_photos(
     results: List[dict] = []
     unmatched_items: list = []
     for it, norm, raw in zip(menu_items, normalized, raw_names):
-        # Try GPT-normalised name first, then fall back to raw (original) name.
-        # The fallback handles cases where GPT reorders Georgian word order
-        # (e.g. "ხინKALi სOKOS" → "სOKOS ხINKALi") but the canonical name
-        # is stored as-is in the library.
+        # Try in order:
+        # 1. GPT-normalised key (strips portion counts, fixes word order)
+        # 2. raw = name_ka or name (whichever was non-empty)
+        # 3. original 'name' field — catches cases where translation changed
+        #    name_ka so raw == name_ka != original OCR name
         norm_key = _tag_key(norm)
-        raw_key = _tag_key(raw)
-        entry = tag_index.get(norm_key) or tag_index.get(raw_key)
+        raw_key  = _tag_key(raw)
+        orig_key = _tag_key(it.get('name') or '')
+        entry = tag_index.get(norm_key) or tag_index.get(raw_key) or tag_index.get(orig_key)
         if entry:
             results.append({
                 'i': it.get('i', 0),

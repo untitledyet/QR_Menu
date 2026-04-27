@@ -27,35 +27,56 @@
           {% set gen_provider = settings['ai.image_gen.provider'] %}
           <label class="ai-provider-card {% if gen_provider == 'openai' %}selected{% endif %}">
             <input type="radio" name="ai.image_gen.provider" value="openai" {% if gen_provider == 'openai' %}checked{% endif %}>
-            <span class="ai-provider-logo openai-logo">
-              <i class="fas fa-robot"></i> OpenAI
-            </span>
+            <span class="ai-provider-logo openai-logo"><i class="fas fa-robot"></i> OpenAI</span>
           </label>
           <label class="ai-provider-card {% if gen_provider == 'google' %}selected{% endif %}">
             <input type="radio" name="ai.image_gen.provider" value="google" {% if gen_provider == 'google' %}checked{% endif %}>
-            <span class="ai-provider-logo google-logo">
-              <i class="fab fa-google"></i> Google Imagen
-            </span>
+            <span class="ai-provider-logo google-logo"><i class="fab fa-google"></i> Google Imagen</span>
           </label>
         </div>
       </div>
 
       <div>
+        {# ── OpenAI model ── #}
         <div id="gen-openai-model" class="model-section {% if settings['ai.image_gen.provider'] != 'openai' %}hidden{% endif %}">
           <label class="bo-label">OpenAI მოდელი</label>
-          <select name="ai.image_gen.openai_model" class="bo-select">
-            {% for m in ['gpt-image-1', 'dall-e-3', 'dall-e-2'] %}
-            <option value="{{ m }}" {% if settings['ai.image_gen.openai_model'] == m %}selected{% endif %}>{{ m }}</option>
+          <select id="openai-model-select" class="bo-select" onchange="syncCustomInput('openai-model-select','openai-model-custom','ai.image_gen.openai_model')">
+            {% set known_openai = ['gpt-image-1', 'dall-e-3', 'dall-e-2'] %}
+            {% set cur_openai = settings['ai.image_gen.openai_model'] %}
+            {% for m in known_openai %}
+            <option value="{{ m }}" {% if cur_openai == m %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
+            {% if cur_openai not in known_openai %}
+            <option value="{{ cur_openai }}" selected>{{ cur_openai }}</option>
+            {% endif %}
+            <option value="__custom__">სხვა (ხელით შეყვანა)...</option>
           </select>
+          <input type="text" id="openai-model-custom" name="ai.image_gen.openai_model"
+                 value="{{ cur_openai }}"
+                 placeholder="მაგ. gpt-image-2"
+                 class="bo-input" style="margin-top:8px;">
+          <p class="bo-hint">ან ჩაწერე ნებისმიერი მოდელი პირდაპირ</p>
         </div>
+
+        {# ── Google model ── #}
         <div id="gen-google-model" class="model-section {% if settings['ai.image_gen.provider'] != 'google' %}hidden{% endif %}">
           <label class="bo-label">Google მოდელი</label>
-          <select name="ai.image_gen.google_model" class="bo-select">
-            {% for m in ['imagen-4.0-generate-001', 'imagen-4.0-ultra-generate-001', 'imagen-4.0-fast-generate-001'] %}
-            <option value="{{ m }}" {% if settings['ai.image_gen.google_model'] == m %}selected{% endif %}>{{ m }}</option>
+          {% set known_google = ['imagen-4.0-generate-001', 'imagen-4.0-ultra-generate-001', 'imagen-4.0-fast-generate-001'] %}
+          {% set cur_google = settings['ai.image_gen.google_model'] %}
+          <select id="google-model-select" class="bo-select" onchange="syncCustomInput('google-model-select','google-model-custom','ai.image_gen.google_model')">
+            {% for m in known_google %}
+            <option value="{{ m }}" {% if cur_google == m %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
+            {% if cur_google not in known_google %}
+            <option value="{{ cur_google }}" selected>{{ cur_google }}</option>
+            {% endif %}
+            <option value="__custom__">სხვა (ხელით შეყვანა)...</option>
           </select>
+          <input type="text" id="google-model-custom" name="ai.image_gen.google_model"
+                 value="{{ cur_google }}"
+                 placeholder="მაგ. imagen-4.0-ultra-generate-001"
+                 class="bo-input" style="margin-top:8px;">
+          <p class="bo-hint">ან ჩაწერე ნებისმიერი მოდელი პირდაპირ</p>
         </div>
       </div>
 
@@ -83,15 +104,42 @@
 .openai-logo { color:#10a37f; }
 .google-logo { color:#4285f4; }
 .hidden { display:none; }
-.bo-select {
+.bo-select, .bo-input {
   width:100%; padding:9px 12px; border:1px solid var(--bo-border);
   border-radius:8px; background:var(--bo-bg-2); color:var(--bo-text);
-  font-size:.875rem; outline:none;
+  font-size:.875rem; outline:none; box-sizing:border-box;
 }
-.bo-select:focus { border-color:#6c63ff; }
+.bo-select:focus, .bo-input:focus { border-color:#6c63ff; }
+.bo-hint { font-size:.75rem; color:var(--bo-text-2); margin:4px 0 0; }
 </style>
 
 <script>
+/* When dropdown changes to a known model, update the text input.
+   When "__custom__" is selected, focus the text input. */
+function syncCustomInput(selectId, inputId, fieldName) {
+  const sel = document.getElementById(selectId);
+  const inp = document.getElementById(inputId);
+  if (sel.value === '__custom__') {
+    inp.focus();
+    inp.select();
+  } else {
+    inp.value = sel.value;
+  }
+}
+
+/* When the text input changes, keep the dropdown in sync (or show custom). */
+function bindTextInput(inputId, selectId) {
+  const inp = document.getElementById(inputId);
+  const sel = document.getElementById(selectId);
+  inp.addEventListener('input', () => {
+    const match = [...sel.options].find(o => o.value === inp.value && o.value !== '__custom__');
+    sel.value = match ? match.value : '__custom__';
+  });
+}
+bindTextInput('openai-model-custom', 'openai-model-select');
+bindTextInput('google-model-custom', 'google-model-select');
+
+/* Provider card switching */
 function bindProviderGroup(groupId, sectionMap) {
   const group = document.getElementById(groupId);
   if (!group) return;
@@ -107,7 +155,6 @@ function bindProviderGroup(groupId, sectionMap) {
     });
   });
 }
-
 bindProviderGroup('gen-provider-group', {
   'openai': 'gen-openai-model',
   'google': 'gen-google-model',
