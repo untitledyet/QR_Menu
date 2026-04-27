@@ -18,7 +18,7 @@
                 <button type="button" class="bo-image-dropzone__remove" onclick="event.stopPropagation();removeImage()" title="სურათის მოშორება">
                     <i class="fas fa-times"></i>
                 </button>
-                <img src="{{ url_for('static', filename='images/' ~ item.ImageFilename) }}" id="preview-img" style="width:100%;height:100%;object-fit:cover;">
+                <img src="{{ item.ImageFilename if item.ImageFilename.startswith('http') else url_for('static', filename='images/' ~ item.ImageFilename) }}" id="preview-img" style="width:100%;height:100%;object-fit:cover;">
                 {% else %}
                 <div class="bo-image-placeholder" id="image-placeholder">
                     <i class="fas fa-camera"></i>
@@ -28,9 +28,15 @@
             </div>
             <input type="file" name="image" id="image-input" accept="image/*" style="display:none;">
             <input type="hidden" name="remove_image" id="remove-image-flag" value="0">
+            <input type="hidden" name="library_image_url" id="library-image-url" value="">
             <small class="bo-form-hint" style="margin-top:8px;text-align:center;display:block;">
                 PNG / JPG / WEBP · მაქს. 5MB
             </small>
+            <button type="button" id="lib-match-btn" onclick="matchLibraryPhoto()"
+                    style="margin-top:6px;width:100%;font-size:12px;padding:5px 8px;"
+                    class="bo-btn bo-btn--ghost bo-btn--sm">
+                <i class="fas fa-images"></i> ბიბლიოთეკიდან
+            </button>
         </div>
 
         <!-- Right: fields -->
@@ -148,6 +154,7 @@ input.addEventListener('change', function(e) {
 function removeImage(){
     input.value = '';
     removeFlag.value = '1';
+    document.getElementById('library-image-url').value = '';
     showPlaceholder();
 }
 window.removeImage = removeImage;
@@ -166,6 +173,36 @@ dropzone.addEventListener('drop', e => {
     const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files;
     input.dispatchEvent(new Event('change'));
 });
+
+async function matchLibraryPhoto() {
+    const name = document.querySelector('input[name="name"]').value.trim();
+    if (!name) { alert('შეიყვანეთ სახელი'); return; }
+    const btn = document.getElementById('lib-match-btn');
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    try {
+        const r = await fetch('/backoffice/api/library-photo-match', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name})
+        });
+        const d = await r.json();
+        if (r.ok && d.image_url) {
+            document.getElementById('library-image-url').value = d.image_url;
+            removeFlag.value = '0';
+            input.value = '';
+            showPreview(d.image_url);
+        } else {
+            alert('ფოტო ვერ მოიძებნა');
+        }
+    } catch(e) {
+        alert('შეცდომა');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
 
 // Filter subcategories by selected category
 document.getElementById('category-select').addEventListener('change', function() {

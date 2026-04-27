@@ -1123,12 +1123,15 @@ def add_item():
 
         image_filename = 'default-image.png'
         file = request.files.get('image')
+        library_image_url = request.form.get('library_image_url', '').strip()
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             upload_dir = os.path.join(current_app.root_path, 'static', 'images')
             os.makedirs(upload_dir, exist_ok=True)
             file.save(os.path.join(upload_dir, filename))
             image_filename = filename
+        elif library_image_url:
+            image_filename = library_image_url
 
         item = FoodItem(FoodName=name, FoodName_en=name_en or None,
                         Description=description or name, Description_en=description_en or None,
@@ -1179,6 +1182,7 @@ def edit_item(item_id):
         item.allow_customization = 'allow_customization' in request.form
 
         file = request.files.get('image')
+        library_image_url = request.form.get('library_image_url', '').strip()
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             upload_dir = os.path.join(current_app.root_path, 'static', 'images')
@@ -1186,6 +1190,8 @@ def edit_item(item_id):
             item.ImageFilename = filename
         elif request.form.get('remove_image') == '1':
             item.ImageFilename = 'default-image.png'
+        elif library_image_url:
+            item.ImageFilename = library_image_url
 
         db.session.commit()
 
@@ -1200,6 +1206,40 @@ def edit_item(item_id):
     return render_template('backoffice/item_form.html', admin=admin, categories=categories,
                            subcategories=subcategories, item=item, title='Edit Item',
                            features=features, preselect_cat=None)
+
+
+@bo_bp.route('/api/library-photo-match', methods=['POST'])
+@login_required
+def library_photo_match():
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify(error='name required'), 400
+
+    lib_items = GlobalItem.query.filter(GlobalItem.image_filename.isnot(None)).all()
+    if not lib_items:
+        return jsonify(error='no library photos'), 404
+
+    idx = {}
+    for g in lib_items:
+        for key in ([g.name_ge] + g.tags_list):
+            if key:
+                idx[key.strip().lower()] = g
+
+    match = idx.get(name.lower())
+    if not match:
+        try:
+            from app.scraper.embeddings import _normalize_names_batch
+            norm = _normalize_names_batch([name])
+            if norm:
+                match = idx.get(norm[0].strip().lower())
+        except Exception:
+            pass
+
+    if not match:
+        return jsonify(error='no match'), 404
+
+    return jsonify(image_url=match.image_filename, name=match.name_ge)
 
 
 @bo_bp.route('/menu/delete/<int:item_id>', methods=['POST'])
