@@ -1055,7 +1055,9 @@ def import_analyzed():
                     continue
                 name_en = (item_data.get('name_en') or name).strip()
                 try:
-                    price = float(item_data.get('price') or 0)
+                    import re as _re
+                    _ps = _re.sub(r'[^\d,.]', '', str(item_data.get('price') or ''))
+                    price = float(_ps.replace(',', '.')) if _ps else 0.0
                 except (ValueError, TypeError):
                     price = 0.0
                 photo = item_data.get('library_photo') or None
