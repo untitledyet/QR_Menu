@@ -269,25 +269,37 @@ def match_library_photos(
 
     # ── Step 1: exact tag matching (priority) ─────────────────
     # Build tag index: normalized tag → library entry
+    def _tag_key(s: str) -> str:
+        """Lowercase, collapse whitespace, normalise spaces inside parens."""
+        k = ' '.join(s.strip().lower().split())
+        k = re.sub(r'\(\s+', '(', k)
+        k = re.sub(r'\s+\)', ')', k)
+        return k
+
     tag_index: dict = {}
     for entry in library:
         for alias in (entry.get('aliases') or []):
-            key = alias.strip().lower()
+            key = _tag_key(alias)
             if key:
                 tag_index[key] = entry
         name = entry.get('name') or {}
         for n in (name.get('ka', ''), name.get('en', '')):
             if n:
-                tag_index[n.strip().lower()] = entry
+                tag_index[_tag_key(n)] = entry
 
     raw_names = [it.get('name_ka') or it.get('name') or '' for it in menu_items]
     normalized = _normalize_names_batch(raw_names)
 
     results: List[dict] = []
     unmatched_items: list = []
-    for it, norm in zip(menu_items, normalized):
-        key = norm.strip().lower()
-        entry = tag_index.get(key)
+    for it, norm, raw in zip(menu_items, normalized, raw_names):
+        # Try GPT-normalised name first, then fall back to raw (original) name.
+        # The fallback handles cases where GPT reorders Georgian word order
+        # (e.g. "ხინKALi სOKOS" → "სOKOS ხINKALi") but the canonical name
+        # is stored as-is in the library.
+        norm_key = _tag_key(norm)
+        raw_key = _tag_key(raw)
+        entry = tag_index.get(norm_key) or tag_index.get(raw_key)
         if entry:
             results.append({
                 'i': it.get('i', 0),
