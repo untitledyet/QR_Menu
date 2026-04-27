@@ -483,18 +483,12 @@ def verify_api_photo(item_id):
 @login_required
 @super_required
 def verify_api_generate_photo(item_id):
-    """Generate a food photo via gpt-image-2 and upload to R2."""
+    """Generate a food photo using the configured AI provider and upload to R2."""
     item = GlobalItem.query.get_or_404(item_id)
     if not item.name_ge:
         return jsonify(error='name_ge is required'), 400
 
     api_key = os.environ.get('OPENAI_API_KEY', '')
-    if not api_key:
-        return jsonify(error='OPENAI_API_KEY not set'), 500
-
-    from openai import OpenAI
-    import base64
-
     dish_label = item.name_en or item.name_ge
     prompt = (
         f'A highly realistic professional food photography image of {dish_label}. '
@@ -510,24 +504,50 @@ def verify_api_generate_photo(item_id):
         'Ultra-realistic, high detail, crisp quality.'
     )
 
-    _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+    provider = SystemSetting.get('ai.image_gen.provider', 'openai')
     t0 = time.time()
-    logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → starting")
-    try:
-        client = OpenAI(api_key=api_key)
-        result = client.images.generate(
-            model=_model,
-            prompt=prompt,
-            size='1024x1024',
-        )
-        image_bytes = base64.b64decode(result.data[0].b64_json)
-        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
-    except Exception as e:
-        logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
-        return jsonify(error=f'Image generation failed: {e}'), 500
+    img_bytes = None
+
+    if provider == 'google':
+        g_model = SystemSetting.get('ai.image_gen.google_model', 'imagen-4.0-generate-001')
+        logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_label}'  → starting")
+        try:
+            from google import genai as _genai
+            from google.genai import types as _gtypes
+            g_key = os.environ.get('GOOGLE_API_KEY', '')
+            if not g_key:
+                return jsonify(error='GOOGLE_API_KEY not set'), 500
+            gclient = _genai.Client(api_key=g_key)
+            resp = gclient.models.generate_images(
+                model=g_model,
+                prompt=prompt,
+                config=_gtypes.GenerateImagesConfig(number_of_images=1),
+            )
+            img_bytes = resp.generated_images[0].image.image_bytes
+            logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
+        except Exception as e:
+            logger.warning(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
+            return jsonify(error=f'Image generation failed: {e}'), 500
+    else:
+        from openai import OpenAI
+        import base64
+        _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → starting")
+        try:
+            client = OpenAI(api_key=api_key)
+            result = client.images.generate(
+                model=_model,
+                prompt=prompt,
+                size='1024x1024',
+            )
+            img_bytes = base64.b64decode(result.data[0].b64_json)
+            logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
+        except Exception as e:
+            logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
+            return jsonify(error=f'Image generation failed: {e}'), 500
 
     from app.services.r2_storage import upload_bytes
-    url = upload_bytes(image_bytes, prefix='global-items', no_compress=False)
+    url = upload_bytes(img_bytes, prefix='global-items', no_compress=False)
     if not url:
         return jsonify(error='R2 upload failed'), 500
 
@@ -546,12 +566,6 @@ def verify_api_generate_photo_styled(item_id):
         return jsonify(error='reference file required'), 400
 
     api_key = os.environ.get('OPENAI_API_KEY', '')
-    if not api_key:
-        return jsonify(error='OPENAI_API_KEY not set'), 500
-
-    from openai import OpenAI
-    import base64
-    import io
 
     ref_file = request.files['reference']
     ref_bytes = ref_file.read()
@@ -568,26 +582,52 @@ def verify_api_generate_photo_styled(item_id):
         'Photorealistic, natural food textures, no artificial gloss, no studio overexposure.'
     )
 
-    _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+    provider = SystemSetting.get('ai.image_gen.provider', 'openai')
     t0 = time.time()
-    logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → starting")
-    try:
-        client = OpenAI(api_key=api_key)
-        result = client.images.edit(
-            model=_model,
-            image=[('reference', ref_bytes, content_type)],
-            prompt=prompt,
-            size='1024x1024',
-            quality='medium',
-        )
-        image_bytes = base64.b64decode(result.data[0].b64_json)
-        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
-    except Exception as e:
-        logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
-        return jsonify(error=f'Image generation failed: {e}'), 500
+    img_bytes = None
+
+    if provider == 'google':
+        g_model = SystemSetting.get('ai.image_gen.google_model', 'imagen-4.0-generate-001')
+        logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  task=generate-styled  dish='{dish_label}'  → starting")
+        try:
+            from google import genai as _genai
+            from google.genai import types as _gtypes
+            g_key = os.environ.get('GOOGLE_API_KEY', '')
+            if not g_key:
+                return jsonify(error='GOOGLE_API_KEY not set'), 500
+            gclient = _genai.Client(api_key=g_key)
+            resp = gclient.models.generate_images(
+                model=g_model,
+                prompt=prompt,
+                config=_gtypes.GenerateImagesConfig(number_of_images=1),
+            )
+            img_bytes = resp.generated_images[0].image.image_bytes
+            logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  task=generate-styled  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
+        except Exception as e:
+            logger.warning(f"[IMAGE-GEN] provider=google  model={g_model}  task=generate-styled  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
+            return jsonify(error=f'Image generation failed: {e}'), 500
+    else:
+        from openai import OpenAI
+        import base64
+        _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → starting")
+        try:
+            client = OpenAI(api_key=api_key)
+            result = client.images.edit(
+                model=_model,
+                image=[('reference', ref_bytes, content_type)],
+                prompt=prompt,
+                size='1024x1024',
+                quality='medium',
+            )
+            img_bytes = base64.b64decode(result.data[0].b64_json)
+            logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
+        except Exception as e:
+            logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
+            return jsonify(error=f'Image generation failed: {e}'), 500
 
     from app.services.r2_storage import upload_bytes
-    url = upload_bytes(image_bytes, prefix='global-items', no_compress=False)
+    url = upload_bytes(img_bytes, prefix='global-items', no_compress=False)
     if not url:
         return jsonify(error='R2 upload failed'), 500
 
