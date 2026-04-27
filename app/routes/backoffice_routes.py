@@ -397,7 +397,7 @@ def super_ai_settings_save():
         if v:
             SystemSetting.set(k, v)
     flash('AI პარამეტრები შენახულია', 'success')
-    return redirect(url_for('backoffice.super_ai_settings'))
+    return redirect(url_for('bo_bp.super_ai_settings'))
 
 
 @bo_bp.route('/super/scraper-test')

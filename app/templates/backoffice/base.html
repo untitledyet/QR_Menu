@@ -36,7 +36,7 @@
                     <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-nav__item {% if 'verify' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-plus-circle"></i> პროდუქტის დამატება
                     </a>
-                    <a href="{{ url_for('backoffice.super_ai_settings') }}" class="bo-nav__item {% if 'ai_settings' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('bo_bp.super_ai_settings') }}" class="bo-nav__item {% if 'ai_settings' in request.endpoint %}active{% endif %}">
                         <i class="fas fa-microchip"></i> AI პარამეტრები
                     </a>
                 {% elif admin and admin.venue %}
