@@ -341,12 +341,17 @@ def _structured_call(
     if reasoning_effort:
         kwargs["reasoning"] = {"effort": reasoning_effort}
 
+    logger.info(f"[LLM] provider=openai  model={model}  task={label}  → starting")
+    t0 = time.time()
+
     def _call():
         resp = client.responses.create(**kwargs)
         raw = (resp.output_text or "").strip()
         return json.loads(raw)
 
-    return _with_retry(_call, label=label)
+    result = _with_retry(_call, label=label)
+    logger.info(f"[LLM] provider=openai  model={model}  task={label}  → done  {time.time()-t0:.1f}s")
+    return result
 
 
 _OCR_PROMPT = (
@@ -366,6 +371,8 @@ def _get_ai_setting(key: str, default: str) -> str:
 
 
 def _ocr_openai(image_data_url: str, model: str) -> str:
+    logger.info(f"[OCR] provider=openai  model={model}  → starting")
+    t0 = time.time()
     client = _get_client()
 
     def _call():
@@ -382,10 +389,14 @@ def _ocr_openai(image_data_url: str, model: str) -> str:
         )
         return (resp.output_text or "").strip()
 
-    return _with_retry(_call, label="ocr-openai")
+    result = _with_retry(_call, label="ocr-openai")
+    logger.info(f"[OCR] provider=openai  model={model}  → done  {time.time()-t0:.1f}s  {len(result)} chars")
+    return result
 
 
 def _ocr_google_vision(image_data_url: str) -> str:
+    logger.info("[OCR] provider=google_vision  model=document_text_detection  → starting")
+    t0 = time.time()
     import json as _json
     import base64 as _b64
     from google.cloud import vision as _gv
@@ -397,15 +408,18 @@ def _ocr_google_vision(image_data_url: str) -> str:
     credentials = _sa.Credentials.from_service_account_info(_json.loads(creds_raw))
     client = _gv.ImageAnnotatorClient(credentials=credentials)
 
-    # data_url → bytes
     _, b64part = image_data_url.split(",", 1)
     image_bytes = _b64.b64decode(b64part)
     image = _gv.Image(content=image_bytes)
     response = client.document_text_detection(image=image)
-    return (response.full_text_annotation.text or "").strip()
+    result = (response.full_text_annotation.text or "").strip()
+    logger.info(f"[OCR] provider=google_vision  model=document_text_detection  → done  {time.time()-t0:.1f}s  {len(result)} chars")
+    return result
 
 
 def _ocr_google_gemini(image_data_url: str, model: str) -> str:
+    logger.info(f"[OCR] provider=google_gemini  model={model}  → starting")
+    t0 = time.time()
     import base64 as _b64
     from google import genai as _genai
     from google.genai import types as _gtypes
@@ -426,7 +440,9 @@ def _ocr_google_gemini(image_data_url: str, model: str) -> str:
             _OCR_PROMPT,
         ],
     )
-    return (resp.text or "").strip()
+    result = (resp.text or "").strip()
+    logger.info(f"[OCR] provider=google_gemini  model={model}  → done  {time.time()-t0:.1f}s  {len(result)} chars")
+    return result
 
 
 def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
@@ -1108,15 +1124,17 @@ def generate_dish_photo(dish_name: str, output_dir: str) -> str:
     provider = _get_ai_setting("ai.image_gen.provider", "openai")
 
     img_bytes: Optional[bytes] = None
+    t0 = time.time()
 
     if provider == "google":
+        g_model = _get_ai_setting("ai.image_gen.google_model", "imagen-4.0-generate-001")
+        logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_name}'  → starting")
         try:
             from google import genai as _genai
             from google.genai import types as _gtypes
             api_key = os.environ.get("GOOGLE_API_KEY", "")
             if not api_key:
                 raise RuntimeError("GOOGLE_API_KEY not set")
-            g_model = _get_ai_setting("ai.image_gen.google_model", "imagen-4.0-generate-001")
             gclient = _genai.Client(api_key=api_key)
             resp = gclient.models.generate_images(
                 model=g_model,
@@ -1124,16 +1142,18 @@ def generate_dish_photo(dish_name: str, output_dir: str) -> str:
                 config=_gtypes.GenerateImagesConfig(number_of_images=1),
             )
             img_bytes = resp.generated_images[0].image.image_bytes
+            logger.info(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_name}'  → done  {time.time()-t0:.1f}s")
         except Exception as e:
-            logger.warning(f"[AI] Google image generation failed for {dish_name}: {e}")
+            logger.warning(f"[IMAGE-GEN] provider=google  model={g_model}  dish='{dish_name}'  → FAILED  {time.time()-t0:.1f}s  {e}")
             return ""
     else:
         # openai (default)
+        openai_model = _get_ai_setting("ai.image_gen.openai_model", config.OPENAI_MODEL_IMAGE_GEN)
+        logger.info(f"[IMAGE-GEN] provider=openai  model={openai_model}  dish='{dish_name}'  → starting")
         try:
             client = _get_client()
         except ImportError:
             return ""
-        openai_model = _get_ai_setting("ai.image_gen.openai_model", config.OPENAI_MODEL_IMAGE_GEN)
 
         def _call():
             return client.images.generate(
@@ -1151,8 +1171,9 @@ def generate_dish_photo(dish_name: str, output_dir: str) -> str:
             elif getattr(entry, "url", None):
                 import requests as _req
                 img_bytes = _req.get(entry.url, timeout=30).content
+            logger.info(f"[IMAGE-GEN] provider=openai  model={openai_model}  dish='{dish_name}'  → done  {time.time()-t0:.1f}s")
         except Exception as e:
-            logger.warning(f"[AI] OpenAI image generation failed for {dish_name}: {e}")
+            logger.warning(f"[IMAGE-GEN] provider=openai  model={openai_model}  dish='{dish_name}'  → FAILED  {time.time()-t0:.1f}s  {e}")
             return ""
 
     if not img_bytes:
