@@ -26,3 +26,7 @@ redis>=5.0.0
 
 # Embeddings / numerical (optional but makes cosine-similarity fast)
 numpy>=1.26.0
+
+# Google AI (Gemini / Imagen image generation + OCR benchmark)
+google-genai>=1.0.0
+google-cloud-vision>=3.0.0
