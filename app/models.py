@@ -590,3 +590,29 @@ class VenueItemPriceOverride(db.Model):
 
     __table_args__ = (db.UniqueConstraint('venue_id', 'food_item_id',
                                           name='uq_venue_item_price'),)
+
+
+class SystemSetting(db.Model):
+    """Platform-wide key/value settings (superadmin-controlled)."""
+    __tablename__ = 'SystemSettings'
+
+    key   = db.Column(db.String(64), primary_key=True)
+    value = db.Column(db.String(512), nullable=False, default='')
+
+    @staticmethod
+    def get(key: str, default: str = '') -> str:
+        try:
+            row = SystemSetting.query.get(key)
+            return row.value if row is not None else default
+        except Exception:
+            return default
+
+    @staticmethod
+    def set(key: str, value: str) -> None:
+        row = SystemSetting.query.get(key)
+        if row is None:
+            row = SystemSetting(key=key, value=value)
+            db.session.add(row)
+        else:
+            row.value = value
+        db.session.commit()

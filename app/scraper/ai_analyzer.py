@@ -349,20 +349,32 @@ def _structured_call(
     return _with_retry(_call, label=label)
 
 
-def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
-    """Plain-text transcription of an image (high verbosity, original detail)."""
+_OCR_PROMPT = (
+    "Transcribe every piece of text visible in this image exactly as it appears. "
+    "Preserve layout cues (line breaks, columns, bullets) with plain ASCII "
+    "(newlines, ' - ', indentation). Do not summarize, explain, or add commentary."
+)
+
+
+def _get_ai_setting(key: str, default: str) -> str:
+    """Read an AI setting from SystemSettings (DB) or fall back to default."""
+    try:
+        from app.models import SystemSetting
+        return SystemSetting.get(key, default)
+    except Exception:
+        return default
+
+
+def _ocr_openai(image_data_url: str, model: str) -> str:
     client = _get_client()
 
     def _call():
         resp = client.responses.create(
-            model=model or config.OPENAI_MODEL_VISION,
+            model=model,
             input=[{
                 "role": "user",
                 "content": [
-                    {"type": "input_text",
-                     "text": "Transcribe every piece of text visible in this image exactly as it appears. "
-                             "Preserve layout cues (line breaks, columns, bullets) with plain ASCII "
-                             "(newlines, ' - ', indentation). Do not summarize, explain, or add commentary."},
+                    {"type": "input_text", "text": _OCR_PROMPT},
                     {"type": "input_image", "image_url": image_data_url, "detail": "original"},
                 ],
             }],
@@ -370,7 +382,67 @@ def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str
         )
         return (resp.output_text or "").strip()
 
-    return _with_retry(_call, label="ocr")
+    return _with_retry(_call, label="ocr-openai")
+
+
+def _ocr_google_vision(image_data_url: str) -> str:
+    import json as _json
+    import base64 as _b64
+    from google.cloud import vision as _gv
+    from google.oauth2 import service_account as _sa
+
+    creds_raw = os.environ.get("GOOGLE_VISION_CREDENTIALS_JSON", "")
+    if not creds_raw:
+        raise RuntimeError("GOOGLE_VISION_CREDENTIALS_JSON not set")
+    credentials = _sa.Credentials.from_service_account_info(_json.loads(creds_raw))
+    client = _gv.ImageAnnotatorClient(credentials=credentials)
+
+    # data_url → bytes
+    _, b64part = image_data_url.split(",", 1)
+    image_bytes = _b64.b64decode(b64part)
+    image = _gv.Image(content=image_bytes)
+    response = client.document_text_detection(image=image)
+    return (response.full_text_annotation.text or "").strip()
+
+
+def _ocr_google_gemini(image_data_url: str, model: str) -> str:
+    import base64 as _b64
+    from google import genai as _genai
+    from google.genai import types as _gtypes
+
+    api_key = os.environ.get("GOOGLE_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("GOOGLE_API_KEY not set")
+
+    client = _genai.Client(api_key=api_key)
+    header, b64part = image_data_url.split(",", 1)
+    mime = header.split(";")[0].split(":")[1]
+    image_bytes = _b64.b64decode(b64part)
+
+    resp = client.models.generate_content(
+        model=model,
+        contents=[
+            _gtypes.Part.from_bytes(data=image_bytes, mime_type=mime),
+            _OCR_PROMPT,
+        ],
+    )
+    return (resp.text or "").strip()
+
+
+def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
+    """Route OCR to the provider selected in SystemSettings."""
+    provider = _get_ai_setting("ai.ocr.provider", "openai")
+
+    if provider == "google_vision":
+        return _ocr_google_vision(image_data_url)
+
+    if provider == "google_gemini":
+        m = model or _get_ai_setting("ai.ocr.google_gemini_model", "gemini-2.5-flash")
+        return _ocr_google_gemini(image_data_url, m)
+
+    # default: openai
+    m = model or _get_ai_setting("ai.ocr.openai_model", config.OPENAI_MODEL_VISION)
+    return _ocr_openai(image_data_url, m)
 
 
 def _image_to_data_url(image_path: str) -> str:
@@ -1018,49 +1090,70 @@ def ai_deduplicate(categories: dict) -> dict:
 # 10. Image generation — gpt-image-1 (newer than DALL·E 3)
 # ═════════════════════════════════════════════════════════════════════════════
 
-def generate_dish_photo(dish_name: str, output_dir: str) -> str:
-    """Generate a professional food photo and save to `output_dir`, return local path."""
-    if not dish_name or len(dish_name.strip()) < 2:
-        return ""
-
-    prompt = (
+def _make_image_gen_prompt(dish_name: str) -> str:
+    return (
         f"Professional food photography of {dish_name.strip()}, "
         "Georgian restaurant dish, top-down 45-degree angle on a matte white plate, "
         "clean neutral background, soft studio lighting, shallow depth of field, "
         "crisp focus on the food, appetizing, editorial magazine quality."
     )
 
-    try:
-        client = _get_client()
-    except ImportError:
+
+def generate_dish_photo(dish_name: str, output_dir: str) -> str:
+    """Generate a professional food photo and save to `output_dir`, return local path."""
+    if not dish_name or len(dish_name.strip()) < 2:
         return ""
 
-    def _call():
-        return client.images.generate(
-            model=config.OPENAI_MODEL_IMAGE_GEN,
-            prompt=prompt,
-            size="1024x1024",
-            n=1,
-        )
+    prompt = _make_image_gen_prompt(dish_name)
+    provider = _get_ai_setting("ai.image_gen.provider", "openai")
 
-    try:
-        response = _with_retry(_call, label="image_gen")
-    except Exception as e:
-        logger.warning(f"[AI] Image generation failed for {dish_name}: {e}")
-        return ""
-
-    # gpt-image-1 returns b64_json by default; DALL·E 3 returns url.
-    entry = response.data[0]
     img_bytes: Optional[bytes] = None
-    try:
-        if getattr(entry, "b64_json", None):
-            img_bytes = base64.b64decode(entry.b64_json)
-        elif getattr(entry, "url", None):
-            import requests as _req
-            img_bytes = _req.get(entry.url, timeout=30).content
-    except Exception as e:
-        logger.warning(f"[AI] Image fetch failed: {e}")
-        return ""
+
+    if provider == "google":
+        try:
+            from google import genai as _genai
+            from google.genai import types as _gtypes
+            api_key = os.environ.get("GOOGLE_API_KEY", "")
+            if not api_key:
+                raise RuntimeError("GOOGLE_API_KEY not set")
+            g_model = _get_ai_setting("ai.image_gen.google_model", "imagen-4.0-generate-001")
+            gclient = _genai.Client(api_key=api_key)
+            resp = gclient.models.generate_images(
+                model=g_model,
+                prompt=prompt,
+                config=_gtypes.GenerateImagesConfig(number_of_images=1),
+            )
+            img_bytes = resp.generated_images[0].image.image_bytes
+        except Exception as e:
+            logger.warning(f"[AI] Google image generation failed for {dish_name}: {e}")
+            return ""
+    else:
+        # openai (default)
+        try:
+            client = _get_client()
+        except ImportError:
+            return ""
+        openai_model = _get_ai_setting("ai.image_gen.openai_model", config.OPENAI_MODEL_IMAGE_GEN)
+
+        def _call():
+            return client.images.generate(
+                model=openai_model,
+                prompt=prompt,
+                size="1024x1024",
+                n=1,
+            )
+
+        try:
+            response = _with_retry(_call, label="image_gen")
+            entry = response.data[0]
+            if getattr(entry, "b64_json", None):
+                img_bytes = base64.b64decode(entry.b64_json)
+            elif getattr(entry, "url", None):
+                import requests as _req
+                img_bytes = _req.get(entry.url, timeout=30).content
+        except Exception as e:
+            logger.warning(f"[AI] OpenAI image generation failed for {dish_name}: {e}")
+            return ""
 
     if not img_bytes:
         return ""

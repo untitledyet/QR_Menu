@@ -362,6 +362,44 @@ def dashboard():
 # Super Admin — Scraper test panel
 # ============================================================
 
+@bo_bp.route('/super/ai-settings', methods=['GET'])
+@login_required
+@super_required
+def super_ai_settings():
+    from app.models import SystemSetting
+    settings = {
+        'ai.ocr.provider':             SystemSetting.get('ai.ocr.provider', 'openai'),
+        'ai.ocr.openai_model':         SystemSetting.get('ai.ocr.openai_model', 'gpt-5.5'),
+        'ai.ocr.google_gemini_model':  SystemSetting.get('ai.ocr.google_gemini_model', 'gemini-2.5-flash'),
+        'ai.image_gen.provider':       SystemSetting.get('ai.image_gen.provider', 'openai'),
+        'ai.image_gen.openai_model':   SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1'),
+        'ai.image_gen.google_model':   SystemSetting.get('ai.image_gen.google_model', 'imagen-4.0-generate-001'),
+    }
+    return render_template('backoffice/super_ai_settings.html',
+                           admin=get_current_admin(), settings=settings)
+
+
+@bo_bp.route('/super/ai-settings', methods=['POST'])
+@login_required
+@super_required
+def super_ai_settings_save():
+    from app.models import SystemSetting
+    keys = [
+        'ai.ocr.provider',
+        'ai.ocr.openai_model',
+        'ai.ocr.google_gemini_model',
+        'ai.image_gen.provider',
+        'ai.image_gen.openai_model',
+        'ai.image_gen.google_model',
+    ]
+    for k in keys:
+        v = request.form.get(k, '').strip()
+        if v:
+            SystemSetting.set(k, v)
+    flash('AI პარამეტრები შენახულია', 'success')
+    return redirect(url_for('backoffice.super_ai_settings'))
+
+
 @bo_bp.route('/super/scraper-test')
 @login_required
 @super_required

@@ -1,0 +1,183 @@
+{% extends 'backoffice/base.html' %}
+{% block title %}AI მოდელის პარამეტრები{% endblock %}
+{% block content %}
+
+<div class="bo-header">
+  <h1>AI მოდელის პარამეტრები</h1>
+  <p class="bo-header__sub">OCR და ფოტოს გენერაციისთვის გამოყენებული პროვაიდერები</p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="bo-alert bo-alert--{{ 'success' if cat == 'success' else 'error' }}" style="margin-bottom:16px;">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('backoffice.super_ai_settings_save') }}">
+
+  {# ── OCR ── #}
+  <div class="bo-card" style="margin-bottom:24px;">
+    <div class="bo-card__header">
+      <h2 class="bo-card__title"><i class="fas fa-eye" style="color:#6c63ff;margin-right:8px;"></i>OCR — ფოტოდან ტექსტის წაკითხვა</h2>
+    </div>
+    <div class="bo-card__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+      <div>
+        <label class="bo-label">პროვაიდერი</label>
+        <div class="ai-provider-group" id="ocr-provider-group">
+          {% set ocr_provider = settings['ai.ocr.provider'] %}
+          <label class="ai-provider-card {% if ocr_provider == 'openai' %}selected{% endif %}">
+            <input type="radio" name="ai.ocr.provider" value="openai" {% if ocr_provider == 'openai' %}checked{% endif %}>
+            <span class="ai-provider-logo openai-logo">
+              <i class="fas fa-robot"></i> OpenAI
+            </span>
+          </label>
+          <label class="ai-provider-card {% if ocr_provider == 'google_gemini' %}selected{% endif %}">
+            <input type="radio" name="ai.ocr.provider" value="google_gemini" {% if ocr_provider == 'google_gemini' %}checked{% endif %}>
+            <span class="ai-provider-logo google-logo">
+              <i class="fab fa-google"></i> Google Gemini
+            </span>
+          </label>
+          <label class="ai-provider-card {% if ocr_provider == 'google_vision' %}selected{% endif %}">
+            <input type="radio" name="ai.ocr.provider" value="google_vision" {% if ocr_provider == 'google_vision' %}checked{% endif %}>
+            <span class="ai-provider-logo google-logo">
+              <i class="fas fa-cloud"></i> Cloud Vision
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div id="ocr-openai-model" class="model-section {% if settings['ai.ocr.provider'] != 'openai' %}hidden{% endif %}">
+          <label class="bo-label">OpenAI მოდელი</label>
+          <select name="ai.ocr.openai_model" class="bo-select">
+            {% for m in ['gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4o-mini'] %}
+            <option value="{{ m }}" {% if settings['ai.ocr.openai_model'] == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="ocr-gemini-model" class="model-section {% if settings['ai.ocr.provider'] != 'google_gemini' %}hidden{% endif %}">
+          <label class="bo-label">Gemini მოდელი</label>
+          <select name="ai.ocr.google_gemini_model" class="bo-select">
+            {% for m in ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-3-flash-preview', 'gemini-3-pro-preview'] %}
+            <option value="{{ m }}" {% if settings['ai.ocr.google_gemini_model'] == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="ocr-vision-info" class="model-section {% if settings['ai.ocr.provider'] != 'google_vision' %}hidden{% endif %}">
+          <label class="bo-label">მოდელი</label>
+          <p style="font-size:.8rem;color:var(--bo-text-2);padding:10px 0;">Google Cloud Vision API — document_text_detection<br>მოდელის არჩევა არ არის საჭირო.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Image Generation ── #}
+  <div class="bo-card" style="margin-bottom:24px;">
+    <div class="bo-card__header">
+      <h2 class="bo-card__title"><i class="fas fa-image" style="color:#10b981;margin-right:8px;"></i>ფოტოს გენერაცია</h2>
+    </div>
+    <div class="bo-card__body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+      <div>
+        <label class="bo-label">პროვაიდერი</label>
+        <div class="ai-provider-group" id="gen-provider-group">
+          {% set gen_provider = settings['ai.image_gen.provider'] %}
+          <label class="ai-provider-card {% if gen_provider == 'openai' %}selected{% endif %}">
+            <input type="radio" name="ai.image_gen.provider" value="openai" {% if gen_provider == 'openai' %}checked{% endif %}>
+            <span class="ai-provider-logo openai-logo">
+              <i class="fas fa-robot"></i> OpenAI
+            </span>
+          </label>
+          <label class="ai-provider-card {% if gen_provider == 'google' %}selected{% endif %}">
+            <input type="radio" name="ai.image_gen.provider" value="google" {% if gen_provider == 'google' %}checked{% endif %}>
+            <span class="ai-provider-logo google-logo">
+              <i class="fab fa-google"></i> Google Imagen
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div id="gen-openai-model" class="model-section {% if settings['ai.image_gen.provider'] != 'openai' %}hidden{% endif %}">
+          <label class="bo-label">OpenAI მოდელი</label>
+          <select name="ai.image_gen.openai_model" class="bo-select">
+            {% for m in ['gpt-image-1', 'dall-e-3', 'dall-e-2'] %}
+            <option value="{{ m }}" {% if settings['ai.image_gen.openai_model'] == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="gen-google-model" class="model-section {% if settings['ai.image_gen.provider'] != 'google' %}hidden{% endif %}">
+          <label class="bo-label">Google მოდელი</label>
+          <select name="ai.image_gen.google_model" class="bo-select">
+            {% for m in ['imagen-4.0-generate-001', 'imagen-4.0-ultra-generate-001', 'imagen-4.0-fast-generate-001', 'gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview'] %}
+            <option value="{{ m }}" {% if settings['ai.image_gen.google_model'] == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button type="submit" class="bo-btn bo-btn--primary">
+    <i class="fas fa-save"></i> შენახვა
+  </button>
+
+</form>
+
+<style>
+.ai-provider-group { display:flex; gap:10px; flex-wrap:wrap; }
+.ai-provider-card {
+  display:flex; align-items:center; gap:8px;
+  border:2px solid var(--bo-border); border-radius:10px;
+  padding:10px 16px; cursor:pointer; transition:all .15s;
+  background:var(--bo-bg-2);
+}
+.ai-provider-card:hover { border-color:#6c63ff; }
+.ai-provider-card.selected { border-color:#6c63ff; background:rgba(108,99,255,.08); }
+.ai-provider-card input[type=radio] { display:none; }
+.ai-provider-logo { font-size:.875rem; font-weight:600; color:var(--bo-text); }
+.openai-logo { color:#10a37f; }
+.google-logo { color:#4285f4; }
+.model-section { }
+.hidden { display:none; }
+.bo-select {
+  width:100%; padding:9px 12px; border:1px solid var(--bo-border);
+  border-radius:8px; background:var(--bo-bg-2); color:var(--bo-text);
+  font-size:.875rem; outline:none;
+}
+.bo-select:focus { border-color:#6c63ff; }
+</style>
+
+<script>
+function bindProviderGroup(groupId, radioName, sectionMap) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ai-provider-card').forEach(card => {
+    const radio = card.querySelector('input[type=radio]');
+    radio.addEventListener('change', () => {
+      group.querySelectorAll('.ai-provider-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      Object.entries(sectionMap).forEach(([val, elId]) => {
+        const el = document.getElementById(elId);
+        if (el) el.classList.toggle('hidden', radio.value !== val);
+      });
+    });
+  });
+}
+
+bindProviderGroup('ocr-provider-group', 'ai.ocr.provider', {
+  'openai':        'ocr-openai-model',
+  'google_gemini': 'ocr-gemini-model',
+  'google_vision': 'ocr-vision-info',
+});
+
+bindProviderGroup('gen-provider-group', 'ai.image_gen.provider', {
+  'openai':  'gen-openai-model',
+  'google':  'gen-google-model',
+});
+</script>
+
+{% endblock %}
