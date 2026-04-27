@@ -844,20 +844,37 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                 for it in deduped[:50]
             ])
 
-            # Library photo matching
+            # Library photo matching — tag index + GPT normalise + embedding fallback
             emit('step_start', step='library', message='ბიბლიოთეკის ფოტოების შეჯვარება...')
-            for it in deduped:
-                name = it['name'].strip()
-                lib = (GlobalItem.query
-                       .filter(func.lower(GlobalItem.name_ge) == name.lower())
-                       .filter(GlobalItem.image_filename.isnot(None))
-                       .first())
-                if not lib:
-                    lib = (GlobalItem.query
-                           .filter(GlobalItem.name_ge.ilike(f'%{name}%'))
-                           .filter(GlobalItem.image_filename.isnot(None))
-                           .first())
-                it['library_photo'] = lib.image_filename if lib else None
+            lib_entries = GlobalItem.query.filter(GlobalItem.image_filename.isnot(None)).all()
+            if lib_entries:
+                from app.scraper.embeddings import match_library_photos
+                r2_public = os.environ.get('R2_PUBLIC_URL', '').rstrip('/')
+                library = []
+                for g in lib_entries:
+                    if r2_public and g.image_filename and not g.image_filename.startswith('http'):
+                        image_url = f'{r2_public}/{g.image_filename}'
+                    else:
+                        image_url = g.image_filename or ''
+                    library.append({
+                        'id': g.id,
+                        'name': {'ka': g.name_ge or '', 'en': g.name_en or ''},
+                        'aliases': g.tags_list,
+                        'image_url': image_url,
+                    })
+                menu_for_match = [
+                    {'i': i, 'name': it['name'],
+                     'name_ka': it.get('name_ka', ''), 'name_en': it.get('name_en', ''),
+                     'category': it.get('category', '')}
+                    for i, it in enumerate(deduped)
+                ]
+                try:
+                    matches = match_library_photos(menu_for_match, library)
+                    match_map = {m['i']: m.get('matched_image_url') for m in matches}
+                    for i, it in enumerate(deduped):
+                        it['library_photo'] = match_map.get(i) or None
+                except Exception as _e:
+                    app.logger.warning(f'library match error: {_e}')
             emit('step_done', step='library')
 
             # Category icons
