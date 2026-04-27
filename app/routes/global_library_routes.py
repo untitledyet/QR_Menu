@@ -1,11 +1,15 @@
 """Super admin routes for managing the global product library."""
 import os
 import json
+import logging
+import time
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
-from app.models import AdminUser, GlobalCategory, GlobalSubcategory, GlobalItem, Category, Subcategory, FoodItem
+from app.models import AdminUser, GlobalCategory, GlobalSubcategory, GlobalItem, Category, Subcategory, FoodItem, SystemSetting
 from app.services.translation_service import translate_global_item_async, needs_translation, _call_openai
 
 lib_bp = Blueprint('lib_bp', __name__, url_prefix='/backoffice/library')
@@ -506,15 +510,20 @@ def verify_api_generate_photo(item_id):
         'Ultra-realistic, high detail, crisp quality.'
     )
 
+    _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+    t0 = time.time()
+    logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → starting")
     try:
         client = OpenAI(api_key=api_key)
         result = client.images.generate(
-            model='gpt-image-2',
+            model=_model,
             prompt=prompt,
             size='1024x1024',
         )
         image_bytes = base64.b64decode(result.data[0].b64_json)
+        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
     except Exception as e:
+        logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
         return jsonify(error=f'Image generation failed: {e}'), 500
 
     from app.services.r2_storage import upload_bytes
@@ -559,17 +568,22 @@ def verify_api_generate_photo_styled(item_id):
         'Photorealistic, natural food textures, no artificial gloss, no studio overexposure.'
     )
 
+    _model = SystemSetting.get('ai.image_gen.openai_model', 'gpt-image-1')
+    t0 = time.time()
+    logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → starting")
     try:
         client = OpenAI(api_key=api_key)
         result = client.images.edit(
-            model='gpt-image-2',
+            model=_model,
             image=[('reference', ref_bytes, content_type)],
             prompt=prompt,
             size='1024x1024',
             quality='medium',
         )
         image_bytes = base64.b64decode(result.data[0].b64_json)
+        logger.info(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → done  {time.time()-t0:.1f}s")
     except Exception as e:
+        logger.warning(f"[IMAGE-GEN] provider=openai  model={_model}  task=edit-styled  dish='{dish_label}'  → FAILED  {time.time()-t0:.1f}s  {e}")
         return jsonify(error=f'Image generation failed: {e}'), 500
 
     from app.services.r2_storage import upload_bytes

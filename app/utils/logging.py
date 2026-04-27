@@ -74,16 +74,20 @@ def setup_logging(app):
 
     # Clear existing handlers to stay idempotent on reload
     app.logger.handlers[:] = []
+    root = logging.getLogger()
+    root.handlers[:] = []
+    root.setLevel(level)
 
     fmt = logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        '%(asctime)s %(levelname)s [%(name)s]: %(message)s'
     )
 
     try:
         file_handler = RotatingFileHandler('logs/menu_app.log', maxBytes=10 * 1024 * 1024, backupCount=10)
         file_handler.setFormatter(fmt)
         file_handler.setLevel(level)
-        app.logger.addHandler(file_handler)
+        root.addHandler(file_handler)
+        app.logger.propagate = True
     except Exception:
         pass  # Read-only filesystem (some deploy envs)
 
@@ -91,7 +95,7 @@ def setup_logging(app):
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(fmt)
         stream_handler.setLevel(level)
-        app.logger.addHandler(stream_handler)
+        root.addHandler(stream_handler)
 
     app.logger.info('MenuApp startup')
 
