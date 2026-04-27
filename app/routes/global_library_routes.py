@@ -12,6 +12,24 @@ lib_bp = Blueprint('lib_bp', __name__, url_prefix='/backoffice/library')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+_TAG_GEN_SYSTEM = (
+    'You are a culinary expert familiar with Georgian restaurant menus. '
+    'Given a dish name in Georgian and English, generate a comprehensive list of '
+    'alias names that a waiter, OCR scan, or customer might use to refer to this '
+    'exact dish on a printed menu — in both Georgian and English.\n'
+    'INCLUDE:\n'
+    '• Word-order variants: "ყველის ხინKALi" ↔ "ხინKALi ყველის"\n'
+    '• Parenthetical forms: "მეგRULi ხაჭაpური" → "ხაჭაpური (მეგRULi)"\n'
+    '• Portion/size variants for Georgian dishes (ხაჭაpური, ლობიანი, ლობიო, '
+    'პელმენი, etc.): append "(8 ნAჭRIANi)" and "(6 ნAჭRIANi)" and '
+    '"8 ნAჭRIANi <name>" and "6 ნAჭRIANi <name>"\n'
+    '• Shortened/informal forms and common alternate spellings\n'
+    '• English transliterations and standard English culinary names\n'
+    'DO NOT include other dishes that are merely similar.\n'
+    'DO NOT repeat the canonical name itself.\n'
+    'Return ONLY a comma-separated list. No explanation, no numbering.'
+)
+
 
 def allowed_file(fn):
     return '.' in fn and fn.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -413,17 +431,7 @@ def verify_api_generate_tags(item_id):
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
 
-    system = (
-        'You are a culinary expert. Given a dish name in Georgian and English, '
-        'generate a comprehensive list of alternative names and aliases '
-        'that people might use to refer to this exact dish on a printed menu — in both Georgian and English. '
-        'Include: shortened forms, word-order variants ("ხაჭაპური აჭარული", "ხაჭაპური (აჭარული)"), '
-        'parenthetical forms, abbreviations, transliterations, and common alternate spellings. '
-        'Do NOT include the canonical name itself. '
-        'Do NOT include other dishes that are merely similar. '
-        'Do NOT include quantity/size variants ("6 ნაჭრიანი", "დიდი") — these are handled separately. '
-        'Return ONLY a comma-separated list of tags. No explanation, no numbering.'
-    )
+    system = _TAG_GEN_SYSTEM
     user = f'Georgian name: {item.name_ge or ""}\nEnglish name: {item.name_en or ""}'
 
     try:
