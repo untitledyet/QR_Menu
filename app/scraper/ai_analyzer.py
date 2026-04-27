@@ -490,10 +490,11 @@ where <item> is:
 # Handling messy input
 1. Plain lists, nested categories, handwritten text, typos — all fair game
 2. Price formats ("10", "10₾", "GEL 10", "$5") → extract numeric string only
-3. Variant lines (Small/Large/XL, 0.33L/0.5L) → fill `variants`, leave top-level price empty
-4. If no explicit categories exist, infer sensible ones (Drinks, Mains, Desserts…)
-5. When uncertain about placement, use "Other"
-6. De-duplicate items that appear multiple times
+3. Size/volume variants (Small/Large/XL, 0.33L/0.5L) → fill `variants`, leave top-level price empty
+4. Filling/ingredient variants (ხორცის/ყველის, meat/cheese, chicken/mushroom) → treat as SEPARATE items, each with the qualifier in its name (e.g. "პელმენი ქოთანში (ხორცის)" and "პელმენი ქოთანში (ყველის)"). Do NOT collapse them into one item with variants.
+5. If no explicit categories exist, infer sensible ones (Drinks, Mains, Desserts…)
+6. When uncertain about placement, use "Other"
+7. De-duplicate items that appear multiple times with the exact same name and filling
 7. Ignore addresses, phone numbers, slogans, service-charge lines
 
 # Hard rules
