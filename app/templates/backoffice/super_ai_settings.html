@@ -4,7 +4,7 @@
 
 <div class="bo-header">
   <h1>AI მოდელის პარამეტრები</h1>
-  <p class="bo-header__sub">ფოტოს გენერაციისთვის გამოყენებული პროვაიდერი</p>
+  <p class="bo-header__sub">OCR და ფოტოს გენერაციისთვის გამოყენებული მოდელები</p>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -15,6 +15,40 @@
 
 <form method="POST" action="{{ url_for('bo_bp.super_ai_settings_save') }}">
 
+  {# ── OCR ── #}
+  <div class="bo-card" style="margin-bottom:24px;">
+    <div class="bo-card__header">
+      <h2 class="bo-card__title"><i class="fas fa-eye" style="color:#6c63ff;margin-right:8px;"></i>OCR — ფოტოდან ტექსტის წაკითხვა</h2>
+    </div>
+    <div class="bo-card__body">
+      {% set cur_ocr = settings['ai.ocr.openai_model'] %}
+      {% set known_ocr = ['gpt-5.5', 'gpt-5.4', 'gpt-4o', 'gpt-4o-mini'] %}
+      <label class="bo-label">OpenAI მოდელი</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:560px;">
+        <div>
+          <select id="ocr-model-select" class="bo-select"
+                  onchange="syncCustomInput('ocr-model-select','ocr-model-custom','ai.ocr.openai_model')">
+            {% for m in known_ocr %}
+            <option value="{{ m }}" {% if cur_ocr == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+            {% if cur_ocr not in known_ocr %}
+            <option value="{{ cur_ocr }}" selected>{{ cur_ocr }}</option>
+            {% endif %}
+            <option value="__custom__">სხვა (ხელით შეყვანა)...</option>
+          </select>
+        </div>
+        <div>
+          <input type="text" id="ocr-model-custom" name="ai.ocr.openai_model"
+                 value="{{ cur_ocr }}"
+                 placeholder="მაგ. gpt-4o"
+                 class="bo-input">
+        </div>
+      </div>
+      <p class="bo-hint" style="margin-top:6px;">რეკომენდებული: <strong>gpt-4o</strong> — gpt-5.5-ზე 3–4x სწრაფი, სიზუსტე თითქმის იდენტური</p>
+    </div>
+  </div>
+
+  {# ── Image Generation ── #}
   <div class="bo-card" style="margin-bottom:24px;">
     <div class="bo-card__header">
       <h2 class="bo-card__title"><i class="fas fa-image" style="color:#10b981;margin-right:8px;"></i>ფოტოს გენერაცია</h2>
@@ -37,12 +71,13 @@
       </div>
 
       <div>
-        {# ── OpenAI model ── #}
+        {# OpenAI model #}
         <div id="gen-openai-model" class="model-section {% if settings['ai.image_gen.provider'] != 'openai' %}hidden{% endif %}">
           <label class="bo-label">OpenAI მოდელი</label>
-          <select id="openai-model-select" class="bo-select" onchange="syncCustomInput('openai-model-select','openai-model-custom','ai.image_gen.openai_model')">
-            {% set known_openai = ['gpt-image-1', 'dall-e-3', 'dall-e-2'] %}
-            {% set cur_openai = settings['ai.image_gen.openai_model'] %}
+          {% set cur_openai = settings['ai.image_gen.openai_model'] %}
+          {% set known_openai = ['gpt-image-1', 'dall-e-3', 'dall-e-2'] %}
+          <select id="openai-model-select" class="bo-select"
+                  onchange="syncCustomInput('openai-model-select','openai-model-custom','ai.image_gen.openai_model')">
             {% for m in known_openai %}
             <option value="{{ m }}" {% if cur_openai == m %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
@@ -55,15 +90,15 @@
                  value="{{ cur_openai }}"
                  placeholder="მაგ. gpt-image-2"
                  class="bo-input" style="margin-top:8px;">
-          <p class="bo-hint">ან ჩაწერე ნებისმიერი მოდელი პირდაპირ</p>
         </div>
 
-        {# ── Google model ── #}
+        {# Google model #}
         <div id="gen-google-model" class="model-section {% if settings['ai.image_gen.provider'] != 'google' %}hidden{% endif %}">
           <label class="bo-label">Google მოდელი</label>
-          {% set known_google = ['imagen-4.0-generate-001', 'imagen-4.0-ultra-generate-001', 'imagen-4.0-fast-generate-001'] %}
           {% set cur_google = settings['ai.image_gen.google_model'] %}
-          <select id="google-model-select" class="bo-select" onchange="syncCustomInput('google-model-select','google-model-custom','ai.image_gen.google_model')">
+          {% set known_google = ['imagen-4.0-generate-001', 'imagen-4.0-ultra-generate-001', 'imagen-4.0-fast-generate-001'] %}
+          <select id="google-model-select" class="bo-select"
+                  onchange="syncCustomInput('google-model-select','google-model-custom','ai.image_gen.google_model')">
             {% for m in known_google %}
             <option value="{{ m }}" {% if cur_google == m %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
@@ -76,7 +111,6 @@
                  value="{{ cur_google }}"
                  placeholder="მაგ. imagen-4.0-ultra-generate-001"
                  class="bo-input" style="margin-top:8px;">
-          <p class="bo-hint">ან ჩაწერე ნებისმიერი მოდელი პირდაპირ</p>
         </div>
       </div>
 
@@ -100,7 +134,7 @@
 .ai-provider-card:hover { border-color:#6c63ff; }
 .ai-provider-card.selected { border-color:#6c63ff; background:rgba(108,99,255,.08); }
 .ai-provider-card input[type=radio] { display:none; }
-.ai-provider-logo { font-size:.875rem; font-weight:600; color:var(--bo-text); }
+.ai-provider-logo { font-size:.875rem; font-weight:600; }
 .openai-logo { color:#10a37f; }
 .google-logo { color:#4285f4; }
 .hidden { display:none; }
@@ -114,9 +148,7 @@
 </style>
 
 <script>
-/* When dropdown changes to a known model, update the text input.
-   When "__custom__" is selected, focus the text input. */
-function syncCustomInput(selectId, inputId, fieldName) {
+function syncCustomInput(selectId, inputId) {
   const sel = document.getElementById(selectId);
   const inp = document.getElementById(inputId);
   if (sel.value === '__custom__') {
@@ -127,7 +159,6 @@ function syncCustomInput(selectId, inputId, fieldName) {
   }
 }
 
-/* When the text input changes, keep the dropdown in sync (or show custom). */
 function bindTextInput(inputId, selectId) {
   const inp = document.getElementById(inputId);
   const sel = document.getElementById(selectId);
@@ -136,10 +167,11 @@ function bindTextInput(inputId, selectId) {
     sel.value = match ? match.value : '__custom__';
   });
 }
+
+bindTextInput('ocr-model-custom',    'ocr-model-select');
 bindTextInput('openai-model-custom', 'openai-model-select');
 bindTextInput('google-model-custom', 'google-model-select');
 
-/* Provider card switching */
 function bindProviderGroup(groupId, sectionMap) {
   const group = document.getElementById(groupId);
   if (!group) return;
@@ -155,6 +187,7 @@ function bindProviderGroup(groupId, sectionMap) {
     });
   });
 }
+
 bindProviderGroup('gen-provider-group', {
   'openai': 'gen-openai-model',
   'google': 'gen-google-model',

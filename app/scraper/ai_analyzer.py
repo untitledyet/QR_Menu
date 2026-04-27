@@ -372,7 +372,7 @@ def _get_ai_setting(key: str, default: str) -> str:
 
 def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
     """Plain-text transcription of an image via OpenAI vision."""
-    m = model or config.OPENAI_MODEL_VISION
+    m = model or _get_ai_setting("ai.ocr.openai_model", config.OPENAI_MODEL_VISION)
     logger.info(f"[OCR] provider=openai  model={m}  → starting")
     t0 = time.time()
     client = _get_client()
