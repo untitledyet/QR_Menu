@@ -370,14 +370,16 @@ def _get_ai_setting(key: str, default: str) -> str:
         return default
 
 
-def _ocr_openai(image_data_url: str, model: str) -> str:
-    logger.info(f"[OCR] provider=openai  model={model}  → starting")
+def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
+    """Plain-text transcription of an image via OpenAI vision."""
+    m = model or config.OPENAI_MODEL_VISION
+    logger.info(f"[OCR] provider=openai  model={m}  → starting")
     t0 = time.time()
     client = _get_client()
 
     def _call():
         resp = client.responses.create(
-            model=model,
+            model=m,
             input=[{
                 "role": "user",
                 "content": [
@@ -389,76 +391,9 @@ def _ocr_openai(image_data_url: str, model: str) -> str:
         )
         return (resp.output_text or "").strip()
 
-    result = _with_retry(_call, label="ocr-openai")
-    logger.info(f"[OCR] provider=openai  model={model}  → done  {time.time()-t0:.1f}s  {len(result)} chars")
+    result = _with_retry(_call, label="ocr")
+    logger.info(f"[OCR] provider=openai  model={m}  → done  {time.time()-t0:.1f}s  {len(result)} chars")
     return result
-
-
-def _ocr_google_vision(image_data_url: str) -> str:
-    logger.info("[OCR] provider=google_vision  model=document_text_detection  → starting")
-    t0 = time.time()
-    import json as _json
-    import base64 as _b64
-    from google.cloud import vision as _gv
-    from google.oauth2 import service_account as _sa
-
-    creds_raw = os.environ.get("GOOGLE_VISION_CREDENTIALS_JSON", "")
-    if not creds_raw:
-        raise RuntimeError("GOOGLE_VISION_CREDENTIALS_JSON not set")
-    credentials = _sa.Credentials.from_service_account_info(_json.loads(creds_raw))
-    client = _gv.ImageAnnotatorClient(credentials=credentials)
-
-    _, b64part = image_data_url.split(",", 1)
-    image_bytes = _b64.b64decode(b64part)
-    image = _gv.Image(content=image_bytes)
-    response = client.document_text_detection(image=image)
-    result = (response.full_text_annotation.text or "").strip()
-    logger.info(f"[OCR] provider=google_vision  model=document_text_detection  → done  {time.time()-t0:.1f}s  {len(result)} chars")
-    return result
-
-
-def _ocr_google_gemini(image_data_url: str, model: str) -> str:
-    logger.info(f"[OCR] provider=google_gemini  model={model}  → starting")
-    t0 = time.time()
-    import base64 as _b64
-    from google import genai as _genai
-    from google.genai import types as _gtypes
-
-    api_key = os.environ.get("GOOGLE_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY not set")
-
-    client = _genai.Client(api_key=api_key)
-    header, b64part = image_data_url.split(",", 1)
-    mime = header.split(";")[0].split(":")[1]
-    image_bytes = _b64.b64decode(b64part)
-
-    resp = client.models.generate_content(
-        model=model,
-        contents=[
-            _gtypes.Part.from_bytes(data=image_bytes, mime_type=mime),
-            _OCR_PROMPT,
-        ],
-    )
-    result = (resp.text or "").strip()
-    logger.info(f"[OCR] provider=google_gemini  model={model}  → done  {time.time()-t0:.1f}s  {len(result)} chars")
-    return result
-
-
-def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str:
-    """Route OCR to the provider selected in SystemSettings."""
-    provider = _get_ai_setting("ai.ocr.provider", "openai")
-
-    if provider == "google_vision":
-        return _ocr_google_vision(image_data_url)
-
-    if provider == "google_gemini":
-        m = model or _get_ai_setting("ai.ocr.google_gemini_model", "gemini-2.5-flash")
-        return _ocr_google_gemini(image_data_url, m)
-
-    # default: openai
-    m = model or _get_ai_setting("ai.ocr.openai_model", config.OPENAI_MODEL_VISION)
-    return _ocr_openai(image_data_url, m)
 
 
 def _image_to_data_url(image_path: str) -> str:
