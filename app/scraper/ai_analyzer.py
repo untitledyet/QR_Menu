@@ -377,6 +377,8 @@ def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str
     t0 = time.time()
     client = _get_client()
 
+    verbosity = "high" if m.startswith("gpt-5") else "medium"
+
     def _call():
         resp = client.responses.create(
             model=m,
@@ -387,7 +389,7 @@ def _vision_ocr_text(image_data_url: str, *, model: Optional[str] = None) -> str
                     {"type": "input_image", "image_url": image_data_url, "detail": "original"},
                 ],
             }],
-            text={"verbosity": "high"},
+            text={"verbosity": verbosity},
         )
         return (resp.output_text or "").strip()
 
