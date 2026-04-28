@@ -886,7 +886,7 @@ def auto_assign_categories():
 
         try:
             resp = client.responses.create(
-                model=config.OPENAI_MODEL_FAST,
+                model=model_fast,
                 input=prompt,
                 text={'format': {'type': 'json_object'}},
             )
