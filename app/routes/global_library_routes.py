@@ -826,7 +826,10 @@ def auto_assign_categories():
         dry_run: bool (default false)         — return plan without saving
     """
     import openai
-    from app import config
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    model_fast = os.environ.get('OPENAI_MODEL_FAST', 'gpt-4o-mini')
+    if not api_key:
+        return jsonify(error='OPENAI_API_KEY not set'), 500
 
     data = request.get_json() or {}
     only_unassigned = data.get('only_unassigned', True)
@@ -861,7 +864,7 @@ def auto_assign_categories():
     if not items:
         return jsonify(assigned=0, skipped=0, message='ყველა item უკვე განაწილებულია')
 
-    client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+    client = openai.OpenAI(api_key=api_key)
 
     BATCH = 60
     assigned = 0
