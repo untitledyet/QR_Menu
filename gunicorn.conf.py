@@ -28,7 +28,7 @@ bind = f"0.0.0.0:{os.environ.get('PORT', '5001')}"
 
 # Worker model
 worker_class = os.environ.get('GUNICORN_WORKER_CLASS', 'gthread')
-workers      = _int('WEB_CONCURRENCY', max(2, multiprocessing.cpu_count()))
+workers      = _int('WEB_CONCURRENCY', min(max(2, multiprocessing.cpu_count()), 4))
 threads      = _int('GUNICORN_THREADS', 4)
 
 # Timeouts
