@@ -70,10 +70,15 @@ def super_required(f):
 def library_index():
     admin = AdminUser.query.get(session['admin_id'])
     categories = GlobalCategory.query.order_by(GlobalCategory.sort_order).all()
+    subcategories = GlobalSubcategory.query.order_by(GlobalSubcategory.sort_order).all()
+    subs_by_cat = {}
+    for s in subcategories:
+        subs_by_cat.setdefault(s.category_id, []).append(s)
     total = GlobalItem.query.filter_by(is_active=True).count()
     verified = GlobalItem.query.filter_by(is_active=True, is_verified=True).count()
     return render_template('backoffice/global_library.html',
                            admin=admin, categories=categories,
+                           subs_by_cat=subs_by_cat,
                            total=total, verified=verified)
 
 
@@ -308,6 +313,8 @@ def _item_verify_dict(item):
     d['is_active'] = item.is_active
     d['category_id'] = item.category_id
     d['subcategory_id'] = item.subcategory_id
+    d['category_name'] = item.category.name if item.category else ''
+    d['subcategory_name'] = item.subcategory.name if item.subcategory else ''
     d['missing'] = _missing(item)
     d['image_url'] = item.image_filename or None
     d['tags'] = item.tags or ''
@@ -346,12 +353,18 @@ def verify_api_items():
         only_verified = False
 
     search = (request.args.get('search') or request.args.get('q', '')).strip()
+    cat_id = request.args.get('cat_id', type=int)
+    sub_id = request.args.get('sub_id', type=int)
 
     q = GlobalItem.query.filter_by(is_active=True)
     if only_verified:
         q = q.filter_by(is_verified=True)
     elif only_unverified:
         q = q.filter_by(is_verified=False)
+    if cat_id:
+        q = q.filter_by(category_id=cat_id)
+    if sub_id:
+        q = q.filter_by(subcategory_id=sub_id)
     if search:
         q = q.filter(GlobalItem.name_ge.ilike(f'%{search}%'))
     q = q.order_by(GlobalItem.id)

@@ -3,366 +3,405 @@
 {% block content %}
 
 <style>
-.lib-stats { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-.lib-stat-card {
-    background:var(--bo-surface); border:1px solid var(--bo-border);
-    border-radius:var(--bo-radius); padding:14px 20px; flex:1; min-width:120px;
-}
-.lib-stat-card__val { font-size:1.5rem; font-weight:700; color:var(--bo-text); }
-.lib-stat-card__lbl { font-size:.72rem; color:var(--bo-text-2); margin-top:2px; }
-.lib-stat-card--green .lib-stat-card__val { color:#10b981; }
-.lib-stat-card--orange .lib-stat-card__val { color:var(--bo-primary); }
+/* ── Layout ───────────────────────────────────────────────── */
+.lib-layout { display:grid; grid-template-columns:260px 1fr; gap:20px; align-items:start; }
+@media(max-width:768px){ .lib-layout { grid-template-columns:1fr; } .lib-sidebar { display:none; } }
 
-.lib-toolbar {
-    display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;
-}
-.lib-search {
-    flex:1; min-width:180px; max-width:320px;
-    background:var(--bo-surface); border:1px solid var(--bo-border);
-    border-radius:8px; padding:8px 12px; color:var(--bo-text);
-    font-family:inherit; font-size:.85rem; outline:none;
-    transition:border-color .15s;
-}
+/* ── Header ───────────────────────────────────────────────── */
+.lib-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+
+/* ── Stats ────────────────────────────────────────────────── */
+.lib-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.lib-stat { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:10px; padding:14px 18px; }
+.lib-stat__val { font-size:1.6rem; font-weight:700; }
+.lib-stat__lbl { font-size:.72rem; color:var(--bo-text-2); margin-top:2px; }
+.lib-stat--orange .lib-stat__val { color:var(--bo-primary); }
+.lib-stat--green .lib-stat__val { color:#10b981; }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.lib-sidebar { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:12px; overflow:hidden; position:sticky; top:80px; }
+.lib-sidebar__head { padding:14px 16px; border-bottom:1px solid var(--bo-border); display:flex; align-items:center; justify-content:space-between; }
+.lib-sidebar__title { font-size:.8rem; font-weight:700; color:var(--bo-text-2); text-transform:uppercase; letter-spacing:.05em; }
+.lib-sidebar__add-btn { background:none; border:none; color:var(--bo-primary); cursor:pointer; font-size:.8rem; font-weight:600; }
+.lib-sidebar__add-btn:hover { text-decoration:underline; }
+
+.lib-cat-list { max-height:calc(100vh - 280px); overflow-y:auto; }
+.lib-cat-item { border-bottom:1px solid var(--bo-border); }
+.lib-cat-item:last-child { border-bottom:none; }
+.lib-cat-row { display:flex; align-items:center; gap:0; padding:0; }
+.lib-cat-btn { flex:1; display:flex; align-items:center; gap:8px; padding:10px 16px; background:none; border:none; cursor:pointer; color:var(--bo-text); font-size:.85rem; text-align:left; }
+.lib-cat-btn:hover { background:var(--bo-surface-2); }
+.lib-cat-btn.active { background:rgba(255,107,53,.08); color:var(--bo-primary); font-weight:600; }
+.lib-cat-btn .cat-icon { width:22px; text-align:center; color:var(--bo-text-2); font-size:.9rem; }
+.lib-cat-btn.active .cat-icon { color:var(--bo-primary); }
+.lib-cat-count { font-size:.7rem; background:var(--bo-surface-2); border-radius:10px; padding:1px 7px; color:var(--bo-text-2); margin-left:auto; }
+.lib-cat-toggle-btn { padding:10px 12px; background:none; border:none; cursor:pointer; color:var(--bo-text-2); font-size:.7rem; }
+.lib-cat-toggle-btn:hover { color:var(--bo-text); }
+
+.lib-sub-list { display:none; background:var(--bo-bg); }
+.lib-sub-list.open { display:block; }
+.lib-sub-btn { width:100%; display:flex; align-items:center; gap:6px; padding:7px 16px 7px 44px; background:none; border:none; cursor:pointer; color:var(--bo-text-2); font-size:.8rem; text-align:left; border-bottom:1px solid var(--bo-border); }
+.lib-sub-btn:last-child { border-bottom:none; }
+.lib-sub-btn:hover { background:var(--bo-surface-2); color:var(--bo-text); }
+.lib-sub-btn.active { color:var(--bo-primary); font-weight:600; }
+.lib-sub-btn::before { content:''; width:4px; height:4px; border-radius:50%; background:currentColor; flex-shrink:0; opacity:.5; }
+
+.lib-all-btn { display:flex; align-items:center; gap:8px; padding:12px 16px; background:none; border:none; cursor:pointer; color:var(--bo-text-2); font-size:.85rem; width:100%; border-bottom:1px solid var(--bo-border); }
+.lib-all-btn:hover { background:var(--bo-surface-2); }
+.lib-all-btn.active { background:rgba(255,107,53,.08); color:var(--bo-primary); font-weight:600; }
+
+/* ── Add form in sidebar ──────────────────────────────────── */
+.lib-sidebar-add { padding:12px 16px; border-top:1px solid var(--bo-border); display:none; }
+.lib-sidebar-add.open { display:block; }
+.lib-sidebar-add input, .lib-sidebar-add select { width:100%; border:1px solid var(--bo-border); border-radius:6px; padding:7px 10px; background:var(--bo-bg); color:var(--bo-text); font-size:.82rem; margin-bottom:6px; }
+
+/* ── Main ─────────────────────────────────────────────────── */
+.lib-main {}
+.lib-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.lib-search { flex:1; min-width:180px; background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:8px; padding:9px 14px; color:var(--bo-text); font-size:.85rem; outline:none; }
 .lib-search:focus { border-color:var(--bo-primary); }
 .lib-tabs { display:flex; gap:4px; }
-.lib-tab {
-    padding:7px 14px; border-radius:8px; font-size:.8rem; font-weight:600;
-    cursor:pointer; border:1px solid var(--bo-border);
-    background:var(--bo-surface); color:var(--bo-text-2);
-    transition:all .15s; white-space:nowrap;
-}
+.lib-tab { padding:7px 14px; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer; border:1px solid var(--bo-border); background:var(--bo-surface); color:var(--bo-text-2); transition:all .15s; white-space:nowrap; }
 .lib-tab.active { background:var(--bo-primary); color:#fff; border-color:var(--bo-primary); }
 .lib-tab:hover:not(.active) { background:var(--bo-surface-2); color:var(--bo-text); }
 
-.lib-grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
-    gap:14px; margin-bottom:24px;
-}
-.lib-card {
-    background:var(--bo-surface); border:1px solid var(--bo-border);
-    border-radius:10px; overflow:hidden; transition:border-color .15s;
-    display:flex; flex-direction:column; position:relative;
-}
-.lib-card:hover { border-color:var(--bo-primary); }
-.lib-card__img {
-    width:100%; height:130px; background:var(--bo-surface-2);
-    display:flex; align-items:center; justify-content:center;
-    color:var(--bo-text-2); font-size:2rem; overflow:hidden; position:relative;
-}
-.lib-card__img img { width:100%; height:130px; object-fit:cover; }
-.lib-badge-verified {
-    position:absolute; top:6px; right:6px;
-    background:#10b981; color:#fff; border-radius:20px;
-    font-size:.62rem; font-weight:700; padding:2px 7px; letter-spacing:.03em;
-}
-.lib-badge-unverified {
-    position:absolute; top:6px; right:6px;
-    background:rgba(0,0,0,.45); color:#f9a825; border-radius:20px;
-    font-size:.62rem; font-weight:700; padding:2px 7px;
-}
-.lib-card__body { padding:10px 12px; flex:1; }
-.lib-card__name { font-size:.85rem; font-weight:600; color:var(--bo-text); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.lib-card__name-en { font-size:.74rem; color:var(--bo-text-2); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
-.lib-card__desc { font-size:.72rem; color:var(--bo-text-2); margin:0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.lib-card__footer { padding:7px 10px; border-top:1px solid var(--bo-border); display:flex; justify-content:space-between; align-items:center; gap:6px; }
-.lib-card__id { font-size:.66rem; color:var(--bo-text-2); }
+/* ── Active filter breadcrumb ─────────────────────────────── */
+.lib-active-filter { display:none; align-items:center; gap:8px; margin-bottom:12px; font-size:.82rem; color:var(--bo-text-2); }
+.lib-active-filter.visible { display:flex; }
+.lib-active-filter__tag { background:rgba(255,107,53,.1); color:var(--bo-primary); border:1px solid rgba(255,107,53,.25); border-radius:20px; padding:3px 10px; font-weight:600; display:flex; align-items:center; gap:6px; }
+.lib-active-filter__tag button { background:none; border:none; cursor:pointer; color:var(--bo-primary); font-size:.8rem; }
 
-.lib-empty {
-    text-align:center; padding:60px 20px; color:var(--bo-text-2);
-    border:1px dashed var(--bo-border); border-radius:var(--bo-radius); grid-column:1/-1;
-}
-.lib-empty i { font-size:2.5rem; opacity:.3; display:block; margin-bottom:12px; }
+/* ── Grid ─────────────────────────────────────────────────── */
+.lib-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; }
+.lib-card { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; transition:all .15s; }
+.lib-card:hover { border-color:var(--bo-primary); transform:translateY(-1px); }
+.lib-card__img { width:100%; height:120px; background:var(--bo-surface-2); display:flex; align-items:center; justify-content:center; color:var(--bo-text-2); font-size:1.8rem; overflow:hidden; position:relative; }
+.lib-card__img img { width:100%; height:100%; object-fit:cover; }
+.lib-card__badge { position:absolute; top:6px; right:6px; border-radius:20px; font-size:.62rem; font-weight:700; padding:2px 7px; }
+.lib-card__badge--ok { background:#10b981; color:#fff; }
+.lib-card__badge--pending { background:rgba(0,0,0,.5); color:#fbbf24; }
+.lib-card__body { padding:9px 10px; flex:1; }
+.lib-card__name { font-size:.82rem; font-weight:600; margin:0 0 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lib-card__name-en { font-size:.72rem; color:var(--bo-text-2); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
+.lib-card__sub { font-size:.68rem; color:var(--bo-text-2); margin:0; }
+.lib-card__footer { padding:6px 10px; border-top:1px solid var(--bo-border); display:flex; justify-content:space-between; align-items:center; }
+.lib-card__id { font-size:.65rem; color:var(--bo-text-2); }
 
-.lib-load-more {
-    text-align:center; padding:16px;
-}
-
-/* Category management collapsible */
-.lib-cat-section {
-    background:var(--bo-surface); border:1px solid var(--bo-border);
-    border-radius:var(--bo-radius); margin-bottom:20px; overflow:hidden;
-}
-.lib-cat-toggle {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 16px; cursor:pointer; user-select:none;
-    font-size:.82rem; font-weight:600; color:var(--bo-text-2);
-}
-.lib-cat-toggle:hover { background:var(--bo-surface-2); }
-.lib-cat-body { display:none; padding:12px 16px; border-top:1px solid var(--bo-border); }
-.lib-cat-body.open { display:block; }
-.lib-cat-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
-.lib-cat-chip {
-    display:inline-flex; align-items:center; gap:5px;
-    background:var(--bo-surface-2); border:1px solid var(--bo-border);
-    border-radius:20px; padding:4px 10px; font-size:.75rem; color:var(--bo-text);
-}
-.lib-cat-chip button { background:none; border:none; color:var(--bo-text-2); cursor:pointer; font-size:.7rem; padding:0; margin-left:2px; }
-.lib-cat-chip button:hover { color:var(--bo-red); }
-
-@media(max-width:600px){
-    .lib-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
-    .lib-card__img { height:100px; }
-    .lib-toolbar { flex-direction:column; align-items:stretch; }
-    .lib-search { max-width:100%; }
-}
+.lib-empty { text-align:center; padding:60px 20px; color:var(--bo-text-2); grid-column:1/-1; }
+.lib-empty i { font-size:2.5rem; opacity:.25; display:block; margin-bottom:12px; }
+.lib-load-more { text-align:center; padding:16px; }
 </style>
 
-<div class="bo-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
-    <div>
-        <h1>კერძების ბიბლიოთეკა</h1>
-        <p class="bo-header__sub">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
-    </div>
-    <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-btn bo-btn--primary">
-        <i class="fas fa-plus"></i> კერძის დამატება
-    </a>
+<div class="lib-header">
+  <div>
+    <h1>კერძების ბიბლიოთეკა</h1>
+    <p style="color:var(--bo-text-2);font-size:.85rem;margin:4px 0 0;">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
+  </div>
+  <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-btn bo-btn--primary">
+    <i class="fas fa-plus"></i> კერძის დამატება
+  </a>
 </div>
 
-{# Stats #}
 <div class="lib-stats">
-    <div class="lib-stat-card lib-stat-card--orange">
-        <div class="lib-stat-card__val" id="stat-total">{{ total }}</div>
-        <div class="lib-stat-card__lbl">სულ კერძი</div>
-    </div>
-    <div class="lib-stat-card lib-stat-card--green">
-        <div class="lib-stat-card__val" id="stat-verified">{{ verified }}</div>
-        <div class="lib-stat-card__lbl">ვერიფიცირებული</div>
-    </div>
-    <div class="lib-stat-card">
-        <div class="lib-stat-card__val" id="stat-unverified">{{ total - verified }}</div>
-        <div class="lib-stat-card__lbl">მოლოდინში</div>
-    </div>
+  <div class="lib-stat lib-stat--orange">
+    <div class="lib-stat__val">{{ total }}</div>
+    <div class="lib-stat__lbl">სულ კერძი</div>
+  </div>
+  <div class="lib-stat lib-stat--green">
+    <div class="lib-stat__val">{{ verified }}</div>
+    <div class="lib-stat__lbl">ვერიფიცირებული</div>
+  </div>
+  <div class="lib-stat">
+    <div class="lib-stat__val">{{ total - verified }}</div>
+    <div class="lib-stat__lbl">მოლოდინში</div>
+  </div>
 </div>
 
-{# Category management (collapsible) #}
-<div class="lib-cat-section">
-    <div class="lib-cat-toggle" onclick="toggleCatSection()">
-        <span><i class="fas fa-folder" style="margin-right:8px;color:var(--bo-primary);"></i>კატეგორიები ({{ categories|length }})</span>
-        <i class="fas fa-chevron-down" id="cat-chevron" style="transition:transform .2s;"></i>
+<div class="lib-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="lib-sidebar">
+    <div class="lib-sidebar__head">
+      <span class="lib-sidebar__title"><i class="fas fa-layer-group" style="margin-right:6px;"></i>კატეგორიები</span>
+      <button class="lib-sidebar__add-btn" onclick="toggleAddCat()"><i class="fas fa-plus"></i> დამატება</button>
     </div>
-    <div class="lib-cat-body" id="cat-body">
-        <div class="lib-cat-row" id="cat-chips">
-            {% for cat in categories %}
-            <span class="lib-cat-chip">
-                {{ cat.name }}
-                <form method="POST" action="{{ url_for('lib_bp.delete_global_category', cat_id=cat.id) }}"
-                      onsubmit="return confirm('კატეგორია წაიშალოს?')" style="display:inline;">
-                    <button type="submit" title="წაშლა">✕</button>
-                </form>
-            </span>
-            {% else %}
-            <span style="font-size:.78rem;color:var(--bo-text-2);">კატეგორია არ არის</span>
-            {% endfor %}
+
+    <!-- Add category form -->
+    <div class="lib-sidebar-add" id="addCatForm">
+      <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}">
+        <input type="text" name="name" placeholder="კატეგორიის სახელი (ქართული)" required>
+        <button type="submit" class="bo-btn bo-btn--primary bo-btn--sm" style="width:100%;">
+          <i class="fas fa-plus"></i> შექმნა
+        </button>
+      </form>
+    </div>
+
+    <div class="lib-cat-list">
+      <!-- All -->
+      <button class="lib-all-btn active" id="btn-all" onclick="filterCat(null, null, 'ყველა')">
+        <i class="fas fa-globe" style="width:22px;text-align:center;"></i> ყველა
+        <span class="lib-cat-count" style="margin-left:auto;">{{ total }}</span>
+      </button>
+
+      {% for cat in categories %}
+      {% set subs = subs_by_cat.get(cat.id, []) %}
+      <div class="lib-cat-item">
+        <div class="lib-cat-row">
+          <button class="lib-cat-btn" id="btn-cat-{{ cat.id }}"
+                  onclick="filterCat({{ cat.id }}, null, '{{ cat.name|e }}')">
+            <span class="cat-icon"><i class="fas {{ cat.icon or 'fa-tag' }}"></i></span>
+            {{ cat.name }}
+            <span class="lib-cat-count">…</span>
+          </button>
+          {% if subs %}
+          <button class="lib-cat-toggle-btn" onclick="toggleSubs({{ cat.id }}, this)"
+                  title="ქვეკატეგორიები">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          {% endif %}
         </div>
-        <form method="POST" action="{{ url_for('lib_bp.add_global_category') }}"
-              style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-            <input type="text" name="name" class="bo-input" placeholder="ახალი კატეგორიის სახელი"
-                   style="max-width:220px;font-size:.82rem;padding:6px 10px;height:32px;">
-            <button type="submit" class="bo-btn bo-btn--primary bo-btn--sm">
-                <i class="fas fa-plus"></i> დამატება
-            </button>
-        </form>
-    </div>
-</div>
 
-{# Toolbar #}
-<div class="lib-toolbar">
-    <input type="text" class="lib-search" id="lib-search" placeholder="&#128269; ძებნა..."
-           oninput="debounceSearch(this.value)">
-    <div class="lib-tabs">
-        <div class="lib-tab active" onclick="setFilter('all', this)">ყველა</div>
-        <div class="lib-tab" onclick="setFilter('verified', this)">ვერიფიცირებული</div>
-        <div class="lib-tab" onclick="setFilter('unverified', this)">მოლოდინში</div>
+        {% if subs %}
+        <div class="lib-sub-list" id="subs-{{ cat.id }}">
+          {% for sub in subs %}
+          <button class="lib-sub-btn" id="btn-sub-{{ sub.id }}"
+                  onclick="filterCat({{ cat.id }}, {{ sub.id }}, '{{ cat.name|e }} › {{ sub.name|e }}')">
+            {{ sub.name }}
+          </button>
+          {% endfor %}
+          <!-- Add subcategory -->
+          <form method="POST" action="{{ url_for('lib_bp.add_global_subcategory') }}"
+                style="display:flex;gap:4px;padding:6px 12px 8px 44px;">
+            <input type="hidden" name="category_id" value="{{ cat.id }}">
+            <input type="text" name="name" placeholder="ქვეკატ..." required
+                   style="flex:1;border:1px solid var(--bo-border);border-radius:5px;padding:4px 8px;font-size:.75rem;background:var(--bo-bg);color:var(--bo-text);">
+            <button type="submit" style="background:none;border:1px solid var(--bo-border);border-radius:5px;padding:4px 8px;cursor:pointer;color:var(--bo-text-2);font-size:.75rem;">+</button>
+          </form>
+        </div>
+        {% else %}
+        <!-- No subs yet — add form always visible -->
+        <div class="lib-sub-list" id="subs-{{ cat.id }}">
+          <form method="POST" action="{{ url_for('lib_bp.add_global_subcategory') }}"
+                style="display:flex;gap:4px;padding:6px 12px 8px 44px;">
+            <input type="hidden" name="category_id" value="{{ cat.id }}">
+            <input type="text" name="name" placeholder="ქვეკატ..." required
+                   style="flex:1;border:1px solid var(--bo-border);border-radius:5px;padding:4px 8px;font-size:.75rem;background:var(--bo-bg);color:var(--bo-text);">
+            <button type="submit" style="background:none;border:1px solid var(--bo-border);border-radius:5px;padding:4px 8px;cursor:pointer;color:var(--bo-text-2);font-size:.75rem;">+</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
-</div>
+  </aside>
 
-{# Grid #}
-<div class="lib-grid" id="lib-grid">
-    <div class="lib-empty" style="grid-column:1/-1;">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>იტვირთება...</p>
+  <!-- ── Main content ── -->
+  <div class="lib-main">
+
+    <!-- Toolbar -->
+    <div class="lib-toolbar">
+      <input type="text" class="lib-search" id="lib-search" placeholder="ძებნა..."
+             oninput="debounceSearch(this.value)">
+      <div class="lib-tabs">
+        <div class="lib-tab active" onclick="setVerFilter('all',this)">ყველა</div>
+        <div class="lib-tab" onclick="setVerFilter('verified',this)">ვერიფიცირებული</div>
+        <div class="lib-tab" onclick="setVerFilter('unverified',this)">მოლოდინში</div>
+      </div>
     </div>
-</div>
-<div class="lib-load-more" id="lib-load-more" style="display:none;">
-    <button class="bo-btn bo-btn--ghost" onclick="loadMore()">
+
+    <!-- Active filter tag -->
+    <div class="lib-active-filter" id="activeFilter">
+      <span style="color:var(--bo-text-2);">ფილტრი:</span>
+      <span class="lib-active-filter__tag" id="activeFilterTag">
+        <span id="activeFilterLabel">ყველა</span>
+        <button onclick="filterCat(null,null,'ყველა')"><i class="fas fa-times"></i></button>
+      </span>
+    </div>
+
+    <!-- Grid -->
+    <div class="lib-grid" id="lib-grid">
+      <div class="lib-empty">
+        <i class="fas fa-spinner fa-spin"></i><p>იტვირთება...</p>
+      </div>
+    </div>
+    <div class="lib-load-more" id="lib-load-more" style="display:none;">
+      <button class="bo-btn bo-btn--outline" onclick="loadMore()">
         <i class="fas fa-chevron-down"></i> მეტის ჩვენება
-    </button>
+      </button>
+    </div>
+
+  </div>
 </div>
 
 <script>
 var _filter = 'all';
 var _search = '';
+var _catId = null;
+var _subId = null;
 var _page = 1;
 var _pageSize = 48;
 var _loading = false;
 var _hasMore = true;
 var _debounceTimer = null;
 
-function setFilter(f, el) {
-    _filter = f;
-    document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    reload();
+// ── Category filter ─────────────────────────────────────────
+function filterCat(catId, subId, label) {
+  _catId = catId;
+  _subId = subId;
+
+  // Update sidebar active state
+  document.querySelectorAll('.lib-cat-btn,.lib-sub-btn,.lib-all-btn').forEach(b => b.classList.remove('active'));
+  if (catId === null) {
+    document.getElementById('btn-all').classList.add('active');
+  } else if (subId !== null) {
+    const sb = document.getElementById('btn-sub-' + subId);
+    if (sb) sb.classList.add('active');
+  } else {
+    const cb = document.getElementById('btn-cat-' + catId);
+    if (cb) cb.classList.add('active');
+  }
+
+  // Update active filter tag
+  const af = document.getElementById('activeFilter');
+  if (catId === null) {
+    af.classList.remove('visible');
+  } else {
+    af.classList.add('visible');
+    document.getElementById('activeFilterLabel').textContent = label;
+  }
+
+  reload();
 }
 
+function toggleSubs(catId, btn) {
+  const list = document.getElementById('subs-' + catId);
+  const icon = btn.querySelector('i');
+  const isOpen = list.classList.toggle('open');
+  icon.className = isOpen ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+}
+
+function toggleAddCat() {
+  document.getElementById('addCatForm').classList.toggle('open');
+}
+
+// ── Verified filter ─────────────────────────────────────────
+function setVerFilter(f, el) {
+  _filter = f;
+  document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  reload();
+}
+
+// ── Search ──────────────────────────────────────────────────
 function debounceSearch(val) {
-    clearTimeout(_debounceTimer);
-    _debounceTimer = setTimeout(function(){ _search = val; reload(); }, 300);
+  clearTimeout(_debounceTimer);
+  _debounceTimer = setTimeout(function(){ _search = val; reload(); }, 300);
 }
 
+// ── Load ────────────────────────────────────────────────────
 function reload() {
-    _page = 1;
-    _hasMore = true;
-    document.getElementById('lib-grid').innerHTML = '<div class="lib-empty" style="grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i></div>';
-    document.getElementById('lib-load-more').style.display = 'none';
-    loadMore();
+  _page = 1; _hasMore = true;
+  document.getElementById('lib-grid').innerHTML =
+    '<div class="lib-empty"><i class="fas fa-spinner fa-spin" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i></div>';
+  document.getElementById('lib-load-more').style.display = 'none';
+  loadMore();
 }
 
 function loadMore() {
-    if (_loading || !_hasMore) return;
-    _loading = true;
+  if (_loading || !_hasMore) return;
+  _loading = true;
+  var p = new URLSearchParams({ page: _page, per_page: _pageSize, search: _search, filter: _filter });
+  if (_catId) p.set('cat_id', _catId);
+  if (_subId) p.set('sub_id', _subId);
 
-    var params = new URLSearchParams({
-        page: _page,
-        per_page: _pageSize,
-        search: _search,
-        filter: _filter
-    });
-
-    fetch('/backoffice/library/verify/api/items?' + params)
-        .then(r => r.json())
-        .then(data => {
-            _loading = false;
-            var grid = document.getElementById('lib-grid');
-            if (_page === 1) grid.innerHTML = '';
-
-            if (!data.items || data.items.length === 0) {
-                if (_page === 1) {
-                    grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1;"><i class="fas fa-box-open"></i><p>კერძი არ მოიძებნა</p></div>';
-                }
-                _hasMore = false;
-                document.getElementById('lib-load-more').style.display = 'none';
-                return;
-            }
-
-            data.items.forEach(function(item) {
-                var card = makeCard(item);
-                grid.appendChild(card);
-            });
-
-            _page++;
-            _hasMore = !!data.has_more;
-            document.getElementById('lib-load-more').style.display = _hasMore ? 'block' : 'none';
-        })
-        .catch(function(e) {
-            _loading = false;
-            console.error(e);
-        });
+  fetch('/backoffice/library/verify/api/items?' + p)
+    .then(r => r.json())
+    .then(function(data) {
+      _loading = false;
+      var grid = document.getElementById('lib-grid');
+      if (_page === 1) grid.innerHTML = '';
+      if (!data.items || data.items.length === 0) {
+        if (_page === 1)
+          grid.innerHTML = '<div class="lib-empty"><i class="fas fa-box-open"></i><p>კერძი არ მოიძებნა</p></div>';
+        _hasMore = false;
+        document.getElementById('lib-load-more').style.display = 'none';
+        return;
+      }
+      data.items.forEach(function(item) { grid.appendChild(makeCard(item)); });
+      _page++;
+      _hasMore = !!data.has_more;
+      document.getElementById('lib-load-more').style.display = _hasMore ? 'block' : 'none';
+    })
+    .catch(function(){ _loading = false; });
 }
 
+// ── Card builder ────────────────────────────────────────────
 function makeCard(item) {
-    var card = document.createElement('div');
-    card.className = 'lib-card';
+  var card = document.createElement('div');
+  card.className = 'lib-card';
 
-    // Image area
-    var imgDiv = document.createElement('div');
-    imgDiv.className = 'lib-card__img';
-    if (item.image_url) {
-        var img = document.createElement('img');
-        img.src = item.image_url;
-        img.style.cssText = 'width:100%;height:130px;object-fit:cover;';
-        img.onerror = function() {
-            imgDiv.innerHTML = '<i class="fas fa-image"></i>';
-        };
-        imgDiv.appendChild(img);
-    } else {
-        var ico = document.createElement('i');
-        ico.className = 'fas fa-image';
-        imgDiv.appendChild(ico);
-    }
-    // Badge
-    var badge = document.createElement('span');
-    if (item.is_verified) {
-        badge.className = 'lib-badge-verified';
-        badge.innerHTML = '<i class="fas fa-check"></i> ვერ.';
-    } else {
-        badge.className = 'lib-badge-unverified';
-        badge.innerHTML = '<i class="fas fa-clock"></i>';
-    }
-    imgDiv.appendChild(badge);
-    card.appendChild(imgDiv);
+  // Image
+  var imgDiv = document.createElement('div');
+  imgDiv.className = 'lib-card__img';
+  if (item.image_url) {
+    var img = document.createElement('img');
+    img.src = item.image_url;
+    img.alt = item.name_ge;
+    img.onerror = function(){ imgDiv.innerHTML = '<i class="fas fa-image"></i>'; };
+    imgDiv.appendChild(img);
+  } else {
+    imgDiv.innerHTML = '<i class="fas fa-image"></i>';
+  }
+  var badge = document.createElement('span');
+  badge.className = 'lib-card__badge ' + (item.is_verified ? 'lib-card__badge--ok' : 'lib-card__badge--pending');
+  badge.innerHTML = item.is_verified ? '<i class="fas fa-check"></i> ვერ.' : '<i class="fas fa-clock"></i>';
+  imgDiv.appendChild(badge);
+  card.appendChild(imgDiv);
 
-    // Body
-    var body = document.createElement('div');
-    body.className = 'lib-card__body';
-    var nameEl = document.createElement('p');
-    nameEl.className = 'lib-card__name';
-    nameEl.title = item.name_ge;
-    nameEl.textContent = item.name_ge;
-    body.appendChild(nameEl);
-    if (item.name_en) {
-        var enEl = document.createElement('p');
-        enEl.className = 'lib-card__name-en';
-        enEl.textContent = item.name_en;
-        body.appendChild(enEl);
-    }
-    if (item.description_ge) {
-        var descEl = document.createElement('p');
-        descEl.className = 'lib-card__desc';
-        descEl.textContent = item.description_ge;
-        body.appendChild(descEl);
-    }
-    card.appendChild(body);
+  // Body
+  var body = document.createElement('div');
+  body.className = 'lib-card__body';
+  body.innerHTML =
+    '<p class="lib-card__name" title="' + esc(item.name_ge) + '">' + esc(item.name_ge) + '</p>' +
+    (item.name_en ? '<p class="lib-card__name-en">' + esc(item.name_en) + '</p>' : '') +
+    (item.category_name ? '<p class="lib-card__sub"><i class="fas fa-tag" style="opacity:.4;margin-right:3px;"></i>' + esc(item.category_name) + (item.subcategory_name ? ' › ' + esc(item.subcategory_name) : '') + '</p>' : '');
+  card.appendChild(body);
 
-    // Footer
-    var footer = document.createElement('div');
-    footer.className = 'lib-card__footer';
-    var idSpan = document.createElement('span');
-    idSpan.className = 'lib-card__id';
-    idSpan.textContent = '#' + item.id;
-    footer.appendChild(idSpan);
-    var btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;gap:4px;';
-    var editA = document.createElement('a');
-    editA.href = '/backoffice/library/verify?id=' + item.id;
-    editA.className = 'bo-btn bo-btn--ghost bo-btn--sm';
-    editA.title = 'რედაქტირება';
-    editA.innerHTML = '<i class="fas fa-edit"></i>';
-    btns.appendChild(editA);
-    var delBtn = document.createElement('button');
-    delBtn.className = 'bo-btn bo-btn--ghost bo-btn--sm';
-    delBtn.style.color = 'var(--bo-red)';
-    delBtn.title = 'წაშლა';
-    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-    delBtn.addEventListener('click', function() { deleteItem(item.id, item.name_ge); });
-    btns.appendChild(delBtn);
-    footer.appendChild(btns);
-    card.appendChild(footer);
-
-    return card;
+  // Footer
+  var footer = document.createElement('div');
+  footer.className = 'lib-card__footer';
+  footer.innerHTML = '<span class="lib-card__id">#' + item.id + '</span><div style="display:flex;gap:4px;">' +
+    '<a href="/backoffice/library/verify?id=' + item.id + '" class="bo-btn bo-btn--ghost bo-btn--sm" title="რედაქტირება"><i class="fas fa-edit"></i></a>' +
+    '<button class="bo-btn bo-btn--ghost bo-btn--sm" style="color:var(--bo-red);" title="წაშლა" onclick="deleteItem(' + item.id + ',\'' + esc(item.name_ge) + '\')"><i class="fas fa-trash"></i></button>' +
+    '</div>';
+  card.appendChild(footer);
+  return card;
 }
 
 function deleteItem(id, name) {
-    if (!confirm('"' + name + '" წაიშალოს?')) return;
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/backoffice/library/items/' + id + '/delete';
-    document.body.appendChild(form);
-    form.submit();
-}
-
-function toggleCatSection() {
-    var body = document.getElementById('cat-body');
-    var chev = document.getElementById('cat-chevron');
-    body.classList.toggle('open');
-    chev.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+  if (!confirm('"' + name + '" წაიშალოს?')) return;
+  var f = document.createElement('form');
+  f.method = 'POST'; f.action = '/backoffice/library/items/' + id + '/delete';
+  document.body.appendChild(f); f.submit();
 }
 
 function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Initial load
+// Load item counts per category
+function loadCatCounts() {
+  {% for cat in categories %}
+  fetch('/backoffice/library/verify/api/items?page=1&per_page=1&filter=all&cat_id={{ cat.id }}')
+    .then(r => r.json()).then(d => {
+      var btn = document.getElementById('btn-cat-{{ cat.id }}');
+      if (btn) btn.querySelector('.lib-cat-count').textContent = d.total || 0;
+    });
+  {% endfor %}
+}
+
 reload();
+loadCatCounts();
 </script>
+
 {% endblock %}
