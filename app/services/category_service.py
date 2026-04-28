@@ -132,6 +132,8 @@ def seed_venue_categories(venue_id: int, venue_type: str) -> int:
             is_hidden=False,
         )
         db.session.add(cat)
+        db.session.flush()
+        seed_venue_subcategories(venue_id, cat.CategoryID, gc.id)
         created += 1
 
     if created:

@@ -275,16 +275,10 @@ function saveSubName(input) {
   const id = input.dataset.id;
   const name = input.value.trim();
   if (!name) { input.value = input.defaultValue; return; }
-  fetch(`/backoffice/subcategories/delete-json/${id}`, { method: 'GET' }); // no-op, just rename
-  // Use edit endpoint if exists, otherwise just update via add+delete — use add-json for now
-  // Actually we'll just store locally; a dedicated sub rename endpoint would be cleaner.
-  // For now: fire edit via a PATCH-style approach using existing endpoint pattern.
-  input.defaultValue = name;
-  // POST to a sub rename route we'll add
   fetch(`/backoffice/subcategories/edit-json/${id}`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ name }),
-  });
+  }).then(r => r.json()).then(d => { if (d.success) input.defaultValue = name; });
 }
 
 // ── Add/delete subcategory ──────────────────────────────────
@@ -441,7 +435,6 @@ document.querySelectorAll('[id^="itemCount-"]').forEach(el => {
 .cat-list { display:flex; flex-direction:column; gap:12px; }
 .cat-card { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:12px; padding:0; overflow:hidden; transition:opacity .2s; }
 .cat-card--hidden { opacity:.5; }
-.cat-card > :not(.cat-card__subs-wrap) { display:inline-flex; align-items:center; }
 
 /* Cat card layout — top bar */
 .cat-card { display:grid; grid-template-columns:28px 52px 1fr auto auto; grid-template-rows:auto auto; align-items:center; gap:0; }
