@@ -400,8 +400,15 @@ def verify_api_save(item_id):
             setattr(item, field, data[field].strip() or None)
     if 'tags' in data:
         item.tags = data['tags'].strip() or None
+    # Category / subcategory assignment
+    if 'category_id' in data:
+        item.category_id = int(data['category_id']) if data['category_id'] else None
+    if 'subcategory_id' in data:
+        item.subcategory_id = int(data['subcategory_id']) if data['subcategory_id'] else None
     db.session.commit()
-    return jsonify(ok=True, missing=_missing(item))
+    return jsonify(ok=True, missing=_missing(item),
+                   category_name=item.category.name if item.category else '',
+                   subcategory_name=item.subcategory.name if item.subcategory else '')
 
 
 @lib_bp.route('/verify/api/item/<int:item_id>/translate', methods=['POST'])
@@ -806,3 +813,106 @@ def verify_api_add():
                 db.session.rollback()
                 results.append({'name': name, 'status': 'error', 'msg': str(e)})
     return jsonify(results=results)
+
+
+@lib_bp.route('/api/auto-assign-categories', methods=['POST'])
+@login_required
+@super_required
+def auto_assign_categories():
+    """AI batch: assign GlobalItems to GlobalCategories/Subcategories.
+
+    POST body (JSON):
+        only_unassigned: bool (default true)  — skip items that already have category_id
+        dry_run: bool (default false)         — return plan without saving
+    """
+    import openai
+    from app import config
+
+    data = request.get_json() or {}
+    only_unassigned = data.get('only_unassigned', True)
+    dry_run = data.get('dry_run', False)
+
+    # Build taxonomy reference
+    cats = GlobalCategory.query.order_by(GlobalCategory.sort_order).all()
+    subs = GlobalSubcategory.query.order_by(GlobalSubcategory.sort_order).all()
+    if not cats:
+        return jsonify(error='GlobalCategories is empty — seed first'), 400
+
+    cat_by_id = {c.id: c for c in cats}
+    sub_by_id = {s.id: s for s in subs}
+    subs_by_cat = {}
+    for s in subs:
+        subs_by_cat.setdefault(s.category_id, []).append(s)
+
+    taxonomy = []
+    for c in cats:
+        taxonomy.append({
+            'cat_id': c.id,
+            'cat': f'{c.name} / {c.name_en}',
+            'subs': [{'sub_id': s.id, 'sub': f'{s.name} / {s.name_en}'} for s in subs_by_cat.get(c.id, [])],
+        })
+
+    # Fetch items
+    q = GlobalItem.query.filter_by(is_active=True)
+    if only_unassigned:
+        q = q.filter(GlobalItem.category_id.is_(None))
+    items = q.all()
+
+    if not items:
+        return jsonify(assigned=0, skipped=0, message='ყველა item უკვე განაწილებულია')
+
+    client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+
+    BATCH = 60
+    assigned = 0
+    errors = 0
+    details = []
+
+    for i in range(0, len(items), BATCH):
+        batch = items[i:i + BATCH]
+        payload = [{'i': j, 'name_ge': it.name_ge, 'name_en': it.name_en or ''} for j, it in enumerate(batch)]
+
+        prompt = (
+            'You are classifying Georgian restaurant menu items into a taxonomy.\n\n'
+            'TAXONOMY (cat_id, cat name, sub_id, sub name):\n'
+            + json.dumps(taxonomy, ensure_ascii=False)
+            + '\n\nFor each item below, return the best matching cat_id and sub_id (or null if no good match).\n'
+            'Return JSON: {"results": [{"i": 0, "cat_id": 1, "sub_id": 3}, ...]}\n\n'
+            'Items:\n' + json.dumps(payload, ensure_ascii=False)
+        )
+
+        try:
+            resp = client.responses.create(
+                model=config.OPENAI_MODEL_FAST,
+                input=prompt,
+                text={'format': {'type': 'json_object'}},
+            )
+            parsed = json.loads(resp.output_text)
+            for row in parsed.get('results', []):
+                idx = row.get('i')
+                if idx is None or idx >= len(batch):
+                    continue
+                it = batch[idx]
+                cat_id = row.get('cat_id')
+                sub_id = row.get('sub_id')
+                cat_name = cat_by_id[cat_id].name if cat_id and cat_id in cat_by_id else None
+                sub_name = sub_by_id[sub_id].name if sub_id and sub_id in sub_by_id else None
+                details.append({'id': it.id, 'name': it.name_ge, 'cat': cat_name, 'sub': sub_name})
+                if not dry_run and cat_id:
+                    it.category_id = cat_id
+                    it.subcategory_id = sub_id if sub_id and sub_id in sub_by_id else None
+                    assigned += 1
+        except Exception as e:
+            logger.warning(f'auto-assign batch {i}: {e}')
+            errors += 1
+
+    if not dry_run:
+        db.session.commit()
+
+    return jsonify(
+        assigned=assigned,
+        total=len(items),
+        errors=errors,
+        dry_run=dry_run,
+        details=details[:100],
+    )

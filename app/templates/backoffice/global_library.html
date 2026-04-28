@@ -90,6 +90,11 @@
 .lib-empty { text-align:center; padding:60px 20px; color:var(--bo-text-2); grid-column:1/-1; }
 .lib-empty i { font-size:2.5rem; opacity:.25; display:block; margin-bottom:12px; }
 .lib-load-more { text-align:center; padding:16px; }
+
+/* Auto-assign modal */
+.bo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; align-items:center; justify-content:center; }
+.bo-modal__box { background:var(--bo-surface); border-radius:14px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.bo-modal__box h3 { margin:0 0 4px; }
 </style>
 
 <div class="lib-header">
@@ -97,9 +102,36 @@
     <h1>კერძების ბიბლიოთეკა</h1>
     <p style="color:var(--bo-text-2);font-size:.85rem;margin:4px 0 0;">გლობალური ბაზა — ყველა venue-სთვის ხელმისაწვდომი</p>
   </div>
-  <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-btn bo-btn--primary">
-    <i class="fas fa-plus"></i> კერძის დამატება
-  </a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="bo-btn bo-btn--outline" onclick="openAutoAssign()" title="AI-ით კატეგორიების ავტომატური განაწილება">
+      <i class="fas fa-robot"></i> AI განაწილება
+    </button>
+    <a href="{{ url_for('lib_bp.verify_index') }}" class="bo-btn bo-btn--primary">
+      <i class="fas fa-plus"></i> კერძის დამატება
+    </a>
+  </div>
+</div>
+
+<!-- AI Auto-Assign Modal -->
+<div id="autoAssignModal" class="bo-modal" style="display:none">
+  <div class="bo-modal__box" style="max-width:520px;">
+    <h3><i class="fas fa-robot" style="color:var(--bo-primary);margin-right:8px;"></i>AI კატეგორიების განაწილება</h3>
+    <p style="color:var(--bo-text-2);margin:12px 0;">AI განიხილავს ყველა კერძის სახელს და ავტომატურად მიამაგრებს გლობალურ კატეგორია/ქვეკატეგორიაში.</p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;margin-bottom:16px;cursor:pointer;">
+      <input type="checkbox" id="onlyUnassigned" checked>
+      მხოლოდ განუნაწილებელი item-ები (კატეგორიის გარეშე)
+    </label>
+    <div id="autoAssignResult" style="display:none;background:var(--bo-bg);border-radius:8px;padding:12px;margin-bottom:16px;font-size:.82rem;max-height:240px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="bo-btn bo-btn--primary" id="btnRunAssign" onclick="runAutoAssign(false)">
+        <i class="fas fa-play"></i> გაშვება
+      </button>
+      <button class="bo-btn bo-btn--outline" onclick="runAutoAssign(true)">
+        <i class="fas fa-eye"></i> Dry-run (არ შეინახოს)
+      </button>
+      <button class="bo-btn bo-btn--outline" onclick="closeAutoAssign()">გაუქმება</button>
+    </div>
+  </div>
 </div>
 
 <div class="lib-stats">
@@ -367,6 +399,15 @@ function makeCard(item) {
     (item.category_name ? '<p class="lib-card__sub"><i class="fas fa-tag" style="opacity:.4;margin-right:3px;"></i>' + esc(item.category_name) + (item.subcategory_name ? ' › ' + esc(item.subcategory_name) : '') + '</p>' : '');
   card.appendChild(body);
 
+  // Category quick-assign row
+  var assignRow = document.createElement('div');
+  assignRow.style.cssText = 'padding:6px 10px;border-top:1px solid var(--bo-border);display:flex;gap:4px;';
+  var catSel = buildCatSelect(item.category_id, item.id);
+  var subSel = buildSubSelect(item.category_id, item.subcategory_id, item.id);
+  assignRow.appendChild(catSel);
+  assignRow.appendChild(subSel);
+  card.appendChild(assignRow);
+
   // Footer
   var footer = document.createElement('div');
   footer.className = 'lib-card__footer';
@@ -389,7 +430,130 @@ function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Load item counts per category
+// ── Category taxonomy data from server ──────────────────────
+var TAXONOMY = {{ (categories | map(attribute='__dict__') | list | tojson) if false else '[]' }};
+// Build from Jinja
+var CAT_OPTIONS = [
+  {id: '', name: '— კატეგორია —'},
+  {% for cat in categories %}
+  {id: {{ cat.id }}, name: '{{ cat.name|e }}', subs: [
+    {% for sub in subs_by_cat.get(cat.id, []) %}
+    {id: {{ sub.id }}, name: '{{ sub.name|e }}'},
+    {% endfor %}
+  ]},
+  {% endfor %}
+];
+var CAT_MAP = {};
+var SUB_MAP = {};
+CAT_OPTIONS.forEach(function(c){ if(c.id) { CAT_MAP[c.id] = c; (c.subs||[]).forEach(function(s){ SUB_MAP[s.id] = s; }); } });
+
+function buildCatSelect(currentCatId, itemId) {
+  var sel = document.createElement('select');
+  sel.style.cssText = 'flex:1;border:1px solid var(--bo-border);border-radius:5px;padding:3px 5px;font-size:.72rem;background:var(--bo-bg);color:var(--bo-text);min-width:0;';
+  sel.title = 'კატეგორია';
+  CAT_OPTIONS.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c.id; o.textContent = c.name;
+    if (c.id === currentCatId) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function() {
+    // Rebuild sub select
+    var row = sel.parentElement;
+    var oldSub = row.querySelector('select:last-child');
+    var newSub = buildSubSelect(parseInt(sel.value)||null, null, itemId);
+    row.replaceChild(newSub, oldSub);
+    saveItemCat(itemId, parseInt(sel.value)||null, null);
+  });
+  return sel;
+}
+
+function buildSubSelect(catId, currentSubId, itemId) {
+  var cat = catId ? CAT_MAP[catId] : null;
+  var subs = (cat && cat.subs) ? cat.subs : [];
+  var sel = document.createElement('select');
+  sel.style.cssText = 'flex:1;border:1px solid var(--bo-border);border-radius:5px;padding:3px 5px;font-size:.72rem;background:var(--bo-bg);color:var(--bo-text);min-width:0;';
+  sel.title = 'ქვეკატეგორია';
+  var placeholder = document.createElement('option');
+  placeholder.value = ''; placeholder.textContent = '— ქვეკატ. —';
+  if (!currentSubId) placeholder.selected = true;
+  sel.appendChild(placeholder);
+  subs.forEach(function(s) {
+    var o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    if (s.id === currentSubId) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function() {
+    var catSel = sel.parentElement.querySelector('select:first-child');
+    saveItemCat(itemId, parseInt(catSel.value)||null, parseInt(sel.value)||null);
+  });
+  return sel;
+}
+
+function saveItemCat(itemId, catId, subId) {
+  fetch('/backoffice/library/verify/api/item/' + itemId + '/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({category_id: catId, subcategory_id: subId}),
+  }).then(r => r.json()).then(function(d) {
+    if (!d.ok) console.warn('save cat failed', d);
+  });
+}
+
+// ── Auto-assign ─────────────────────────────────────────────
+function openAutoAssign() {
+  document.getElementById('autoAssignModal').style.display = 'flex';
+  document.getElementById('autoAssignResult').style.display = 'none';
+}
+function closeAutoAssign() {
+  document.getElementById('autoAssignModal').style.display = 'none';
+}
+
+function runAutoAssign(dryRun) {
+  var btn = document.getElementById('btnRunAssign');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> მუშავდება...';
+  var onlyUnassigned = document.getElementById('onlyUnassigned').checked;
+  var resultDiv = document.getElementById('autoAssignResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI-ი მუშაობს (30-60 წამი)...';
+
+  fetch('/backoffice/library/api/auto-assign-categories', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({only_unassigned: onlyUnassigned, dry_run: dryRun}),
+  })
+  .then(r => r.json())
+  .then(function(d) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play"></i> გაშვება';
+    if (d.error) { resultDiv.innerHTML = '<span style="color:red;">' + esc(d.error) + '</span>'; return; }
+    var html = '<b>' + (dryRun ? '🔍 Dry-run — ' : '✅ ') + d.assigned + ' / ' + d.total + ' item განაწილდა</b>';
+    if (d.errors) html += ' <span style="color:orange;">(' + d.errors + ' შეცდომა)</span>';
+    if (d.details && d.details.length) {
+      html += '<table style="width:100%;margin-top:8px;font-size:.75rem;border-collapse:collapse;">';
+      html += '<tr><th style="text-align:left;padding:2px 4px;">კერძი</th><th>კატეგ.</th><th>ქვეკატ.</th></tr>';
+      d.details.forEach(function(r) {
+        html += '<tr><td style="padding:2px 4px;">' + esc(r.name) + '</td><td>' + esc(r.cat||'—') + '</td><td>' + esc(r.sub||'—') + '</td></tr>';
+      });
+      html += '</table>';
+    }
+    resultDiv.innerHTML = html;
+    if (!dryRun) setTimeout(function(){ reload(); }, 1500);
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play"></i> გაშვება';
+    resultDiv.innerHTML = '<span style="color:red;">შეცდომა: ' + e + '</span>';
+  });
+}
+
+document.querySelectorAll('.bo-modal').forEach(function(m) {
+  m.addEventListener('click', function(e){ if(e.target===m) m.style.display='none'; });
+});
+
+// ── Load item counts per category ───────────────────────────
 function loadCatCounts() {
   {% for cat in categories %}
   fetch('/backoffice/library/verify/api/items?page=1&per_page=1&filter=all&cat_id={{ cat.id }}')
