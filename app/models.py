@@ -182,6 +182,7 @@ class Venue(db.Model):
     # Chain membership — nullable; if set, venue belongs to this group
     group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id',
                          use_alter=True, name='fk_venue_group'), nullable=True, index=True)
+    venue_type = db.Column(db.String(30), nullable=False, default='restaurant')
 
     feature_overrides = db.relationship('VenueFeatureOverride', backref='venue',
                                          lazy=True, cascade='all, delete-orphan')
@@ -291,9 +292,29 @@ class Category(db.Model):
     Description = db.Column(db.String(500), nullable=True)
     Description_en = db.Column(db.String(500), nullable=True)
     CategoryIcon = db.Column(db.String(100), nullable=True)
+    icon_custom = db.Column(db.String(300), nullable=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=True, index=True)
     # If group_id is set and venue_id is NULL → shared group category
     group_id = db.Column(db.Integer, db.ForeignKey('VenueGroups.id'), nullable=True, index=True)
+    global_category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=True, index=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
+
+    global_category = db.relationship('GlobalCategory', backref=db.backref('venue_instances', lazy=True))
+
+    @property
+    def effective_icon(self):
+        return self.icon_custom or self.CategoryIcon or (
+            self.global_category.icon if self.global_category else None
+        )
+
+    @property
+    def effective_sort_order(self):
+        if self.sort_order:
+            return self.sort_order
+        if self.global_category:
+            return self.global_category.sort_order
+        return 999
 
 
 class Subcategory(db.Model):
@@ -302,7 +323,12 @@ class Subcategory(db.Model):
     SubcategoryName = db.Column(db.String(150), nullable=False)
     SubcategoryName_en = db.Column(db.String(150), nullable=True)
     CategoryID = db.Column(db.Integer, db.ForeignKey('Categories.CategoryID'), nullable=False, index=True)
+    global_subcategory_id = db.Column(db.Integer, db.ForeignKey('GlobalSubcategories.id'), nullable=True, index=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
+
     category = db.relationship('Category', backref=db.backref('subcategories', lazy=True))
+    global_subcategory = db.relationship('GlobalSubcategory', backref=db.backref('venue_instances', lazy=True))
 
 
 class FoodItem(db.Model):
@@ -386,6 +412,7 @@ class GlobalSubcategory(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('GlobalCategories.id'), nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False)
     name_en = db.Column(db.String(100), nullable=True)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
     is_active = db.Column(db.Boolean, default=True)
 
     category = db.relationship('GlobalCategory', backref=db.backref('subcategories', lazy=True))

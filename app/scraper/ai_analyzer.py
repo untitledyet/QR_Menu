@@ -644,9 +644,11 @@ def assign_global_categories(items: list, global_cats: list, global_subcats: lis
         return items
 
     cat_by_name = {c["name"].lower(): c for c in global_cats}
+    cat_by_name.update({c["name_en"].lower(): c for c in global_cats if c.get("name_en")})
     sub_by_name = {s["name"].lower(): s for s in global_subcats}
-    cat_names = [c["name"] for c in global_cats]
-    sub_names = [s["name"] for s in global_subcats]
+    sub_by_name.update({s["name_en"].lower(): s for s in global_subcats if s.get("name_en")})
+    cat_names = [f'{c["name"]} / {c["name_en"]}' if c.get("name_en") else c["name"] for c in global_cats]
+    sub_names = [f'{s["name"]} / {s["name_en"]}' if s.get("name_en") else s["name"] for s in global_subcats]
 
     unique_cats = sorted({(it.get("category") or "").strip() for it in items if it.get("category")})
     unique_subs = sorted({(it.get("subcategory") or "").strip() for it in items if it.get("subcategory")})
@@ -674,7 +676,11 @@ def assign_global_categories(items: list, global_cats: list, global_subcats: lis
             )
             for row in parsed.get("mapping", []):
                 inp = (row.get("input") or "").strip()
-                match = cat_by_name.get((row.get("matched") or "").strip().lower())
+                raw_matched = (row.get("matched") or "").strip()
+                # AI may return "ka / en" combined — try full, then split parts
+                match = (cat_by_name.get(raw_matched.lower()) or
+                         cat_by_name.get(raw_matched.split('/')[0].strip().lower()) or
+                         cat_by_name.get(raw_matched.split('/')[-1].strip().lower()))
                 if inp and match:
                     cat_mapping[inp.lower()] = match
             logger.info(f"[AI] Category mapping: {len(cat_mapping)} matched")
@@ -699,7 +705,10 @@ def assign_global_categories(items: list, global_cats: list, global_subcats: lis
             )
             for row in parsed.get("mapping", []):
                 inp = (row.get("input") or "").strip()
-                match = sub_by_name.get((row.get("matched") or "").strip().lower())
+                raw_matched = (row.get("matched") or "").strip()
+                match = (sub_by_name.get(raw_matched.lower()) or
+                         sub_by_name.get(raw_matched.split('/')[0].strip().lower()) or
+                         sub_by_name.get(raw_matched.split('/')[-1].strip().lower()))
                 if inp and match:
                     sub_mapping[inp.lower()] = match
             logger.info(f"[AI] Subcategory mapping: {len(sub_mapping)} matched")

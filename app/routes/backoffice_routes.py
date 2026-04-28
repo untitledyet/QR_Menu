@@ -860,10 +860,10 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
 
             # Assign global categories
             emit('step_start', step='cats', message='კატეგორიებში განლაგება...')
-            global_cats = [{'id': c.id, 'name': c.name}
-                           for c in GlobalCategory.query.filter_by(is_active=True).all()]
-            global_subcats = [{'id': s.id, 'name': s.name, 'category_id': s.category_id}
-                              for s in GlobalSubcategory.query.filter_by(is_active=True).all()]
+            global_cats = [{'id': c.id, 'name': c.name, 'name_en': c.name_en or ''}
+                           for c in GlobalCategory.query.filter_by(is_active=True).order_by(GlobalCategory.sort_order).all()]
+            global_subcats = [{'id': s.id, 'name': s.name, 'name_en': s.name_en or '', 'category_id': s.category_id}
+                              for s in GlobalSubcategory.query.filter_by(is_active=True).order_by(GlobalSubcategory.sort_order).all()]
             if global_cats:
                 assign_global_categories(deduped, global_cats, global_subcats)
             emit('step_done', step='cats')
@@ -925,12 +925,18 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
             # Organise
             organised = {}
             cats_en = {}
+            cat_global_ids = {}   # {cat_name_ka: global_category_id}
+            sub_global_ids = {}   # {(cat_name_ka, sub_name): global_subcategory_id}
             for it in deduped:
                 cat = it.get('category') or 'სხვა'
                 sub = it.get('subcategory') or ''
                 organised.setdefault(cat, {}).setdefault(sub, []).append(it)
                 if cat not in cats_en and it.get('category_en'):
                     cats_en[cat] = it['category_en']
+                if cat not in cat_global_ids and it.get('category_id'):
+                    cat_global_ids[cat] = it['category_id']
+                if sub and (cat, sub) not in sub_global_ids and it.get('subcategory_id'):
+                    sub_global_ids[f'{cat}||{sub}'] = it['subcategory_id']
 
             emit('complete', total=len(deduped))
 
@@ -942,6 +948,8 @@ def _run_photo_analysis(app, job_id, venue_id, file_paths, tmpdir):
                 'categories': organised,
                 'cat_icons': cat_icons,
                 'cats_en': cats_en,
+                'cat_global_ids': cat_global_ids,
+                'sub_global_ids': sub_global_ids,
             }
             _job_write(job_id, job)
     except Exception as e:
@@ -1048,6 +1056,8 @@ def analyze_events(job_id):
 @login_required
 @email_verified_required
 def import_analyzed():
+    from app.services.category_service import get_or_create_venue_category, get_or_create_venue_subcategory
+    import re as _re
     admin = get_current_admin()
     if not admin.venue:
         return jsonify(error='no venue'), 400
@@ -1055,6 +1065,8 @@ def import_analyzed():
     data = request.get_json() or {}
     categories_data = data.get('categories', {})
     cats_en = data.get('cats_en', {})
+    cat_global_ids = data.get('cat_global_ids', {})
+    sub_global_ids = data.get('sub_global_ids', {})
 
     imported_cats = 0
     imported_subs = 0
@@ -1064,24 +1076,44 @@ def import_analyzed():
         cat_name = (cat_name or '').strip()
         if not cat_name:
             continue
-        cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
-        if not cat:
-            cat_name_en = (cats_en.get(cat_name) or '').strip() or None
-            cat = Category(CategoryName=cat_name, CategoryName_en=cat_name_en, venue_id=venue_id)
-            db.session.add(cat)
-            db.session.flush()
+
+        global_cat_id = cat_global_ids.get(cat_name) or None
+        cat_name_en = (cats_en.get(cat_name) or '').strip() or None
+
+        is_new = False
+        if global_cat_id:
+            existing = Category.query.filter_by(venue_id=venue_id, global_category_id=global_cat_id).first()
+            if existing:
+                cat = existing
+            else:
+                cat = get_or_create_venue_category(venue_id, global_cat_id, cat_name, cat_name_en)
+                is_new = True
+        else:
+            cat = Category.query.filter_by(venue_id=venue_id, CategoryName=cat_name).first()
+            if not cat:
+                cat = get_or_create_venue_category(venue_id, None, cat_name, cat_name_en)
+                is_new = True
+
+        if is_new:
             imported_cats += 1
 
         for sub_name, items in subcats.items():
             sub_name = (sub_name or '').strip()
             sub = None
             if sub_name:
-                sub = Subcategory.query.filter_by(CategoryID=cat.CategoryID, SubcategoryName=sub_name).first()
-                if not sub:
-                    sub = Subcategory(SubcategoryName=sub_name, CategoryID=cat.CategoryID)
-                    db.session.add(sub)
-                    db.session.flush()
-                    imported_subs += 1
+                global_sub_id = sub_global_ids.get(f'{cat_name}||{sub_name}') or None
+                if global_sub_id:
+                    sub = Subcategory.query.filter_by(CategoryID=cat.CategoryID,
+                                                      global_subcategory_id=global_sub_id).first()
+                    if not sub:
+                        sub = get_or_create_venue_subcategory(cat.CategoryID, global_sub_id, sub_name)
+                        imported_subs += 1
+                else:
+                    sub = Subcategory.query.filter_by(CategoryID=cat.CategoryID,
+                                                      SubcategoryName=sub_name).first()
+                    if not sub:
+                        sub = get_or_create_venue_subcategory(cat.CategoryID, None, sub_name)
+                        imported_subs += 1
 
             for item_data in items:
                 if item_data.get('excluded'):
@@ -1093,7 +1125,6 @@ def import_analyzed():
                     continue
                 name_en = (item_data.get('name_en') or name).strip()
                 try:
-                    import re as _re
                     _ps = _re.sub(r'[^\d,.]', '', str(item_data.get('price') or ''))
                     price = float(_ps.replace(',', '.')) if _ps else 0.0
                 except (ValueError, TypeError):
@@ -1150,9 +1181,10 @@ def toggle_item_active(item_id):
 @login_required
 @email_verified_required
 def add_item():
+    from app.services.category_service import get_venue_categories
     admin = get_current_admin()
     venue = admin.venue
-    categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
+    categories = get_venue_categories(venue.id) if venue else Category.query.order_by(Category.sort_order).all()
     subcategories = Subcategory.query.all()
     features = venue.get_all_features() if venue else {}
     preselect_cat = request.args.get('cat', type=int)
@@ -1222,7 +1254,8 @@ def edit_item(item_id):
     if not item:
         flash('Access denied')
         return redirect(url_for('bo_bp.menu_list'))
-    categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
+    from app.services.category_service import get_venue_categories
+    categories = get_venue_categories(venue.id) if venue else Category.query.order_by(Category.sort_order).all()
     subcategories = Subcategory.query.all()
     features = venue.get_all_features() if venue else {}
 
@@ -1371,6 +1404,10 @@ def toggle_promotion(promo_id):
 def api_stats():
     admin = get_current_admin()
     venue = admin.venue
+    cat_id = request.args.get('cat_id', type=int)
+    if cat_id:
+        item_count = FoodItem.query.filter_by(CategoryID=cat_id).count()
+        return jsonify(item_count=item_count)
     if venue:
         items = FoodItem.query.join(Category).filter(Category.venue_id == venue.id).count()
         promos = Promotion.query.filter_by(venue_id=venue.id).count()
@@ -1402,10 +1439,21 @@ def api_subcategories(category_id):
 @login_required
 @email_verified_required
 def categories_list():
+    from app.services.category_service import get_venue_categories, VENUE_TYPE_LABELS
+    from app.models import GlobalCategory as GC
     admin = get_current_admin()
     venue = admin.venue
-    categories = Category.query.filter_by(venue_id=venue.id).all() if venue else Category.query.all()
-    return render_template('backoffice/categories.html', admin=admin, categories=categories)
+    if venue:
+        categories = get_venue_categories(venue.id, include_hidden=True)
+    else:
+        categories = Category.query.order_by(Category.sort_order, Category.CategoryID).all()
+    global_cats = GC.query.filter_by(is_active=True).order_by(GC.sort_order).all()
+    return render_template(
+        'backoffice/categories.html',
+        admin=admin, categories=categories,
+        global_cats=global_cats,
+        venue_type_labels=VENUE_TYPE_LABELS,
+    )
 
 
 @bo_bp.route('/categories/add', methods=['GET', 'POST'])
@@ -1648,6 +1696,216 @@ def delete_subcategory_json(sub_id):
     db.session.delete(sub)
     db.session.commit()
     return jsonify(success=True)
+
+
+@bo_bp.route('/subcategories/edit-json/<int:sub_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def edit_subcategory_json(sub_id):
+    sub = Subcategory.query.get_or_404(sub_id)
+    cat = verify_category_ownership(sub.CategoryID)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    data = request.get_json() or request.form
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify(success=False, error='სახელი სავალდებულოა'), 400
+    sub.SubcategoryName = name
+    db.session.commit()
+    return jsonify(success=True, id=sub.SubcategoryID, name=sub.SubcategoryName)
+
+
+@bo_bp.route('/categories/toggle-hidden/<int:cat_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def toggle_category_hidden(cat_id):
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    cat.is_hidden = not cat.is_hidden
+    db.session.commit()
+    return jsonify(success=True, is_hidden=cat.is_hidden)
+
+
+@bo_bp.route('/subcategories/toggle-hidden/<int:sub_id>', methods=['POST'])
+@login_required
+@email_verified_required
+def toggle_subcategory_hidden(sub_id):
+    sub = Subcategory.query.get_or_404(sub_id)
+    cat = verify_category_ownership(sub.CategoryID)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    sub.is_hidden = not sub.is_hidden
+    db.session.commit()
+    return jsonify(success=True, is_hidden=sub.is_hidden)
+
+
+@bo_bp.route('/categories/reorder', methods=['POST'])
+@login_required
+@email_verified_required
+def reorder_categories():
+    """Accepts JSON: {"order": [cat_id, cat_id, ...]} — position = array index + 1."""
+    admin = get_current_admin()
+    venue = admin.venue
+    data = request.get_json() or {}
+    order = data.get('order', [])
+    for idx, cat_id in enumerate(order, start=1):
+        cat = Category.query.get(cat_id)
+        if cat and (cat.venue_id == (venue.id if venue else None) or cat.group_id):
+            cat.sort_order = idx
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/subcategories/reorder', methods=['POST'])
+@login_required
+@email_verified_required
+def reorder_subcategories():
+    """Accepts JSON: {"order": [sub_id, ...]} for subs within a category."""
+    admin = get_current_admin()
+    venue = admin.venue
+    data = request.get_json() or {}
+    order = data.get('order', [])
+    for idx, sub_id in enumerate(order, start=1):
+        sub = Subcategory.query.get(sub_id)
+        if not sub:
+            continue
+        cat = verify_category_ownership(sub.CategoryID)
+        if cat:
+            sub.sort_order = idx
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/categories/apply-preset', methods=['POST'])
+@login_required
+@email_verified_required
+def apply_venue_preset():
+    """Apply a venue_type preset — seed global categories for this venue."""
+    from app.services.category_service import seed_venue_categories, VENUE_TYPE_PRESETS
+    admin = get_current_admin()
+    venue = admin.venue
+    if not venue:
+        return jsonify(success=False, error='No venue'), 400
+    data = request.get_json() or request.form
+    venue_type = (data.get('venue_type') or '').strip()
+    if venue_type not in VENUE_TYPE_PRESETS:
+        return jsonify(success=False, error='Unknown venue type'), 400
+    venue.venue_type = venue_type
+    created = seed_venue_categories(venue.id, venue_type)
+    db.session.commit()
+    return jsonify(success=True, created=created)
+
+
+@bo_bp.route('/categories/<int:cat_id>/seed-subcategories', methods=['POST'])
+@login_required
+@email_verified_required
+def seed_subcategories(cat_id):
+    """Seed subcategories from the global subcategory defaults for this category."""
+    from app.services.category_service import seed_venue_subcategories
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    if not cat.global_category_id:
+        return jsonify(success=False, error='Not a global category'), 400
+    created = seed_venue_subcategories(venue_id=cat.venue_id, category_id=cat.CategoryID,
+                                       global_category_id=cat.global_category_id)
+    return jsonify(success=True, created=created)
+
+
+@bo_bp.route('/categories/<int:cat_id>/icon', methods=['POST'])
+@login_required
+@email_verified_required
+def upload_category_icon(cat_id):
+    """Upload a custom icon image for a category."""
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    file = request.files.get('icon')
+    if not file or not file.filename or not allowed_file(file.filename):
+        return jsonify(success=False, error='Invalid file'), 400
+    filename = f"cat_{cat_id}_{secure_filename(file.filename)}"
+    upload_dir = os.path.join(current_app.root_path, 'static', 'images', 'categories')
+    os.makedirs(upload_dir, exist_ok=True)
+    file.save(os.path.join(upload_dir, filename))
+    cat.icon_custom = filename
+    db.session.commit()
+    return jsonify(success=True, filename=filename)
+
+
+@bo_bp.route('/categories/<int:cat_id>/reset-icon', methods=['POST'])
+@login_required
+@email_verified_required
+def reset_category_icon(cat_id):
+    """Remove custom icon, fall back to global/FontAwesome icon."""
+    cat = verify_category_ownership(cat_id)
+    if not cat:
+        return jsonify(success=False, error='Access denied'), 403
+    cat.icon_custom = None
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@bo_bp.route('/categories/reset-to-default', methods=['POST'])
+@login_required
+@email_verified_required
+def reset_categories_to_default():
+    """Re-apply preset: clear sort_order/name overrides, un-hide, re-seed missing global cats."""
+    from app.services.category_service import seed_venue_categories, VENUE_TYPE_PRESETS
+    admin = get_current_admin()
+    venue = admin.venue
+    if not venue:
+        return jsonify(success=False, error='No venue'), 400
+    cats = Category.query.filter_by(venue_id=venue.id).all()
+    for cat in cats:
+        if cat.global_category_id:
+            gc = cat.global_category
+            if gc:
+                cat.CategoryName = gc.name
+                cat.CategoryName_en = gc.name_en
+                cat.sort_order = gc.sort_order
+                cat.is_hidden = False
+    created = seed_venue_categories(venue.id, venue.venue_type or 'restaurant')
+    db.session.commit()
+    return jsonify(success=True, created=created)
+
+
+@bo_bp.route('/categories/add-global', methods=['POST'])
+@login_required
+@email_verified_required
+def add_global_category_to_venue():
+    """Add a global category to the current venue."""
+    from app.models import GlobalCategory as GC
+    from app.services.category_service import seed_venue_subcategories
+    admin = get_current_admin()
+    venue = admin.venue
+    if not venue:
+        return jsonify(success=False, error='No venue'), 400
+    data = request.get_json() or {}
+    try:
+        global_cat_id = int(data.get('global_category_id') or 0)
+    except (TypeError, ValueError):
+        global_cat_id = 0
+    if not global_cat_id:
+        return jsonify(success=False, error='global_category_id required'), 400
+    gc = GC.query.get(global_cat_id)
+    if not gc:
+        return jsonify(success=False, error='Not found'), 404
+    existing = Category.query.filter_by(venue_id=venue.id, global_category_id=global_cat_id).first()
+    if existing:
+        existing.is_hidden = False
+        db.session.commit()
+        return jsonify(success=True, id=existing.CategoryID, action='unhidden')
+    cat = Category(
+        CategoryName=gc.name, CategoryName_en=gc.name_en,
+        CategoryIcon=gc.icon, venue_id=venue.id,
+        global_category_id=gc.id, sort_order=gc.sort_order, is_hidden=False,
+    )
+    db.session.add(cat)
+    db.session.flush()
+    seed_venue_subcategories(venue.id, cat.CategoryID, gc.id)
+    db.session.commit()
+    return jsonify(success=True, id=cat.CategoryID, action='created')
 
 
 @bo_bp.route('/menu/copy/<int:item_id>', methods=['POST'])

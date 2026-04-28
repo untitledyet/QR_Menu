@@ -149,10 +149,15 @@ function doImport(){
         if(items.filter(i => !i.excluded).length) result[catName] = items;
     });
 
-    fetch('/backoffice/scraper/import', {
+    fetch('/backoffice/menu/import-analyzed', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({categories: result})
+        body: JSON.stringify({
+            categories: result,
+            cats_en: typeof CAT_EN !== 'undefined' ? CAT_EN : {},
+            cat_global_ids: typeof CAT_GLOBAL_IDS !== 'undefined' ? CAT_GLOBAL_IDS : {},
+            sub_global_ids: typeof SUB_GLOBAL_IDS !== 'undefined' ? SUB_GLOBAL_IDS : {},
+        }),
     })
     .then(r => r.json())
     .then(d => {

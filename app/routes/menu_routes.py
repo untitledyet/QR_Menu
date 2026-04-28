@@ -38,26 +38,14 @@ def _load_price_overrides(venue):
 
 
 def _load_all_categories(venue):
-    """Fetch venue-local + group-shared categories with subcategories eager-loaded.
+    """Fetch venue-visible categories (sorted, hidden filtered) with subcategories.
 
-    Returns (all_categories, group_categories) where all_categories is ordered
-    with group categories first (matching the original render contract).
+    Returns (all_categories, group_categories).
     """
-    local = (
-        Category.query
-        .options(selectinload(Category.subcategories))
-        .filter_by(venue_id=venue.id)
-        .all()
-    )
-    group = []
-    if venue.group_id:
-        group = (
-            Category.query
-            .options(selectinload(Category.subcategories))
-            .filter_by(group_id=venue.group_id, venue_id=None)
-            .all()
-        )
-    return group + local, group
+    from app.services.category_service import get_venue_categories
+    all_cats = get_venue_categories(venue.id, include_hidden=False)
+    group_cats = [c for c in all_cats if c.venue_id is None and c.group_id == venue.group_id]
+    return all_cats, group_cats
 
 
 @menu_bp.route('/<slug>/table/<int:table_id>')

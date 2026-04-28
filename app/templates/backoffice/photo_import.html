@@ -926,7 +926,12 @@ function importItems() {
     fetch('/backoffice/menu/import-analyzed', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({categories: result, cats_en: analysedData.cats_en || {}}),
+        body: JSON.stringify({
+            categories: result,
+            cats_en: analysedData.cats_en || {},
+            cat_global_ids: analysedData.cat_global_ids || {},
+            sub_global_ids: analysedData.sub_global_ids || {},
+        }),
     })
     .then(function(r){ return r.json(); })
     .then(function(d) {

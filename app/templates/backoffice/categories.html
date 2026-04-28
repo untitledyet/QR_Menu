@@ -1,55 +1,501 @@
 {% extends 'backoffice/base.html' %}
-{% block title %}Categories{% endblock %}
+{% block title %}კატეგორიები{% endblock %}
 {% block content %}
-<div class="bo-header" style="display:flex; align-items:center; justify-content:space-between;">
-    <h1>Categories</h1>
-    <a href="{{ url_for('bo_bp.add_category') }}" class="bo-btn bo-btn--primary"><i class="fas fa-plus"></i> Add Category</a>
-</div>
 
-{% for cat in categories %}
-<div class="bo-cat-card">
-    <div class="bo-cat-card__header">
-        {% if cat.CategoryIcon %}
-        <img src="{{ url_for('static', filename='images/categories/' ~ cat.CategoryIcon) }}" class="bo-cat-card__icon">
+<div class="cats-page">
+
+  <!-- Header -->
+  <div class="cats-page__head">
+    <div>
+      <h1>მენიუს კატეგორიები</h1>
+      <p class="cats-page__subtitle">გადაიტანეთ ჩასაქცევად • თვალი მოხსენით დასამალად • სახელი ჩასასწორებელი</p>
+    </div>
+    <div class="cats-page__actions">
+      <button class="bo-btn bo-btn--outline" id="btnPreset" onclick="openPresetModal()">
+        <i class="fas fa-magic"></i> პრეზეტი
+      </button>
+      <button class="bo-btn bo-btn--outline" id="btnReset" onclick="resetToDefault()">
+        <i class="fas fa-undo"></i> სტანდარტზე
+      </button>
+      <button class="bo-btn bo-btn--primary" onclick="openAddCustom()">
+        <i class="fas fa-plus"></i> კატეგორია
+      </button>
+    </div>
+  </div>
+
+  <!-- Global taxonomy picker (add existing global cat) -->
+  {% if global_cats %}
+  <div class="cats-global-bar">
+    <span class="cats-global-bar__label"><i class="fas fa-globe"></i> გლობალური კატეგორიები:</span>
+    <div class="cats-global-bar__chips">
+      {% for gc in global_cats %}
+      <button class="global-chip {% if categories|selectattr('global_category_id','eq',gc.id)|list %}global-chip--active{% endif %}"
+              onclick="addGlobalCat({{ gc.id }}, '{{ gc.name|e }}')"
+              title="{{ gc.name_en or '' }}">
+        <i class="{{ gc.icon or 'fa-tag' }} fas"></i> {{ gc.name }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Category list (drag-drop) -->
+  <div id="catList" class="cat-list">
+    {% for cat in categories %}
+    <div class="cat-card {% if cat.is_hidden %}cat-card--hidden{% endif %}" data-id="{{ cat.CategoryID }}">
+
+      <!-- Drag handle -->
+      <span class="cat-card__handle" title="გადათრევა"><i class="fas fa-grip-vertical"></i></span>
+
+      <!-- Icon -->
+      <div class="cat-card__icon-wrap" onclick="openIconModal({{ cat.CategoryID }}, '{{ (cat.icon_custom or cat.CategoryIcon or '') }}')">
+        {% if cat.icon_custom %}
+          <img src="{{ url_for('static', filename='images/categories/' ~ cat.icon_custom) }}" class="cat-card__icon-img">
+        {% elif cat.CategoryIcon and cat.CategoryIcon.startswith('fa-') %}
+          <i class="fas {{ cat.CategoryIcon }} cat-card__icon-fa"></i>
+        {% elif cat.CategoryIcon %}
+          <img src="{{ url_for('static', filename='images/categories/' ~ cat.CategoryIcon) }}" class="cat-card__icon-img">
+        {% elif cat.global_category and cat.global_category.icon %}
+          <i class="fas {{ cat.global_category.icon }} cat-card__icon-fa"></i>
         {% else %}
-        <div class="bo-cat-card__icon-placeholder"><i class="fas fa-folder"></i></div>
+          <i class="fas fa-folder cat-card__icon-fa cat-card__icon-fa--placeholder"></i>
         {% endif %}
-        <div class="bo-cat-card__info">
-            <h3>{{ cat.CategoryName }}</h3>
-            <small>{{ cat.Description or '' }} · {{ cat.subcategories|length }} subcategories</small>
+        <span class="cat-card__icon-edit-hint"><i class="fas fa-camera"></i></span>
+      </div>
+
+      <!-- Info: name (editable) + meta -->
+      <div class="cat-card__body">
+        <div class="cat-card__names">
+          <input class="cat-card__name-input" type="text" value="{{ cat.CategoryName }}"
+                 data-id="{{ cat.CategoryID }}" onblur="saveName(this)" onkeydown="if(event.key==='Enter')this.blur()">
+          <input class="cat-card__name-input cat-card__name-input--en" type="text"
+                 placeholder="English name" value="{{ cat.CategoryName_en or '' }}"
+                 data-id="{{ cat.CategoryID }}" data-lang="en" onblur="saveNameEn(this)" onkeydown="if(event.key==='Enter')this.blur()">
         </div>
-        <div class="bo-table__actions">
-            <a href="{{ url_for('bo_bp.edit_category', cat_id=cat.CategoryID) }}" class="bo-icon-btn" title="Edit"><i class="fas fa-pen"></i></a>
-            <form method="POST" action="{{ url_for('bo_bp.delete_category', cat_id=cat.CategoryID) }}" style="display:inline;" onsubmit="return confirm('Delete {{ cat.CategoryName }}?')">
-                <button type="submit" class="bo-icon-btn bo-icon-btn--danger" title="Delete"><i class="fas fa-trash"></i></button>
-            </form>
+        <div class="cat-card__meta">
+          {% if cat.global_category %}
+            <span class="cat-badge cat-badge--global">
+              <i class="fas fa-globe"></i> {{ cat.global_category.name_en or 'global' }}
+            </span>
+          {% else %}
+            <span class="cat-badge cat-badge--custom"><i class="fas fa-star"></i> custom</span>
+          {% endif %}
+          <span class="cat-badge cat-badge--count">
+            {{ cat.subcategories|length }} sub &nbsp;·&nbsp;
+            <span id="itemCount-{{ cat.CategoryID }}">…</span> item
+          </span>
         </div>
+      </div>
+
+      <!-- Toggle visibility -->
+      <button class="cat-card__visibility {% if cat.is_hidden %}cat-card__visibility--off{% endif %}"
+              onclick="toggleHide({{ cat.CategoryID }}, this)" title="{{ 'გამოჩენა' if cat.is_hidden else 'დამალვა' }}">
+        <i class="fas {{ 'fa-eye-slash' if cat.is_hidden else 'fa-eye' }}"></i>
+      </button>
+
+      <!-- Delete -->
+      <button class="cat-card__delete bo-icon-btn bo-icon-btn--danger"
+              onclick="deleteCategory({{ cat.CategoryID }}, '{{ cat.CategoryName|e }}')"
+              title="წაშლა">
+        <i class="fas fa-trash"></i>
+      </button>
+
+      <!-- Subcategories section -->
+      <div class="cat-card__subs-wrap">
+        <div id="subList-{{ cat.CategoryID }}" class="sub-list">
+          {% for sub in cat.subcategories|sort(attribute='sort_order') %}
+          <div class="sub-chip {% if sub.is_hidden %}sub-chip--hidden{% endif %}" data-id="{{ sub.SubcategoryID }}">
+            <span class="sub-chip__handle"><i class="fas fa-grip-lines"></i></span>
+            <input class="sub-chip__input" type="text" value="{{ sub.SubcategoryName }}"
+                   data-id="{{ sub.SubcategoryID }}" onblur="saveSubName(this)" onkeydown="if(event.key==='Enter')this.blur()">
+            <button class="sub-chip__toggle {% if sub.is_hidden %}sub-chip__toggle--off{% endif %}"
+                    onclick="toggleSubHide({{ sub.SubcategoryID }}, this)">
+              <i class="fas {{ 'fa-eye-slash' if sub.is_hidden else 'fa-eye' }}"></i>
+            </button>
+            <button class="sub-chip__remove" onclick="deleteSub({{ sub.SubcategoryID }}, this)"><i class="fas fa-times"></i></button>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="sub-add-row">
+          <input type="text" class="sub-add-input" id="subInput-{{ cat.CategoryID }}" placeholder="ახალი ქვეკატეგორია...">
+          <button class="bo-icon-btn" onclick="addSub({{ cat.CategoryID }})"><i class="fas fa-plus"></i></button>
+          {% if cat.global_category_id %}
+          <button class="bo-btn bo-btn--xs bo-btn--outline" onclick="seedSubs({{ cat.CategoryID }})"
+                  title="გლობალური ქვეკატეგორიების იმპორტი">
+            <i class="fas fa-download"></i> სტანდარტი
+          </button>
+          {% endif %}
+        </div>
+      </div>
+
     </div>
+    {% endfor %}
 
-    <!-- Subcategories -->
-    <div class="bo-cat-card__subs">
-        {% for sub in cat.subcategories %}
-        <div class="bo-sub-chip">
-            <span>{{ sub.SubcategoryName }}</span>
-            <form method="POST" action="{{ url_for('bo_bp.delete_subcategory', sub_id=sub.SubcategoryID) }}" style="display:inline;">
-                <button type="submit" class="bo-sub-chip__remove" title="Remove"><i class="fas fa-times"></i></button>
-            </form>
-        </div>
-        {% endfor %}
-
-        <!-- Add subcategory inline -->
-        <form method="POST" action="{{ url_for('bo_bp.add_subcategory', cat_id=cat.CategoryID) }}" class="bo-sub-add">
-            <input type="text" name="name" placeholder="New subcategory..." required>
-            <button type="submit" class="bo-icon-btn" title="Add"><i class="fas fa-plus"></i></button>
-        </form>
+    {% if not categories %}
+    <div class="cats-empty">
+      <i class="fas fa-folder-open"></i>
+      <p>კატეგორიები არ არის. დაამატეთ გლობალური კატეგორია ზემოდან ან შექმენით custom.</p>
     </div>
-</div>
-{% endfor %}
+    {% endif %}
+  </div>
 
-{% if not categories %}
-<div style="text-align:center; padding:60px 20px; color:var(--bo-text-2);">
-    <i class="fas fa-folder-open" style="font-size:3rem; opacity:.3; margin-bottom:16px; display:block;"></i>
-    <p>No categories yet. Create your first category to start adding menu items.</p>
 </div>
-{% endif %}
+
+<!-- ─── Modals ─── -->
+
+<!-- Preset modal -->
+<div id="presetModal" class="bo-modal" style="display:none">
+  <div class="bo-modal__box">
+    <h3>ვენიუს ტიპი — პრეზეტი</h3>
+    <p style="color:var(--bo-text-2);margin-bottom:20px;">გლობალური კატეგორიები ავტომატურად დაემატება</p>
+    <div class="preset-grid">
+      {% for k, label in venue_type_labels.items() %}
+      <button class="preset-btn" onclick="applyPreset('{{ k }}', '{{ label }}')">{{ label }}</button>
+      {% endfor %}
+    </div>
+    <button class="bo-btn bo-btn--outline" style="margin-top:16px" onclick="closeModal('presetModal')">გაუქმება</button>
+  </div>
+</div>
+
+<!-- Add custom category modal -->
+<div id="addCustomModal" class="bo-modal" style="display:none">
+  <div class="bo-modal__box">
+    <h3>Custom კატეგორიის დამატება</h3>
+    <div class="bo-form-group" style="margin-top:16px">
+      <label>სახელი (ქართული)</label>
+      <input type="text" id="customCatName" class="bo-input" placeholder="მაგ: შეფის სპეციალი">
+    </div>
+    <div class="bo-form-group">
+      <label>სახელი (ინგლისური, სურვ.)</label>
+      <input type="text" id="customCatNameEn" class="bo-input" placeholder="e.g. Chef's Special">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="bo-btn bo-btn--primary" onclick="submitAddCustom()">დამატება</button>
+      <button class="bo-btn bo-btn--outline" onclick="closeModal('addCustomModal')">გაუქმება</button>
+    </div>
+  </div>
+</div>
+
+<!-- Icon upload modal -->
+<div id="iconModal" class="bo-modal" style="display:none">
+  <div class="bo-modal__box">
+    <h3>ხატულის შეცვლა</h3>
+    <input type="hidden" id="iconCatId">
+    <div style="margin-top:16px">
+      <label class="bo-btn bo-btn--outline" style="cursor:pointer">
+        <i class="fas fa-upload"></i> ატვირთე სურათი
+        <input type="file" id="iconFile" accept="image/*" style="display:none" onchange="uploadIcon()">
+      </label>
+    </div>
+    <p style="color:var(--bo-text-2);margin:12px 0">ან გააუქმე custom ხატი (გლობალური დაბრუნდება)</p>
+    <button class="bo-btn bo-btn--outline" onclick="resetIcon()"><i class="fas fa-undo"></i> სტანდარტი</button>
+    <button class="bo-btn bo-btn--outline" style="margin-left:8px" onclick="closeModal('iconModal')">დახურვა</button>
+  </div>
+</div>
+
+<!-- ─── SortableJS ─── -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<script>
+// ── Drag-drop ──────────────────────────────────────────────
+const catSortable = Sortable.create(document.getElementById('catList'), {
+  handle: '.cat-card__handle',
+  animation: 150,
+  onEnd() { saveCatOrder(); },
+});
+
+document.querySelectorAll('[id^="subList-"]').forEach(el => {
+  Sortable.create(el, {
+    handle: '.sub-chip__handle',
+    animation: 120,
+    onEnd() { saveSubOrder(el.id.replace('subList-', '')); },
+  });
+});
+
+function saveCatOrder() {
+  const order = [...document.querySelectorAll('#catList .cat-card')].map(e => +e.dataset.id);
+  fetch('/backoffice/categories/reorder', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ order }),
+  });
+}
+
+function saveSubOrder(catId) {
+  const order = [...document.querySelectorAll(`#subList-${catId} .sub-chip`)].map(e => +e.dataset.id);
+  fetch('/backoffice/subcategories/reorder', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ order }),
+  });
+}
+
+// ── Hide / show ────────────────────────────────────────────
+function toggleHide(id, btn) {
+  fetch(`/backoffice/categories/toggle-hidden/${id}`, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      const card = btn.closest('.cat-card');
+      card.classList.toggle('cat-card--hidden', d.is_hidden);
+      btn.classList.toggle('cat-card__visibility--off', d.is_hidden);
+      btn.querySelector('i').className = `fas ${d.is_hidden ? 'fa-eye-slash' : 'fa-eye'}`;
+      btn.title = d.is_hidden ? 'გამოჩენა' : 'დამალვა';
+    });
+}
+
+function toggleSubHide(id, btn) {
+  fetch(`/backoffice/subcategories/toggle-hidden/${id}`, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      const chip = btn.closest('.sub-chip');
+      chip.classList.toggle('sub-chip--hidden', d.is_hidden);
+      btn.classList.toggle('sub-chip__toggle--off', d.is_hidden);
+      btn.querySelector('i').className = `fas ${d.is_hidden ? 'fa-eye-slash' : 'fa-eye'}`;
+    });
+}
+
+// ── Rename ─────────────────────────────────────────────────
+function saveName(input) {
+  const id = input.dataset.id;
+  const name = input.value.trim();
+  if (!name) { input.value = input.defaultValue; return; }
+  fetch(`/backoffice/categories/edit-json/${id}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, name_en: input.closest('.cat-card__names').querySelector('[data-lang="en"]').value }),
+  }).then(r => r.json()).then(d => { if (d.success) input.defaultValue = name; });
+}
+
+function saveNameEn(input) {
+  const id = input.dataset.id;
+  const name_en = input.value.trim();
+  const nameInput = input.closest('.cat-card__names').querySelector('.cat-card__name-input:not([data-lang])');
+  fetch(`/backoffice/categories/edit-json/${id}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name: nameInput.value, name_en }),
+  });
+}
+
+function saveSubName(input) {
+  const id = input.dataset.id;
+  const name = input.value.trim();
+  if (!name) { input.value = input.defaultValue; return; }
+  fetch(`/backoffice/subcategories/delete-json/${id}`, { method: 'GET' }); // no-op, just rename
+  // Use edit endpoint if exists, otherwise just update via add+delete — use add-json for now
+  // Actually we'll just store locally; a dedicated sub rename endpoint would be cleaner.
+  // For now: fire edit via a PATCH-style approach using existing endpoint pattern.
+  input.defaultValue = name;
+  // POST to a sub rename route we'll add
+  fetch(`/backoffice/subcategories/edit-json/${id}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name }),
+  });
+}
+
+// ── Add/delete subcategory ──────────────────────────────────
+function addSub(catId) {
+  const input = document.getElementById(`subInput-${catId}`);
+  const name = input.value.trim();
+  if (!name) return;
+  fetch(`/backoffice/categories/${catId}/subcategories/add-json`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name }),
+  }).then(r => r.json()).then(d => {
+    if (!d.success) { alert(d.error); return; }
+    const list = document.getElementById(`subList-${catId}`);
+    const chip = document.createElement('div');
+    chip.className = 'sub-chip'; chip.dataset.id = d.id;
+    chip.innerHTML = `
+      <span class="sub-chip__handle"><i class="fas fa-grip-lines"></i></span>
+      <input class="sub-chip__input" type="text" value="${escHtml(d.name)}"
+             data-id="${d.id}" onblur="saveSubName(this)" onkeydown="if(event.key==='Enter')this.blur()">
+      <button class="sub-chip__toggle" onclick="toggleSubHide(${d.id},this)"><i class="fas fa-eye"></i></button>
+      <button class="sub-chip__remove" onclick="deleteSub(${d.id},this)"><i class="fas fa-times"></i></button>`;
+    list.appendChild(chip);
+    Sortable.get(list) && Sortable.get(list).destroy();
+    Sortable.create(list, { handle: '.sub-chip__handle', animation: 120, onEnd() { saveSubOrder(catId); } });
+    input.value = '';
+  });
+}
+
+function deleteSub(id, btn) {
+  if (!confirm('ქვეკატეგორია წაიშლება?')) return;
+  fetch(`/backoffice/subcategories/delete-json/${id}`, { method: 'POST' })
+    .then(r => r.json()).then(d => { if (d.success) btn.closest('.sub-chip').remove(); });
+}
+
+// ── Seed global subs ────────────────────────────────────────
+function seedSubs(catId) {
+  fetch(`/backoffice/categories/${catId}/seed-subcategories`, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) {
+        if (d.created > 0) location.reload();
+        else alert('ახალი ქვეკატეგორია არ დამატებულა (უკვე ყველა არსებობს).');
+      } else alert(d.error);
+    });
+}
+
+// ── Delete category ─────────────────────────────────────────
+function deleteCategory(id, name) {
+  if (!confirm(`"${name}" წაიშლება. გააგრძელოთ?`)) return;
+  fetch(`/backoffice/categories/delete-json/${id}`, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) document.querySelector(`.cat-card[data-id="${id}"]`)?.remove();
+      else alert(d.error);
+    });
+}
+
+// ── Add global category ─────────────────────────────────────
+function addGlobalCat(id, name) {
+  fetch('/backoffice/categories/add-global', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ global_category_id: id }),
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert(d.error);
+  });
+}
+
+// ── Add custom category ─────────────────────────────────────
+function openAddCustom() { document.getElementById('addCustomModal').style.display = 'flex'; }
+function submitAddCustom() {
+  const name = document.getElementById('customCatName').value.trim();
+  const name_en = document.getElementById('customCatNameEn').value.trim();
+  if (!name) { alert('სახელი სავალდებულოა'); return; }
+  fetch('/backoffice/categories/add-json', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, name_en }),
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert(d.error);
+  });
+}
+
+// ── Preset ─────────────────────────────────────────────────
+function openPresetModal() { document.getElementById('presetModal').style.display = 'flex'; }
+function applyPreset(venue_type, label) {
+  if (!confirm(`"${label}" პრეზეტი გამოყენებული იქნება. განაგრძოთ?`)) return;
+  fetch('/backoffice/categories/apply-preset', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ venue_type }),
+  }).then(r => r.json()).then(d => {
+    if (d.success) { location.reload(); }
+    else alert(d.error);
+  });
+}
+
+// ── Reset to default ────────────────────────────────────────
+function resetToDefault() {
+  if (!confirm('სახელები და წყობა სტანდარტულზე დაბრუნდება. გნებავთ?')) return;
+  fetch('/backoffice/categories/reset-to-default', { method: 'POST' })
+    .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.error); });
+}
+
+// ── Icon modal ──────────────────────────────────────────────
+function openIconModal(id, current) {
+  document.getElementById('iconCatId').value = id;
+  document.getElementById('iconModal').style.display = 'flex';
+}
+function uploadIcon() {
+  const id = document.getElementById('iconCatId').value;
+  const file = document.getElementById('iconFile').files[0];
+  if (!file) return;
+  const fd = new FormData(); fd.append('icon', file);
+  fetch(`/backoffice/categories/${id}/icon`, { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => { if (d.success) { closeModal('iconModal'); location.reload(); } else alert(d.error); });
+}
+function resetIcon() {
+  const id = document.getElementById('iconCatId').value;
+  fetch(`/backoffice/categories/${id}/reset-icon`, { method: 'POST' })
+    .then(r => r.json()).then(d => { if (d.success) { closeModal('iconModal'); location.reload(); } });
+}
+
+// ── Utils ───────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Close modals on backdrop click
+document.querySelectorAll('.bo-modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+});
+
+// Load item counts
+document.querySelectorAll('[id^="itemCount-"]').forEach(el => {
+  const catId = el.id.replace('itemCount-', '');
+  fetch(`/backoffice/api/stats?cat_id=${catId}`)
+    .then(r => r.json()).then(d => { el.textContent = d.item_count ?? 0; })
+    .catch(() => { el.textContent = '?'; });
+});
+</script>
+
+<style>
+.cats-page { max-width: 900px; margin: 0 auto; padding: 0 0 60px; }
+.cats-page__head { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+.cats-page__subtitle { color:var(--bo-text-2); font-size:.85rem; margin-top:4px; }
+.cats-page__actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Global bar */
+.cats-global-bar { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:10px; padding:14px 16px; margin-bottom:24px; display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+.cats-global-bar__label { color:var(--bo-text-2); font-size:.8rem; font-weight:600; white-space:nowrap; margin-top:4px; }
+.cats-global-bar__chips { display:flex; flex-wrap:wrap; gap:8px; }
+.global-chip { border:1px solid var(--bo-border); background:var(--bo-bg); color:var(--bo-text-2); padding:5px 12px; border-radius:20px; font-size:.8rem; cursor:pointer; transition:all .15s; }
+.global-chip:hover { border-color:var(--bo-accent); color:var(--bo-accent); }
+.global-chip--active { border-color:var(--bo-success,#16a34a); color:var(--bo-success,#16a34a); background:rgba(22,163,74,.08); }
+
+/* Category cards */
+.cat-list { display:flex; flex-direction:column; gap:12px; }
+.cat-card { background:var(--bo-surface); border:1px solid var(--bo-border); border-radius:12px; padding:0; overflow:hidden; transition:opacity .2s; }
+.cat-card--hidden { opacity:.5; }
+.cat-card > :not(.cat-card__subs-wrap) { display:inline-flex; align-items:center; }
+
+/* Cat card layout — top bar */
+.cat-card { display:grid; grid-template-columns:28px 52px 1fr auto auto; grid-template-rows:auto auto; align-items:center; gap:0; }
+.cat-card__handle { grid-column:1; grid-row:1; cursor:grab; color:var(--bo-text-2); padding:18px 6px; opacity:.5; }
+.cat-card__icon-wrap { grid-column:2; grid-row:1; width:44px; height:44px; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; margin:10px 0; background:var(--bo-bg); }
+.cat-card__icon-wrap:hover .cat-card__icon-edit-hint { opacity:1; }
+.cat-card__icon-img { width:100%; height:100%; object-fit:cover; }
+.cat-card__icon-fa { font-size:1.2rem; color:var(--bo-accent); }
+.cat-card__icon-fa--placeholder { color:var(--bo-text-2); opacity:.4; }
+.cat-card__icon-edit-hint { position:absolute; inset:0; background:rgba(0,0,0,.45); color:#fff; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s; font-size:.75rem; }
+.cat-card__body { grid-column:3; grid-row:1; padding:12px 16px 12px 12px; }
+.cat-card__names { display:flex; flex-direction:column; gap:4px; }
+.cat-card__name-input { border:none; background:transparent; font-size:1rem; font-weight:600; color:var(--bo-text); width:100%; padding:2px 4px; border-radius:4px; }
+.cat-card__name-input:focus { outline:none; background:var(--bo-bg); }
+.cat-card__name-input--en { font-size:.8rem; font-weight:400; color:var(--bo-text-2); }
+.cat-card__meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.cat-badge { font-size:.72rem; padding:2px 8px; border-radius:10px; }
+.cat-badge--global { background:rgba(59,130,246,.12); color:#3b82f6; }
+.cat-badge--custom { background:rgba(245,158,11,.12); color:#d97706; }
+.cat-badge--count { background:var(--bo-bg); color:var(--bo-text-2); }
+.cat-card__visibility { grid-column:4; grid-row:1; background:none; border:none; cursor:pointer; padding:10px; color:var(--bo-text-2); font-size:1rem; }
+.cat-card__visibility:hover { color:var(--bo-accent); }
+.cat-card__visibility--off { color:var(--bo-text-2); opacity:.4; }
+.cat-card__delete { grid-column:5; grid-row:1; margin-right:10px; }
+
+/* Subcategories */
+.cat-card__subs-wrap { grid-column:1/-1; grid-row:2; border-top:1px solid var(--bo-border); padding:12px 16px; }
+.sub-list { display:flex; flex-wrap:wrap; gap:8px; min-height:8px; margin-bottom:10px; }
+.sub-chip { display:inline-flex; align-items:center; gap:4px; background:var(--bo-bg); border:1px solid var(--bo-border); border-radius:20px; padding:4px 10px; }
+.sub-chip--hidden { opacity:.4; }
+.sub-chip__handle { cursor:grab; color:var(--bo-text-2); font-size:.75rem; opacity:.5; }
+.sub-chip__input { border:none; background:transparent; font-size:.82rem; color:var(--bo-text); min-width:60px; width:auto; max-width:180px; padding:0 2px; }
+.sub-chip__input:focus { outline:none; border-bottom:1px solid var(--bo-accent); }
+.sub-chip__toggle, .sub-chip__remove { background:none; border:none; cursor:pointer; color:var(--bo-text-2); font-size:.75rem; padding:2px 3px; }
+.sub-chip__toggle--off { opacity:.4; }
+.sub-chip__remove:hover { color:var(--bo-danger,#dc2626); }
+.sub-add-row { display:flex; align-items:center; gap:8px; }
+.sub-add-input { border:1px solid var(--bo-border); border-radius:6px; padding:6px 10px; font-size:.82rem; background:var(--bo-bg); color:var(--bo-text); flex:1; max-width:220px; }
+.sub-add-input:focus { outline:none; border-color:var(--bo-accent); }
+
+/* Empty */
+.cats-empty { text-align:center; padding:60px 20px; color:var(--bo-text-2); }
+.cats-empty i { font-size:3rem; opacity:.25; display:block; margin-bottom:16px; }
+
+/* Modals */
+.bo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; }
+.bo-modal__box { background:var(--bo-surface); border-radius:14px; padding:28px; max-width:480px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.bo-modal__box h3 { margin:0 0 4px; }
+.preset-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+.preset-btn { border:1px solid var(--bo-border); background:var(--bo-bg); color:var(--bo-text); padding:12px; border-radius:8px; cursor:pointer; font-size:.9rem; }
+.preset-btn:hover { border-color:var(--bo-accent); color:var(--bo-accent); }
+
+/* Micro btns */
+.bo-btn--xs { font-size:.75rem; padding:4px 10px; }
+</style>
+
 {% endblock %}
